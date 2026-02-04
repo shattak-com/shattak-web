@@ -1,0 +1,90 @@
+{
+	"name": "shattak.web",
+	"version": "0.1.0",
+	"private": true,
+	"author": "shattak",
+	"scripts": {
+		"dev": "next dev --turbopack",
+		"build": "next build --webpack",
+		"turbo": "npx turbo@2.0.9",
+		"build:turbo": "npm run turbo run build",
+		"netlify:login": "npx netlify login",
+		"netlify:link": "npx netlify link",
+		"netlify:deploy": "node scripts/netlify-deploy.js",
+		"netlify:deploy:prod": "node scripts/netlify-deploy.js --prod",
+		"netlify:env:import": "npx netlify env:import .env",
+		"postbuild": "next-sitemap --config next-sitemap.config.js",
+		"start": "next start",
+		"type-check": "tsc --noEmit",
+		"check:turbo": "npm run turbo lint type-check",
+		"format": "prettier --write src",
+		"up-interactive": "npx npm-check-updates -i",
+		"up-latest": "npx npm-check-updates -u --interactive --latest",
+		"release": "cross-env HUSKY=0 standard-version",
+		"push-release": "git push --follow-tags origin main",
+		"lint-staged": "lint-staged",
+		"prepare": "husky",
+		"sanity-check": "npm run checkTs && npm run lint && npm run prettier:check",
+		"checkTs": "tsc && tsc-strict",
+		"eslint": "eslint --ext js,ts,tsx",
+		"lint": "npm run eslint -- src",
+		"lint:fix": "npm run eslint -- --fix src",
+		"prettier:check": "prettier --check .",
+		"prettify": "prettier --write --ignore-unknown ."
+	},
+	"dependencies": {
+		"@chakra-ui/react": "^3.30.0",
+		"@emotion/react": "^11.14.0",
+		"@emotion/styled": "^11.14.1",
+		"@hookform/resolvers": "^5.2.2",
+		"@types/yup": "^0.32.0",
+		"date-fns": "^4.1.0",
+		"firebase": "^12.7.0",
+		"framer-motion": "^12.23.26",
+		"next": "^16.1.1",
+		"next-auth": "^4.24.13",
+		"next-pwa": "^5.6.0",
+		"react": "^19.2.3",
+		"react-dom": "^19.2.3",
+		"react-hook-form": "^7.68.0",
+		"react-icons": "^5.5.0",
+		"sass": "^1.97.0"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^20.2.0",
+		"@commitlint/config-conventional": "^20.2.0",
+		"@commitlint/cz-commitlint": "^20.2.0",
+		"@netlify/plugin-nextjs": "^5.15.5",
+		"@next/eslint-plugin-next": "^15.3.5",
+		"@types/react": "^19.2.7",
+		"@typescript-eslint/eslint-plugin": "^8.50.0",
+		"@typescript-eslint/parser": "^8.50.0",
+		"commitizen": "^4.3.1",
+		"cross-env": "^10.1.0",
+		"eslint": "^8.57.1",
+		"eslint-config-sznm": "^2.0.4",
+		"eslint-plugin-react": "^7.37.5",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
+		"next-sitemap": "^4.2.3",
+		"prettier": "^3.7.4",
+		"standard-version": "^9.5.0",
+		"typescript": "^5.9.3",
+		"typescript-strict-plugin": "^2.4.4"
+	},
+	"engines": {
+		"node": ">=20.17.0",
+		"npm": ">=11"
+	},
+	"packageManager": "npm@11.7.0",
+	"lint-staged": {
+		"*.{ts,tsx,js,jsx}": [
+			"eslint --fix",
+			"prettier --write",
+			"git add"
+		]
+	},
+	"lint-staged:config": {
+		"stash": false
+	}
+}

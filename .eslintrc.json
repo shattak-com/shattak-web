@@ -1,0 +1,38 @@
+{
+	"extends": ["sznm/react", "plugin:react/jsx-runtime", "plugin:@next/next/recommended"],
+	"parser": "@typescript-eslint/parser",
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"@typescript-eslint/lines-between-class-members": "off",
+		"@typescript-eslint/no-throw-literal": "off",
+		"import/extensions": [
+			"off",
+			"ignorePackages",
+			{
+				"js": "never",
+				"jsx": "never",
+				"ts": "never",
+				"tsx": "never"
+			}
+		],
+		"no-restricted-imports": [
+			"error",
+			{
+				"patterns": [
+					{
+						"group": ["*.scss", "!*.module.scss"],
+						"message": "Direct SCSS imports are not allowed. Use Chakra UI's useMultiStyleConfig for styling instead."
+					}
+				]
+			}
+		]
+	},
+	"overrides": [
+		{
+			"files": ["src/lib/firebase/**/*.ts", "src/lib/firebase/**/*.tsx"],
+			"rules": {
+				"import/no-extraneous-dependencies": "off"
+			}
+		}
+	]
+}

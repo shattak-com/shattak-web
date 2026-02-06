@@ -25,39 +25,33 @@ type CurriculumGroupProps = {
 const toneStyles = {
 	neutral: {
 		headerBg: '#ffebe5',
-		headerBgDark: 'bg.card',
+		headerBgDark: 'bg.accent',
 		headerColor: 'text.primary',
-		headerColorDark: 'text.primary',
 		itemBg: 'bg.card',
-		itemBgDark: 'bg.card',
 		itemBorder: 'border.default',
-		itemBorderDark: 'border.default',
+		itemBorderDark: 'border.accentSoft',
 		hoverBg: 'bg.subtle',
-		hoverBgDark: 'bg.subtle'
+		hoverBgDark: 'bg.accent'
 	},
 	brand: {
 		headerBg: 'primary',
-		headerBgDark: 'bg.card',
+		headerBgDark: 'primary',
 		headerColor: 'text.inverse',
-		headerColorDark: 'text.primary',
 		itemBg: 'bg.brand',
-		itemBgDark: 'bg.card',
 		itemBorder: 'border.brandSoft',
-		itemBorderDark: 'border.default',
+		itemBorderDark: 'border.brandSoft',
 		hoverBg: 'bg.brand',
-		hoverBgDark: 'bg.subtle'
+		hoverBgDark: 'bg.brand'
 	},
 	accent: {
 		headerBg: '#ffebe5',
-		headerBgDark: 'bg.card',
+		headerBgDark: 'bg.accent',
 		headerColor: 'text.primary',
-		headerColorDark: 'text.primary',
 		itemBg: 'bg.card',
-		itemBgDark: 'bg.card',
 		itemBorder: 'border.default',
-		itemBorderDark: 'border.default',
+		itemBorderDark: 'border.accentSoft',
 		hoverBg: 'bg.subtle',
-		hoverBgDark: 'bg.subtle'
+		hoverBgDark: 'bg.accent'
 	}
 } as const;
 
@@ -68,20 +62,15 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 		<Box bg="bg.card" borderRadius="card" border="1px solid" borderColor="border.default" overflow="hidden">
 			<Box
 				bg={styles.headerBg}
-				_dark={{ bg: styles.headerBgDark, color: styles.headerColorDark }}
 				color={styles.headerColor}
+				_dark={{ bg: styles.headerBgDark }}
 				px={{ base: 4, md: 5 }}
 				py={4}
 			>
 				<Text fontWeight="semibold" fontSize="md">
 					{title}
 				</Text>
-				<Text
-					fontSize="sm"
-					color={tone === 'brand' ? 'text.inverse' : 'text.muted'}
-					_dark={{ color: 'text.muted' }}
-					mt={1}
-				>
+				<Text fontSize="sm" color={tone === 'brand' ? 'text.inverse' : 'text.muted'} mt={1}>
 					{description}
 				</Text>
 			</Box>
@@ -95,11 +84,11 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 								<Accordion.Item key={section.sectionName} value={itemValue}>
 									<Box
 										bg={styles.itemBg}
-										_dark={{ bg: styles.itemBgDark, borderColor: styles.itemBorderDark }}
 										borderRadius="soft"
 										border="1px solid"
 										borderColor={styles.itemBorder}
 										overflow="hidden"
+										_dark={{ bg: 'bg.card', borderColor: styles.itemBorderDark }}
 									>
 										<Accordion.ItemTrigger
 											display="flex"
@@ -184,7 +173,7 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 	};
 
 	return (
-		<Box as="section" py={{ base: 10, md: 12 }} bg="bg.surface">
+		<Box as="section" py={{ base: 12, md: 16 }} bg="bg.surface">
 			<Container maxW="7xl">
 				<Stack spacing={6}>
 					<Stack spacing={2}>

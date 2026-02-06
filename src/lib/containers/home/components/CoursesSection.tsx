@@ -15,12 +15,13 @@ import {
 	Text,
 	VisuallyHidden,
 	Wrap,
-	WrapItem
+	WrapItem,
+	Avatar
 } from '@chakra-ui/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useRef, useState } from 'react';
-import { FiBarChart2, FiClock, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
+import { FiBarChart2, FiClock, FiStar, FiUsers, FiVideo, FiHeart  } from 'react-icons/fi';
 
 import Reveal from '~/lib/components/Reveal';
 import { courseCategories } from '~/lib/constants/landing';
@@ -146,28 +147,83 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													objectPosition: '50% 10%'
 												}}
 											/>
-											<HStack position="absolute" bottom={3} right={3} spacing={2} zIndex={1}>
+											<HStack position="absolute" top={2} left={3}  zIndex={1}
+													px={2}
+													py={1.5}
+													borderRadius="full"
+											
+													backdropFilter="blur(8px)"
+													boxShadow="soft"
+														boxShadow="soft"
+													bg="bg.badgeStrong">
+										
+												{/* only first 5 from tools */}
+												<Avatar.Root  boxSize="25px" >
+													<Avatar.Image src="https://appxcontent.kaxa.in/paid_course3/2024-10-15-0.3724774982995829.png" />
+												</Avatar.Root>
+												<Avatar.Root  boxSize="25px" >
+													<Avatar.Image src="https://images.icon-icons.com/2108/PNG/512/react_icon_130845.png" />
+												</Avatar.Root>
+												<Avatar.Root  boxSize="25px" >
+													<Avatar.Image src="https://cdn-1.webcatalog.io/catalog/vs-code/vs-code-social-preview.png?v=1714776407457" />
+												</Avatar.Root>
+												<Avatar.Root  boxSize="25px" >
+													<Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR13ZDccP9GD690KVSsfBFZnah0zFMyDp5CIA&s" />
+												</Avatar.Root>
+												<Avatar.Root  boxSize="25px" >
+													<Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoZAPhkIP75IVa4trptoEfFlzk-0KFEm0ibg&s" />
+												</Avatar.Root>
+											
+											
+												
+											</HStack>
+
+									
+
+											<HStack position="absolute" top={2} right={3}  zIndex={1}>
+				
+												<HStack spacing={1} px={3} py={3} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
+													<Icon as={FiHeart} boxSize={6} color="red.400" _dark={{ color: 'red.400' }} />
+												</HStack>
+													
+											</HStack>
+
+
+											<HStack position="absolute" bottom={2} left={3} zIndex={1}  px={1} py={1} borderRadius="md" bg="bg.badgeStrong" boxShadow="soft">
+
+										
+													<Avatar.Root boxSize="50px" shape="sm">
+													<Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRTg-3puC1FElbQVmGS94p1eirmT7TLi9YmA&s" />
+												</Avatar.Root>
+											</HStack>
+
+												<HStack position="absolute" bottom={3} right={3} spacing={2} zIndex={1} >
+
 												<HStack
 													spacing={1.5}
 													px={3}
 													py={1}
 													borderRadius="full"
-													bg="bg.badge"
 													backdropFilter="blur(8px)"
 													boxShadow="soft"
+													bg="bg.badgeStrong"
 												>
 													<Icon as={FiUsers} boxSize={3.5} color="icon.inverse" />
 													<Text fontSize="xs" fontWeight="semibold" color="text.inverse">
 														{formatLearners(course.learners)} Learners
 													</Text>
 												</HStack>
+
 												<HStack spacing={1} px={2.5} py={1} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
 													<Icon as={FiStar} boxSize={3} color="yellow.400" _dark={{ color: 'yellow.500' }} />
 													<Text fontSize="xs" fontWeight="semibold" color="text.inverse">
 														{course.rating.toFixed(1)}
 													</Text>
 												</HStack>
+													
 											</HStack>
+
+
 										</Box>
 										<Stack spacing={3} flex="1">
 											<Heading size="md" lineClamp={2} lineHeight="compact">

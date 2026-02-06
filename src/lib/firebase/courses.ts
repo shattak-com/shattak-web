@@ -11,6 +11,12 @@ import { getFirestoreDb } from '~/lib/firebase';
 
 export const COURSES_COLLECTION = 'courses';
 
+export type CourseTool = {
+	id: string;
+	name: string;
+	image : string; 
+};
+
 export type LandingCourseCard = {
 	id: string;
 	title: string;
@@ -23,6 +29,7 @@ export type LandingCourseCard = {
 	learners: number;
 	price: number | null;
 	originalPrice: number;
+	tools: CourseTool[];
 };
 
 type CourseFetchOptions = {
@@ -140,7 +147,9 @@ const toLandingCourseCard = (course: CourseDetails): LandingCourseCard => ({
 	rating: course.rating,
 	learners: course.enrollmentCount,
 	price: course.price > 0 ? course.price : null,
-	originalPrice: course.originalPrice
+	originalPrice: course.originalPrice,
+	tools: course.tools,
+
 });
 
 export const getCourseById = async (id: string, options?: CourseFetchOptions): Promise<CourseDetails | null> => {

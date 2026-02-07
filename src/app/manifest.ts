@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-static'; 
 
 const manifest = (): MetadataRoute.Manifest => ({
 	short_name: 'Shattak',

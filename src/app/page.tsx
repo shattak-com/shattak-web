@@ -4,7 +4,7 @@ import HomePage from '~/lib/containers/home';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const SHARE_IMAGE = '/assets/android-chrome-512x512.png';
-const DESCRIPTION = 'Shattak offers compact but complete live classes led by industry mentors. Learn one skill deeply, build real projects, and strengthen your portfolio with outcome-driven learning.';
+
 
 export const dynamic = 'force-dynamic';
 

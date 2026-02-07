@@ -10,8 +10,8 @@ type RootLayoutProps = {
 	children: React.ReactNode;
 };
 
-const APP_NAME = 'Shattak';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const APP_NAME = 'Shattak – Live Classes That Build Real Skills & Portfolio Projects';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'; 
 const GA_MEASUREMENT_ID = 'G-75NBV2Y1D8';
 const MANIFEST_PATH = '/assets/site.webmanifest';
 const FAVICON_ICO = '/assets/favicon.ico';
@@ -38,7 +38,7 @@ const bodyFont = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
 	title: { default: APP_NAME, template: '%s | Shattak' },
-	description: 'Live classes, expert mentors, and career-ready learning with Shattak.',
+	description: 'Shattak offers compact but complete live classes led by industry mentors. Learn one skill deeply, build real projects, and strengthen your portfolio with outcome-driven learning.',
 	applicationName: APP_NAME,
 	metadataBase: new URL(SITE_URL),
 	verification: {
@@ -117,9 +117,9 @@ const RootLayout = async ({ children }: RootLayoutProps) => (
 			<Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
 			<Script id="ga-init" strategy="afterInteractive">
 				{`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA_MEASUREMENT_ID}');`}
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');`}
 			</Script>
 			<RootProviders>
 				<Layout>{children}</Layout>

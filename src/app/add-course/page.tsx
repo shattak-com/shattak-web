@@ -15,4 +15,4 @@ const AddCourse = async () => {
 	return <AddCoursePage />;
 };
 
-export default AddCourse;
+export default AddCourse; 

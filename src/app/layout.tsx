@@ -41,6 +41,9 @@ export const metadata: Metadata = {
 	description: 'Live classes, expert mentors, and career-ready learning with Shattak.',
 	applicationName: APP_NAME,
 	metadataBase: new URL(SITE_URL),
+	verification: {
+    google: "Ed4AzxtahacP_bpNmfVpHwwGWTgCCjUSlGm6kIWeNpU",
+  	},
 	keywords: ['Shattak', 'live classes', 'expert mentors', 'courses', 'learning platform', 'career upskilling'],
 	alternates: {
 		canonical: SITE_URL
@@ -96,7 +99,7 @@ export const metadata: Metadata = {
 		title: 'Shattak',
 		description: 'Learn from experts. Build what matters.',
 		images: [ANDROID_ICON_512]
-	}
+	},
 };
 
 export const viewport: Viewport = {

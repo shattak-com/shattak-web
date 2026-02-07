@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Container, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Container, SimpleGrid, Stack, Text , Avatar} from '@chakra-ui/react';
 import Image from 'next/image';
 
 import type { CourseTool } from '~/lib/containers/course/types';
@@ -46,32 +46,36 @@ const CourseTools = ({ tools }: CourseToolsProps) => (
 								borderRadius="tile"
 								border="1px solid"
 								borderColor="border.subtle"
-								px={4}
-								py={4}
+								px={3}
+								py={3}
 								textAlign="center"
 								transition="transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease"
 								_hover={{ transform: 'translateY(-3px)', boxShadow: 'soft', borderColor: 'border.brandSoft' }}
 							>
 								<Box
-									w="52px"
-									h="52px"
+									w="60px"
+									h="60px"
 									borderRadius="full"
-									bg="bg.card"
+								
 									border="1px solid"
 									borderColor="border.default"
 									display="flex"
 									alignItems="center"
 									justifyContent="center"
-									boxShadow="soft"
 								>
 									{tool.image ? (
-										<Image src={tool.image} alt={tool.name} width={28} height={28} />
+										
+										<Avatar.Root  size="xl">
+											
+											<Avatar.Image src={`${tool.image}`}  />
+										</Avatar.Root>
 									) : (
 										<Text fontWeight="semibold" fontSize="md">
 											{tool.name.slice(0, 1).toUpperCase()}
 										</Text>
 									)}
 								</Box>
+
 								<Text fontSize="sm" fontWeight="semibold" color="text.primary">
 									{tool.name}
 								</Text>

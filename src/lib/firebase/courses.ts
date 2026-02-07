@@ -98,7 +98,7 @@ const normalizeCourseDetails = (id: string, data: Partial<CourseDetails>): Cours
 		id,
 		title: asString(data.title),
 		subtitle: asString(data.subtitle),
-		summary: asString(data.summary),
+		summary: asString(data.subtitle),
 		category: primaryCategory,
 		categories,
 		level: asCourseLevel(data.level),

@@ -18,6 +18,7 @@ export const courseDetailsMock: CourseDetails = {
 	rating: 4.7,
 	thumbnailImage: '/images/courses/course-1.svg',
 	promoImage: '/images/courses/course-2.svg',
+	promoImageBrand: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnA94djNyPByY8I_iAHcxJQJkSnLOKDRMebw&s',
 	paymentLink: '',
 	status: 'Published',
 	highlights: [

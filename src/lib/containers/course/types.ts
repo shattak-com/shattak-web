@@ -108,6 +108,7 @@ export type CourseDetails = {
 	rating: number;
 	thumbnailImage: string;
 	promoImage: string;
+	promoImageBrand: string;
 	paymentLink: string;
 	status: CourseStatus;
 	highlights: CourseHighlight[];

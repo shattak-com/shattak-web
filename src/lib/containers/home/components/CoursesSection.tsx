@@ -159,22 +159,35 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													>
 										
 								
-										
-												<Avatar.Root  boxSize="27px" variant= "solid" >
-													<Avatar.Image src={`${course.tools[0].image}`} />
-												</Avatar.Root>
-												<Avatar.Root  boxSize="27px" variant= "solid" >
-													<Avatar.Image src={`${course.tools[1].image}`}/>
-												</Avatar.Root>
-												<Avatar.Root  boxSize="27px" variant= "solid"  >
-													<Avatar.Image src={`${course.tools[2].image}`}  />
-												</Avatar.Root>
-												<Avatar.Root  boxSize="27px" variant= "solid" >
-													<Avatar.Image src={`${course.tools[3].image}`} />
-												</Avatar.Root>
-												<Avatar.Root  boxSize="27px" variant= "solid" >
-													<Avatar.Image src={`${course.tools[4].image}`} />
-												</Avatar.Root>
+										 {course.tools?.[0]?.image && (
+											<Avatar.Root boxSize="27px" variant="solid">
+											<Avatar.Image src={course.tools[0].image} />
+											</Avatar.Root>
+										)}
+
+										{course.tools?.[1]?.image && (
+											<Avatar.Root boxSize="27px" variant="solid">
+											<Avatar.Image src={course.tools[1].image} />
+											</Avatar.Root>
+										)}
+
+										{course.tools?.[2]?.image && (
+											<Avatar.Root boxSize="27px" variant="solid">
+											<Avatar.Image src={course.tools[2].image} />
+											</Avatar.Root>
+										)}
+
+										{course.tools?.[3]?.image && (
+											<Avatar.Root boxSize="27px" variant="solid">
+											<Avatar.Image src={course.tools[3].image} />
+											</Avatar.Root>
+										)}
+
+										{course.tools?.[4]?.image && (
+											<Avatar.Root boxSize="27px" variant="solid">
+											<Avatar.Image src={course.tools[4].image} />
+											</Avatar.Root>
+										)}
 											
 											
 												

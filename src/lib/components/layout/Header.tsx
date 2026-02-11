@@ -9,6 +9,12 @@ import ThemeToggle from '~/lib/components/ThemeToggle';
 
 const headerLinks = [
 	{
+		id: 'about',
+		label: 'About',
+		href: '/about',
+		external: false
+	},
+	{
 		id: 'campus-ambassador',
 		label: 'Campus Ambassador Program',
 		href: 'https://forms.gle/HqTLJG6EcNzgNRcW9',

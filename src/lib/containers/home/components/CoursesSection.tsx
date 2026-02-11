@@ -20,8 +20,9 @@ import {
 } from '@chakra-ui/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
-import { FiBarChart2, FiClock, FiStar, FiUsers, FiVideo, FiHeart  } from 'react-icons/fi';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
 import Reveal from '~/lib/components/Reveal';
 import { courseCategories } from '~/lib/constants/landing';
@@ -37,14 +38,46 @@ const formatLearners = (count: number) => {
 	return `${count}+`;
 };
 
+const CATEGORY_QUERY_KEY = 'category';
+
+const slugifyCategory = (value: string) =>
+	value
+		.toLowerCase()
+		.trim()
+		.replace(/&/g, 'and')
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+
+const getCategoryFromQuery = (value: string | null, categories: readonly string[]) => {
+	if (!value) {
+		return null;
+	}
+
+	const normalized = value.trim().toLowerCase();
+	const exactMatch = categories.find(category => category.toLowerCase() === normalized);
+	if (exactMatch) {
+		return exactMatch;
+	}
+
+	return categories.find(category => slugifyCategory(category) === normalized) ?? null;
+};
+
 type CoursesSectionProps = {
 	courses: LandingCourseCard[];
 };
 
 const CoursesSection = ({ courses }: CoursesSectionProps) => {
 	const categories = courseCategories as readonly string[];
-	const [activeCategory, setActiveCategory] = useState<string>(categories[0] ?? '');
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+	const defaultCategory = categories[0] ?? '';
 	const headingRef = useRef<HTMLHeadingElement | null>(null);
+	const [activeCategory, setActiveCategory] = useState(defaultCategory);
+
+	useEffect(() => {
+		const selectedCategory = getCategoryFromQuery(searchParams.get(CATEGORY_QUERY_KEY), categories);
+		setActiveCategory(selectedCategory ?? defaultCategory);
+	}, [categories, defaultCategory, searchParams]);
 
 	const filteredItems = useMemo(() => {
 		if (!activeCategory) {
@@ -52,6 +85,28 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 		}
 		return courses.filter(item => item.categories.includes(activeCategory));
 	}, [activeCategory, courses]);
+
+	const handleCategoryChange = (category: string) => {
+		setActiveCategory(category);
+		const nextParams = new URLSearchParams(searchParams.toString());
+		const categorySlug = slugifyCategory(category);
+		const defaultCategorySlug = slugifyCategory(defaultCategory);
+
+		if (!categorySlug || categorySlug === defaultCategorySlug) {
+			nextParams.delete(CATEGORY_QUERY_KEY);
+		} else {
+			nextParams.set(CATEGORY_QUERY_KEY, categorySlug);
+		}
+
+		const query = nextParams.toString();
+		const hash = typeof window === 'undefined' ? '' : window.location.hash;
+		const nextUrl = `${pathname}${query ? `?${query}` : ''}${hash}`;
+
+		if (typeof window !== 'undefined') {
+			window.history.replaceState(window.history.state, '', nextUrl);
+		}
+		headingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	};
 
 	return (
 		<Box as="section" id="courses" py={{ base: 14, md: 20 }}>
@@ -75,10 +130,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 											bg: activeCategory === category ? 'primaryHover' : 'bg.brand',
 											color: activeCategory === category ? 'text.inverse' : 'text.primary'
 										}}
-										onClick={() => {
-											setActiveCategory(category);
-											headingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-										}}
+										onClick={() => handleCategoryChange(category)}
 									>
 										{category}
 									</Button>

@@ -1,6 +1,7 @@
 export type NavLink = {
 	id: string;
 	label: string;
+	href: string;
 };
 
 export type Feature = {
@@ -20,9 +21,10 @@ export type Testimonial = {
 };
 
 export const navLinks: NavLink[] = [
-	{ id: 'courses', label: 'Courses' },
-	{ id: 'testimonials', label: 'Testimonials' },
-	{ id: 'instructor', label: 'Become an Instructor' }
+	{ id: 'about', label: 'About', href: '/about' },
+	{ id: 'courses', label: 'Courses', href: '/#courses' },
+	{ id: 'testimonials', label: 'Testimonials', href: '/#testimonials' },
+	{ id: 'instructor', label: 'Become an Instructor', href: '/#instructor' }
 ];
 
 export const courseCategories = [

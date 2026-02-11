@@ -6,53 +6,62 @@ import { FiInstagram, FiLinkedin, FiTwitter, FiYoutube } from 'react-icons/fi';
 
 import { navLinks } from '~/lib/constants/landing';
 
-const Footer = () => (
-	<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
-		<Container maxW="6xl">
-			<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
-				<Stack spacing={3}>
-					<Heading size="md">Shattak</Heading>
-					<Text fontSize="sm" color="text.onDarkMuted">
-						Learn from Experts. Build What Matters. 
-					</Text>
-					<HStack spacing={3}>
-						<Icon as={FiInstagram} />
-						<Icon as={FiLinkedin} />
-						<Icon as={FiYoutube} />
-						<Icon as={FiTwitter} />
-					</HStack>
-				</Stack>
-				<Stack spacing={3}>
-					<Text fontWeight="semibold">Quick Links</Text>
-					{navLinks.map(link => (
-						<Link key={link.id} href={`#${link.id}`}>
+const Footer = () => {
+	const joinNowUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '/#whatsapp';
+	const isJoinNowExternal = /^https?:\/\//i.test(joinNowUrl);
+
+	return (
+		<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
+			<Container maxW="6xl">
+				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
+					<Stack spacing={3}>
+						<Heading size="md">Shattak</Heading>
+						<Text fontSize="sm" color="text.onDarkMuted">
+							Learn from Experts. Build What Matters.
+						</Text>
+						<HStack spacing={3}>
+							<Icon as={FiInstagram} />
+							<Icon as={FiLinkedin} />
+							<Icon as={FiYoutube} />
+							<Icon as={FiTwitter} />
+						</HStack>
+					</Stack>
+					<Stack spacing={3}>
+						<Text fontWeight="semibold">Quick Links</Text>
+						{navLinks.map(link => (
+							<Link key={link.id} href={link.href}>
+								<Text fontSize="sm" color="text.onDarkMuted">
+									{link.label}
+								</Text>
+							</Link>
+						))}
+						<Link
+							href={joinNowUrl}
+							target={isJoinNowExternal ? '_blank' : undefined}
+							rel={isJoinNowExternal ? 'noopener noreferrer' : undefined}
+						>
 							<Text fontSize="sm" color="text.onDarkMuted">
-								{link.label}
+								Join Now
 							</Text>
 						</Link>
-					))}
-					<Link href="#cta">
+					</Stack>
+					<Stack spacing={3}>
+						<Text fontWeight="semibold">Contact</Text>
 						<Text fontSize="sm" color="text.onDarkMuted">
-							Join Now
+							hello@shattak.com
 						</Text>
-					</Link>
-				</Stack>
-				<Stack spacing={3}>
-					<Text fontWeight="semibold">Contact</Text>
-					<Text fontSize="sm" color="text.onDarkMuted">
-						hello@shattak.com
-					</Text>
-					<Text fontSize="sm" color="text.onDarkMuted">
-						+91 90000 00000
-					</Text>
-				</Stack>
-			</SimpleGrid>
-			<Separator my={8} borderColor="border.onDark" />
-			<Text fontSize="sm" color="text.onDarkSubtle" textAlign={{ base: 'left', md: 'center' }}>
-				All Copy Right Reserved
-			</Text>
-		</Container>
-	</Box>
-);
+						<Text fontSize="sm" color="text.onDarkMuted">
+							+91 90000 00000
+						</Text>
+					</Stack>
+				</SimpleGrid>
+				<Separator my={8} borderColor="border.onDark" />
+				<Text fontSize="sm" color="text.onDarkSubtle" textAlign={{ base: 'left', md: 'center' }}>
+					All Copy Right Reserved
+				</Text>
+			</Container>
+		</Box>
+	);
+};
 
 export default Footer;

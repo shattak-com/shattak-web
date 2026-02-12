@@ -14,17 +14,48 @@ const Footer = () => {
 		<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
 			<Container maxW="6xl">
 				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
-					<Stack spacing={3}>
+					<Stack spacing={4}>
+
 						<Heading size="md">Shattak</Heading>
+
 						<Text fontSize="sm" color="text.onDarkMuted">
 							Learn from Experts. Build What Matters.
 						</Text>
+
 						<HStack spacing={3}>
-							<Icon as={FiInstagram} />
-							<Icon as={FiLinkedin} />
-							<Icon as={FiYoutube} />
-							<Icon as={FiTwitter} />
-						</HStack>
+						 <Link
+							href="https://www.instagram.com/shattakofficial/"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<Icon as={FiInstagram} boxSize={8} cursor="pointer" />
+						</Link>
+
+						<Link
+							href="https://www.linkedin.com/company/shattak/"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<Icon as={FiLinkedin} boxSize={8} cursor="pointer" />
+						</Link>
+
+						<Link
+							href="https://www.youtube.com/@shattakofficial"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<Icon as={FiYoutube} boxSize={8} cursor="pointer" />
+						</Link>
+
+						<Link
+							href="https://x.com/shattakofficial"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<Icon as={FiTwitter} boxSize={8} cursor="pointer" />
+						</Link>
+
+					  </HStack>
 					</Stack>
 					<Stack spacing={3}>
 						<Text fontWeight="semibold">Quick Links</Text>

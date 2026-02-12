@@ -178,6 +178,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 											position="absolute"
 											inset="0"
 											zIndex={1}
+											target="_blank"
 										>
 											<VisuallyHidden>View details</VisuallyHidden>
 										</LinkOverlay>
@@ -336,6 +337,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													color="text.inverse"
 													_hover={{ bg: 'bg.inverseHover' }}
 													asChild
+													target="_blank"
 												>
 													<Link href={courseHref}>View Details</Link>
 												</Button>

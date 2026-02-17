@@ -261,7 +261,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 
 										
 													<Avatar.Root boxSize="50px" shape="sm">
-													<Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRTg-3puC1FElbQVmGS94p1eirmT7TLi9YmA&s" />
+													<Avatar.Image src={course.promoImageBrand} />
 												</Avatar.Root>
 											</HStack>
 

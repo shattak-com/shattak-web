@@ -30,6 +30,7 @@ export type LandingCourseCard = {
 	price: number | null;
 	originalPrice: number;
 	tools: CourseTool[];
+	promoImageBrand : string;
 };
 
 type CourseFetchOptions = {
@@ -132,7 +133,8 @@ const normalizeCourseDetails = (id: string, data: Partial<CourseDetails>): Cours
 		requirements: asArray(data.requirements),
 		tools: asArray(data.tools),
 		instructors: asArray(data.instructors),
-		reviews: asArray(data.reviews)
+		reviews: asArray(data.reviews),
+		promoImageBrand : asString(data.promoImageBrand),
 	};
 };
 
@@ -149,7 +151,7 @@ const toLandingCourseCard = (course: CourseDetails): LandingCourseCard => ({
 	price: course.price > 0 ? course.price : null,
 	originalPrice: course.originalPrice,
 	tools: course.tools,
-
+	promoImageBrand:  course.promoImageBrand
 });
 
 export const getCourseById = async (id: string, options?: CourseFetchOptions): Promise<CourseDetails | null> => {

@@ -4,6 +4,7 @@ import { Box, Container, Heading, HStack, Icon, Separator, SimpleGrid, Stack, Te
 import Link from 'next/link';
 import { FiInstagram, FiLinkedin, FiTwitter, FiYoutube } from 'react-icons/fi';
 
+import { trackCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
 import { navLinks } from '~/lib/constants/landing';
 
 const Footer = () => {
@@ -15,7 +16,6 @@ const Footer = () => {
 			<Container maxW="6xl">
 				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
 					<Stack spacing={4}>
-
 						<Heading size="md">Shattak</Heading>
 
 						<Text fontSize="sm" color="text.onDarkMuted">
@@ -23,44 +23,38 @@ const Footer = () => {
 						</Text>
 
 						<HStack spacing={3}>
-						 <Link
-							href="https://www.instagram.com/shattakofficial/"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Icon as={FiInstagram} boxSize={8} cursor="pointer" />
-						</Link>
+							<Link href="https://www.instagram.com/shattakofficial/" target="_blank" rel="noopener noreferrer">
+								<Icon as={FiInstagram} boxSize={8} cursor="pointer" />
+							</Link>
 
-						<Link
-							href="https://www.linkedin.com/company/shattak/"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Icon as={FiLinkedin} boxSize={8} cursor="pointer" />
-						</Link>
+							<Link href="https://www.linkedin.com/company/shattak/" target="_blank" rel="noopener noreferrer">
+								<Icon as={FiLinkedin} boxSize={8} cursor="pointer" />
+							</Link>
 
-						<Link
-							href="https://www.youtube.com/@shattakofficial"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Icon as={FiYoutube} boxSize={8} cursor="pointer" />
-						</Link>
+							<Link href="https://www.youtube.com/@shattakofficial" target="_blank" rel="noopener noreferrer">
+								<Icon as={FiYoutube} boxSize={8} cursor="pointer" />
+							</Link>
 
-						<Link
-							href="https://x.com/shattakofficial"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Icon as={FiTwitter} boxSize={8} cursor="pointer" />
-						</Link>
-
-					  </HStack>
+							<Link href="https://x.com/shattakofficial" target="_blank" rel="noopener noreferrer">
+								<Icon as={FiTwitter} boxSize={8} cursor="pointer" />
+							</Link>
+						</HStack>
 					</Stack>
 					<Stack spacing={3}>
 						<Text fontWeight="semibold">Quick Links</Text>
 						{navLinks.map(link => (
-							<Link key={link.id} href={link.href}>
+							<Link
+								key={link.id}
+								href={link.href}
+								onClick={() =>
+									trackCtaClicked({
+										label: link.label,
+										location: 'footer_quick_links',
+										destination: link.href,
+										context: link.id
+									})
+								}
+							>
 								<Text fontSize="sm" color="text.onDarkMuted">
 									{link.label}
 								</Text>
@@ -70,11 +64,43 @@ const Footer = () => {
 							href={joinNowUrl}
 							target={isJoinNowExternal ? '_blank' : undefined}
 							rel={isJoinNowExternal ? 'noopener noreferrer' : undefined}
+							onClick={() =>
+								trackWhatsAppCtaClicked({
+									location: 'footer_join_now',
+									destination: joinNowUrl,
+									label: 'Join Now'
+								})
+							}
 						>
 							<Text fontSize="sm" color="text.onDarkMuted">
 								Join Now
 							</Text>
 						</Link>
+						<Box
+							as="button"
+							type="button"
+							textAlign="left"
+							cursor="pointer"
+							_hover={{ opacity: 0.85 }}
+							_focusVisible={{
+								outline: '2px solid',
+								outlineColor: 'border.brand',
+								outlineOffset: '2px'
+							}}
+							aria-label="Open analytics preferences"
+							onClick={() => {
+								window.dispatchEvent(new Event('shattak:open-analytics-consent'));
+								trackCtaClicked({
+									label: 'Analytics Preferences',
+									location: 'footer_quick_links',
+									context: 'analytics_preferences'
+								});
+							}}
+						>
+							<Text fontSize="sm" color="text.onDarkMuted">
+								Analytics Preferences
+							</Text>
+						</Box>
 					</Stack>
 					<Stack spacing={3}>
 						<Text fontWeight="semibold">Contact</Text>

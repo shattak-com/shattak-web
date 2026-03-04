@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
+import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+
 const Hero = () => {
 	const prefersReducedMotion = useReducedMotion();
 	const x = useMotionValue(0);
@@ -292,7 +294,17 @@ const Hero = () => {
 								boxShadow="primary"
 								fontWeight="semibold"
 							>
-								<Link href="https://forms.gle/yQVwU7FJ9Q5rDHTq7" target="_blank" rel="noopener noreferrer">
+								<Link
+									href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() =>
+										trackInstructorCtaClicked({
+											location: 'home_hero',
+											destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7'
+										})
+									}
+								>
 									Become an Instructor
 								</Link>
 							</Button>
@@ -317,7 +329,19 @@ const Hero = () => {
 								boxShadow="neutral"
 								fontWeight="semibold"
 							>
-								<Link href="https://forms.gle/HqTLJG6EcNzgNRcW9" target="_blank" rel="noopener noreferrer">
+								<Link
+									href="https://forms.gle/HqTLJG6EcNzgNRcW9"
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() =>
+										trackCtaClicked({
+											label: 'Campus Ambassador Program',
+											location: 'home_hero',
+											destination: 'https://forms.gle/HqTLJG6EcNzgNRcW9',
+											context: 'campus_ambassador'
+										})
+									}
+								>
 									Campus Ambassador Program
 								</Link>
 							</Button>

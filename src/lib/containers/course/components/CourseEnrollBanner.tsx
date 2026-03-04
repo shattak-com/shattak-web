@@ -4,6 +4,7 @@ import { Box, Button, Container, HStack, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
+import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
@@ -127,6 +128,14 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 										href={enrollHref}
 										target={openExternal ? '_blank' : undefined}
 										rel={openExternal ? 'noopener noreferrer' : undefined}
+										onClick={() =>
+											trackEnrollClicked({
+												location: 'course_sticky_banner',
+												destination: enrollHref,
+												courseId: course.id,
+												courseTitle: course.title
+											})
+										}
 									>
 										Enroll Now
 									</Link>
@@ -165,6 +174,14 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 									href={enrollHref}
 									target={openExternal ? '_blank' : undefined}
 									rel={openExternal ? 'noopener noreferrer' : undefined}
+									onClick={() =>
+										trackEnrollClicked({
+											location: 'course_sticky_banner_mobile',
+											destination: enrollHref,
+											courseId: course.id,
+											courseTitle: course.title
+										})
+									}
 								>
 									Enroll Now
 								</Link>

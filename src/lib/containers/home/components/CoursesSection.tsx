@@ -24,6 +24,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
+import { trackCourseCardClicked, trackCourseFilterChanged } from '~/lib/analytics/mixpanel';
 import Reveal from '~/lib/components/Reveal';
 import { courseCategories } from '~/lib/constants/landing';
 import type { LandingCourseCard } from '~/lib/firebase/courses';
@@ -87,6 +88,12 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 	}, [activeCategory, courses]);
 
 	const handleCategoryChange = (category: string) => {
+		trackCourseFilterChanged({
+			location: 'home_courses',
+			selectedCategory: category,
+			previousCategory: activeCategory
+		});
+
 		setActiveCategory(category);
 		const nextParams = new URLSearchParams(searchParams.toString());
 		const categorySlug = slugifyCategory(category);
@@ -179,6 +186,14 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 											inset="0"
 											zIndex={1}
 											target="_blank"
+											onClick={() =>
+												trackCourseCardClicked({
+													location: 'home_courses_grid',
+													courseId: course.id,
+													courseTitle: course.title,
+													destination: courseHref
+												})
+											}
 										>
 											<VisuallyHidden>View details</VisuallyHidden>
 										</LinkOverlay>
@@ -200,73 +215,71 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													objectPosition: '50% 10%'
 												}}
 											/>
-										
-											<HStack position="absolute"
-													top={2} 
-													left={3}  
-													zIndex={1}
-													px={1.5}
-													py={1.5}
-													borderRadius="full"
-													bg="bg.badgeStrong"
-													>
-										
-								
-										 {course.tools?.[0]?.image && (
-											<Avatar.Root boxSize="27px" variant="solid">
-											<Avatar.Image src={course.tools[0].image} />
-											</Avatar.Root>
-										)}
 
-										{course.tools?.[1]?.image && (
-											<Avatar.Root boxSize="27px" variant="solid">
-											<Avatar.Image src={course.tools[1].image} />
-											</Avatar.Root>
-										)}
+											<HStack
+												position="absolute"
+												top={2}
+												left={3}
+												zIndex={1}
+												px={1.5}
+												py={1.5}
+												borderRadius="full"
+												bg="bg.badgeStrong"
+											>
+												{course.tools?.[0]?.image && (
+													<Avatar.Root boxSize="27px" variant="solid">
+														<Avatar.Image src={course.tools[0].image} />
+													</Avatar.Root>
+												)}
 
-										{course.tools?.[2]?.image && (
-											<Avatar.Root boxSize="27px" variant="solid">
-											<Avatar.Image src={course.tools[2].image} />
-											</Avatar.Root>
-										)}
+												{course.tools?.[1]?.image && (
+													<Avatar.Root boxSize="27px" variant="solid">
+														<Avatar.Image src={course.tools[1].image} />
+													</Avatar.Root>
+												)}
 
-										{course.tools?.[3]?.image && (
-											<Avatar.Root boxSize="27px" variant="solid">
-											<Avatar.Image src={course.tools[3].image} />
-											</Avatar.Root>
-										)}
+												{course.tools?.[2]?.image && (
+													<Avatar.Root boxSize="27px" variant="solid">
+														<Avatar.Image src={course.tools[2].image} />
+													</Avatar.Root>
+												)}
 
-										{course.tools?.[4]?.image && (
-											<Avatar.Root boxSize="27px" variant="solid">
-											<Avatar.Image src={course.tools[4].image} />
-											</Avatar.Root>
-										)}
-											
-											
-												
+												{course.tools?.[3]?.image && (
+													<Avatar.Root boxSize="27px" variant="solid">
+														<Avatar.Image src={course.tools[3].image} />
+													</Avatar.Root>
+												)}
+
+												{course.tools?.[4]?.image && (
+													<Avatar.Root boxSize="27px" variant="solid">
+														<Avatar.Image src={course.tools[4].image} />
+													</Avatar.Root>
+												)}
 											</HStack>
 
-									
-
-											<HStack position="absolute" top={2} right={3}  zIndex={1}>
-				
+											<HStack position="absolute" top={2} right={3} zIndex={1}>
 												<HStack spacing={1} px={3} py={3} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
 													<Icon as={FiHeart} boxSize={6} color="red.400" _dark={{ color: 'red.400' }} />
 												</HStack>
-													
 											</HStack>
 
-
-											<HStack position="absolute" bottom={2} left={3} zIndex={1}  px={1} py={1} borderRadius="md" bg="bg.badgeStrong" boxShadow="soft">
-
-										
-													<Avatar.Root boxSize="50px" shape="sm">
+											<HStack
+												position="absolute"
+												bottom={2}
+												left={3}
+												zIndex={1}
+												px={1}
+												py={1}
+												borderRadius="md"
+												bg="bg.badgeStrong"
+												boxShadow="soft"
+											>
+												<Avatar.Root boxSize="50px" shape="sm">
 													<Avatar.Image src={course.promoImageBrand} />
 												</Avatar.Root>
 											</HStack>
 
-												<HStack position="absolute" bottom={3} right={3} spacing={2} zIndex={1} >
-
+											<HStack position="absolute" bottom={3} right={3} spacing={2} zIndex={1}>
 												<HStack
 													spacing={1.5}
 													px={3}
@@ -288,18 +301,14 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 														{course.rating.toFixed(1)}
 													</Text>
 												</HStack>
-													
 											</HStack>
-
-
 										</Box>
 										<Stack spacing={3} flex="1">
 											<Heading size="md" lineClamp={2} lineHeight="compact">
 												{course.title}
-												
 											</Heading>
 											<Separator borderColor="border.default" />
-										
+
 											<HStack spacing={3} color="text.muted" fontSize="xs" flexWrap="wrap">
 												<HStack spacing={1}>
 													<Icon as={FiBarChart2} />
@@ -339,13 +348,23 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													asChild
 													target="_blank"
 												>
-													<Link href={courseHref}>View Details</Link>
+													<Link
+														href={courseHref}
+														onClick={() =>
+															trackCourseCardClicked({
+																location: 'home_courses_button',
+																courseId: course.id,
+																courseTitle: course.title,
+																destination: courseHref
+															})
+														}
+													>
+														View Details
+													</Link>
 												</Button>
 											</HStack>
-											
 										</Stack>
 									</LinkBox>
-									
 								</Reveal>
 							);
 						})}

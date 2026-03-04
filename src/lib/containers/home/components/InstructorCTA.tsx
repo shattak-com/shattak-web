@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useCallback } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
+import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+
 const Reveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
 	const prefersReducedMotion = useReducedMotion();
 
@@ -248,7 +250,18 @@ const InstructorCTA = () => {
 											px={7}
 											fontWeight="semibold"
 										>
-											<Link href={instructorUrl} target="_blank" rel="noopener noreferrer">
+											<Link
+												href={instructorUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												onClick={() =>
+													trackInstructorCtaClicked({
+														location: 'instructor_cta',
+														destination: instructorUrl,
+														context: 'become_instructor'
+													})
+												}
+											>
 												Become An Instructor →
 											</Link>
 										</Button>
@@ -272,6 +285,14 @@ const InstructorCTA = () => {
 											download="mentor-pitch-deck.pdf"
 											px={7}
 											fontWeight="semibold"
+											onClick={() =>
+												trackCtaClicked({
+													label: 'Know More',
+													location: 'instructor_cta',
+													destination: pitchDeckUrl,
+													context: 'pitch_deck'
+												})
+											}
 										>
 											Know More
 										</Button>
@@ -429,4 +450,3 @@ const InstructorCTA = () => {
 };
 
 export default InstructorCTA;
-

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 
+import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
 import ThemeToggle from '~/lib/components/ThemeToggle';
 
 const headerLinks = [
@@ -60,6 +61,14 @@ const Header = () => {
 								href={link.href}
 								target={link.external ? '_blank' : undefined}
 								rel={link.external ? 'noopener noreferrer' : undefined}
+								onClick={() =>
+									trackCtaClicked({
+										label: link.label,
+										location: 'header_nav',
+										destination: link.href,
+										context: link.id
+									})
+								}
 							>
 								<Text fontSize="sm" fontWeight="medium" color="text.secondary">
 									{link.label}
@@ -74,7 +83,18 @@ const Header = () => {
 							borderRadius="full"
 							px={6}
 						>
-							<Link href="https://forms.gle/yQVwU7FJ9Q5rDHTq7" target="_blank" rel="noopener noreferrer">
+							<Link
+								href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
+								target="_blank"
+								rel="noopener noreferrer"
+								onClick={() =>
+									trackInstructorCtaClicked({
+										location: 'header_primary',
+										destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7',
+										context: 'desktop'
+									})
+								}
+							>
 								Become an Instructor
 							</Link>
 						</Button>
@@ -111,7 +131,15 @@ const Header = () => {
 											<Link
 												key={link.id}
 												href={link.href}
-												onClick={() => setIsOpen(false)}
+												onClick={() => {
+													trackCtaClicked({
+														label: link.label,
+														location: 'header_drawer',
+														destination: link.href,
+														context: link.id
+													});
+													setIsOpen(false);
+												}}
 												target={link.external ? '_blank' : undefined}
 												rel={link.external ? 'noopener noreferrer' : undefined}
 											>
@@ -129,7 +157,18 @@ const Header = () => {
 											mt={2}
 											onClick={() => setIsOpen(false)}
 										>
-											<Link href="https://forms.gle/yQVwU7FJ9Q5rDHTq7" target="_blank" rel="noopener noreferrer">
+											<Link
+												href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
+												target="_blank"
+												rel="noopener noreferrer"
+												onClick={() =>
+													trackInstructorCtaClicked({
+														location: 'header_primary',
+														destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7',
+														context: 'mobile_drawer'
+													})
+												}
+											>
 												Become an Instructor
 											</Link>
 										</Button>

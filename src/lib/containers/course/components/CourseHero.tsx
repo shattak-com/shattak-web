@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FiCalendar, FiStar, FiUsers } from 'react-icons/fi';
 
+import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
@@ -317,6 +318,14 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 											href={enrollHref}
 											target={openExternal ? '_blank' : undefined}
 											rel={openExternal ? 'noopener noreferrer' : undefined}
+											onClick={() =>
+												trackEnrollClicked({
+													location: 'course_hero',
+													destination: enrollHref,
+													courseId: course.id,
+													courseTitle: course.title
+												})
+											}
 										>
 											Enroll Now
 										</Link>

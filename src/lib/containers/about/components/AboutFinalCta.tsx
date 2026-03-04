@@ -1,6 +1,9 @@
+'use client';
+
 import { Box, Button, Container, HStack, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 
+import { trackInstructorCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
 import { instructorApplicationUrl } from '~/lib/containers/about/constants';
 
 const AboutFinalCta = () => {
@@ -33,6 +36,13 @@ const AboutFinalCta = () => {
 									href={joinNowUrl}
 									target={isJoinNowExternal ? '_blank' : undefined}
 									rel={isJoinNowExternal ? 'noopener noreferrer' : undefined}
+									onClick={() =>
+										trackWhatsAppCtaClicked({
+											location: 'about_final_cta',
+											destination: joinNowUrl,
+											label: 'Join Now'
+										})
+									}
 								>
 									Join Now
 								</Link>
@@ -45,7 +55,17 @@ const AboutFinalCta = () => {
 								color="text.primary"
 								_hover={{ bg: 'bg.card' }}
 							>
-								<Link href={instructorApplicationUrl} target="_blank" rel="noopener noreferrer">
+								<Link
+									href={instructorApplicationUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() =>
+										trackInstructorCtaClicked({
+											location: 'about_final_cta',
+											destination: instructorApplicationUrl
+										})
+									}
+								>
 									Become an Instructor
 								</Link>
 							</Button>

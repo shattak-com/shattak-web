@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { IconType } from 'react-icons';
 import { FiMessageCircle } from 'react-icons/fi';
 
+import { trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
 import Reveal from '~/lib/components/Reveal';
 
 type WhatsAppBannerProps = {
@@ -56,7 +57,18 @@ const WhatsAppBanner = ({
 								_dark={{ bg: 'bg.inverse', color: 'text.inverse', _hover: { bg: 'bg.inverseHover' } }}
 								justifySelf="end"
 							>
-								<Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+								<Link
+									href={whatsappUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() =>
+										trackWhatsAppCtaClicked({
+											location: 'whatsapp_banner',
+											destination: whatsappUrl,
+											label: ctaLabel
+										})
+									}
+								>
 									{ctaLabel}
 								</Link>
 							</Button>

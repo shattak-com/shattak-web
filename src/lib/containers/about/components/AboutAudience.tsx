@@ -1,6 +1,9 @@
+'use client';
+
 import { Box, Button, Container, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 
+import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
 import { instructorApplicationUrl, instructorBenefits, learnerBenefits } from '~/lib/containers/about/constants';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
 
@@ -44,7 +47,19 @@ const AboutAudience = () => (
 								color="text.inverse"
 								_hover={{ bg: 'primaryHover' }}
 							>
-								<Link href="/#courses">Explore Courses</Link>
+								<Link
+									href="/#courses"
+									onClick={() =>
+										trackCtaClicked({
+											label: 'Explore Courses',
+											location: 'about_audience',
+											destination: '/#courses',
+											context: 'learners'
+										})
+									}
+								>
+									Explore Courses
+								</Link>
 							</Button>
 						</Stack>
 					</Box>
@@ -71,7 +86,18 @@ const AboutAudience = () => (
 								color="text.primary"
 								_hover={{ bg: 'bg.subtle' }}
 							>
-								<Link href={instructorApplicationUrl} target="_blank" rel="noopener noreferrer">
+								<Link
+									href={instructorApplicationUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									onClick={() =>
+										trackInstructorCtaClicked({
+											location: 'about_audience',
+											destination: instructorApplicationUrl,
+											context: 'instructors'
+										})
+									}
+								>
 									Become an Instructor
 								</Link>
 							</Button>

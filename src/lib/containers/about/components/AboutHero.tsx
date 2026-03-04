@@ -1,6 +1,9 @@
+'use client';
+
 import { Box, Button, Container, HStack, Heading, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 
+import { trackCtaClicked, trackInstructorCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
 import { instructorApplicationUrl } from '~/lib/containers/about/constants';
 
 const AboutHero = () => {
@@ -15,8 +18,8 @@ const AboutHero = () => {
 						About Shattak
 					</Heading>
 					<Text color="text.secondary" fontSize={{ base: 'md', md: 'lg' }} lineHeight="relaxed">
-						Learn from experts through outcome-driven live mentor sessions. Build practical portfolio projects and develop
-						job-ready skills with clear, structured guidance.
+						Learn from experts through outcome-driven live mentor sessions. Build practical portfolio projects and
+						develop job-ready skills with clear, structured guidance.
 					</Text>
 					<HStack gap={3} flexWrap="wrap">
 						<Button
@@ -27,7 +30,17 @@ const AboutHero = () => {
 							_hover={{ bg: 'primaryHover' }}
 							_focusVisible={{ outline: '2px solid', outlineColor: 'border.brand', outlineOffset: '2px' }}
 						>
-							<Link href="/#courses" aria-label="Explore Shattak courses">
+							<Link
+								href="/#courses"
+								aria-label="Explore Shattak courses"
+								onClick={() =>
+									trackCtaClicked({
+										label: 'Explore Courses',
+										location: 'about_hero',
+										destination: '/#courses'
+									})
+								}
+							>
 								Explore Courses
 							</Link>
 						</Button>
@@ -45,6 +58,12 @@ const AboutHero = () => {
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="Apply to become a Shattak instructor"
+								onClick={() =>
+									trackInstructorCtaClicked({
+										location: 'about_hero',
+										destination: instructorApplicationUrl
+									})
+								}
 							>
 								Become an Instructor
 							</Link>
@@ -61,6 +80,13 @@ const AboutHero = () => {
 							target={isJoinNowExternal ? '_blank' : undefined}
 							rel={isJoinNowExternal ? 'noopener noreferrer' : undefined}
 							style={{ textDecoration: 'underline' }}
+							onClick={() =>
+								trackWhatsAppCtaClicked({
+									location: 'about_hero_inline',
+									destination: joinNowUrl,
+									label: 'Join Now'
+								})
+							}
 						>
 							Join Now
 						</Link>{' '}

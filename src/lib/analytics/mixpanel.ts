@@ -1,23 +1,8 @@
 import mixpanel from 'mixpanel-browser';
 
 let isMixpanelInitialized = false;
-let lastTrackedPage = '';
 let hasAnonymousProfileSynced = false;
 const pendingEvents: Array<{ eventName: string; properties: MixpanelProperties }> = [];
-
-export const ANALYTICS_EVENTS = {
-	PAGE_VIEWED: 'Page Viewed',
-	CTA_CLICKED: 'CTA Clicked',
-	COURSE_FILTER_CHANGED: 'Course Filter Changed',
-	COURSE_CARD_CLICKED: 'Course Card Clicked',
-	ENROLL_CLICKED: 'Enroll Clicked',
-	WHATSAPP_CTA_CLICKED: 'WhatsApp CTA Clicked',
-	INSTRUCTOR_CTA_CLICKED: 'Instructor CTA Clicked',
-	ANALYTICS_CONSENT_UPDATED: 'Analytics Consent Updated',
-	CLIENT_ERROR_CAPTURED: 'Client Error Captured'
-} as const;
-
-type AnalyticsConsent = 'granted' | 'denied';
 
 type FirstTouchAttribution = {
 	initial_referrer: string;
@@ -32,7 +17,27 @@ type FirstTouchAttribution = {
 
 type MixpanelProperties = Record<string, unknown>;
 
-const ANALYTICS_CONSENT_KEY = 'shattak-analytics-consent';
+const SECTION_NAME_BY_LOCATION: Record<string, string> = {
+	header_nav: 'Header',
+	header_primary: 'Header',
+	header_drawer: 'Header',
+	footer_quick_links: 'Footer',
+	footer_join_now: 'Footer',
+	home_hero: 'Hero',
+	home_courses: 'Courses',
+	home_courses_grid: 'Courses',
+	home_courses_button: 'Courses',
+	instructor_cta: 'Instructor CTA',
+	about_hero: 'Hero',
+	about_hero_inline: 'Hero',
+	about_audience: 'Audience',
+	about_final_cta: 'Final CTA',
+	whatsapp_banner: 'WhatsApp Banner',
+	course_hero: 'Hero',
+	course_sticky_banner: 'Sticky Enroll Banner',
+	course_sticky_banner_mobile: 'Sticky Enroll Banner'
+};
+
 const FIRST_TOUCH_ATTRIBUTION_KEY = 'shattak-first-touch-attribution';
 const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN ?? '';
 const MIXPANEL_API_HOST = process.env.NEXT_PUBLIC_MIXPANEL_API_HOST ?? '';
@@ -40,12 +45,11 @@ const MIXPANEL_ENABLED = process.env.NEXT_PUBLIC_MIXPANEL_ENABLED ?? 'true';
 const MIXPANEL_TRACK_LOCALHOST = process.env.NEXT_PUBLIC_MIXPANEL_TRACK_LOCALHOST === 'true';
 const MIXPANEL_AUTOCAPTURE = process.env.NEXT_PUBLIC_MIXPANEL_AUTOCAPTURE !== 'false';
 const MIXPANEL_DEBUG = process.env.NEXT_PUBLIC_MIXPANEL_DEBUG === 'true';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? '';
 
-const replaySamplePercent = Number(process.env.NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT ?? '25');
+const replaySamplePercent = Number(process.env.NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT ?? '100');
 const MIXPANEL_REPLAY_PERCENT = Number.isFinite(replaySamplePercent)
 	? Math.min(100, Math.max(0, Math.floor(replaySamplePercent)))
-	: 25;
+	: 100;
 
 const isBrowser = () => typeof window !== 'undefined';
 
@@ -66,6 +70,76 @@ const cleanProperties = (properties: MixpanelProperties = {}) =>
 		return acc;
 	}, {});
 
+const formatCustomProperties = (properties: MixpanelProperties = {}) =>
+	Object.entries(cleanProperties(properties)).reduce<MixpanelProperties>((acc, [key, value]) => {
+		const formattedKey = key.startsWith('#') || key.startsWith('$') ? key : `#${key}`;
+		acc[formattedKey] = value;
+		return acc;
+	}, {});
+
+const titleCase = (value: string) =>
+	value
+		.replace(/[_-]+/g, ' ')
+		.trim()
+		.replace(/\b\w/g, character => character.toUpperCase());
+
+const getPageNameFromPath = (pathname: string) => {
+	const normalizedPath = pathname.replace(/^\/+|\/+$/g, '');
+	if (!normalizedPath) {
+		return 'Home';
+	}
+
+	const [firstSegment] = normalizedPath.split('/');
+
+	switch (firstSegment.toLowerCase()) {
+		case 'about':
+			return 'About';
+		case 'course':
+			return 'Course';
+		case 'booking':
+			return 'Booking';
+		case 'add-course':
+			return 'Add Course';
+		case 'admin':
+			return 'Admin';
+		case 'xample':
+			return 'Xample';
+		default:
+			return titleCase(firstSegment);
+	}
+};
+
+const getCurrentPageName = () => {
+	if (!isBrowser()) {
+		return 'App';
+	}
+
+	return getPageNameFromPath(window.location.pathname);
+};
+
+const getSectionName = (location?: string) => {
+	if (!location) {
+		return 'App';
+	}
+
+	return SECTION_NAME_BY_LOCATION[location] ?? titleCase(location);
+};
+
+const buildEventName = (payload: { eventName: string; location?: string; pageName?: string }) =>
+	`${payload.pageName ?? getCurrentPageName()} - ${getSectionName(payload.location)} - ${payload.eventName}`;
+
+const getClientErrorEventName = (source: 'window.error' | 'unhandledrejection' | 'react_error_boundary') => {
+	if (source === 'unhandledrejection') {
+		return 'Unhandled Rejection Captured';
+	}
+
+	if (source === 'react_error_boundary') {
+		return 'React Error Captured';
+	}
+
+	return 'Client Error Captured';
+};
+
 const getPageContext = (): MixpanelProperties => {
 	if (!isBrowser()) {
 		return {};
@@ -73,8 +147,7 @@ const getPageContext = (): MixpanelProperties => {
 
 	return {
 		page_path: window.location.pathname,
-		page_search: window.location.search,
-		page_url: window.location.href
+		page_search: window.location.search
 	};
 };
 
@@ -88,11 +161,7 @@ const queueEvent = (eventName: string, properties: MixpanelProperties) => {
 };
 
 const flushPendingEvents = () => {
-	if (
-		!isMixpanelInitialized ||
-		(isBrowser() && window.localStorage.getItem(ANALYTICS_CONSENT_KEY) === 'denied') ||
-		!pendingEvents.length
-	) {
+	if (!isMixpanelInitialized || !pendingEvents.length) {
 		return;
 	}
 
@@ -101,25 +170,6 @@ const flushPendingEvents = () => {
 	queuedEvents.forEach(item => {
 		mixpanel.track(item.eventName, item.properties);
 	});
-};
-
-const getStoredConsent = (): AnalyticsConsent | null => {
-	if (!isBrowser()) {
-		return null;
-	}
-
-	const rawValue = window.localStorage.getItem(ANALYTICS_CONSENT_KEY);
-	return rawValue === 'granted' || rawValue === 'denied' ? rawValue : null;
-};
-
-export const getAnalyticsConsentStatus = () => getStoredConsent();
-
-export const resetAnalyticsConsentChoice = () => {
-	if (!isBrowser()) {
-		return;
-	}
-
-	window.localStorage.removeItem(ANALYTICS_CONSENT_KEY);
 };
 
 const readFirstTouchAttribution = (): FirstTouchAttribution | null => {
@@ -170,26 +220,16 @@ const registerSuperProperties = (attribution: FirstTouchAttribution | null) => {
 		return;
 	}
 
-	const siteOrigin = SITE_URL || (isBrowser() ? window.location.origin : '');
-	mixpanel.register(
-		cleanProperties({
-			app_name: 'shattak-web',
-			environment: process.env.NODE_ENV ?? 'unknown',
-			site_url: siteOrigin,
-			...attribution
-		})
-	);
+	mixpanel.register(formatCustomProperties({ ...attribution }));
 };
 
-const getReplayControls = () => {
+const getSessionReplayControls = () => {
 	const sessionReplay = mixpanel as unknown as {
 		start_session_recording?: () => void;
-		stop_session_recording?: () => void;
 	};
 
 	return {
-		start: () => sessionReplay.start_session_recording?.(),
-		stop: () => sessionReplay.stop_session_recording?.()
+		start: () => sessionReplay.start_session_recording?.()
 	};
 };
 
@@ -205,54 +245,15 @@ const syncAnonymousProfile = () => {
 
 	mixpanel.identify(distinctId);
 	mixpanel.people.set_once({
-		first_seen_at: new Date().toISOString(),
-		visitor_type: 'anonymous',
-		signup_stage: 'pre-auth',
-		...cleanProperties(captureFirstTouchAttribution() ?? {})
+		...formatCustomProperties({
+			first_seen_at: new Date().toISOString(),
+			visitor_type: 'anonymous',
+			signup_stage: 'pre-auth',
+			...cleanProperties(captureFirstTouchAttribution() ?? {})
+		})
 	});
 
 	hasAnonymousProfileSynced = true;
-};
-
-export const hasAnalyticsConsent = () => getStoredConsent() === 'granted';
-
-export const grantAnalyticsConsent = () => {
-	if (!isBrowser()) {
-		return;
-	}
-
-	window.localStorage.setItem(ANALYTICS_CONSENT_KEY, 'granted');
-
-	if (!isMixpanelInitialized) {
-		return;
-	}
-
-	mixpanel.opt_in_tracking();
-	if (MIXPANEL_REPLAY_PERCENT > 0) {
-		getReplayControls().start();
-	}
-	flushPendingEvents();
-	mixpanel.track(ANALYTICS_EVENTS.ANALYTICS_CONSENT_UPDATED, {
-		consent: 'granted',
-		...cleanProperties(getPageContext())
-	});
-	syncAnonymousProfile();
-};
-
-export const revokeAnalyticsConsent = () => {
-	if (!isBrowser()) {
-		return;
-	}
-
-	window.localStorage.setItem(ANALYTICS_CONSENT_KEY, 'denied');
-	pendingEvents.length = 0;
-
-	if (!isMixpanelInitialized) {
-		return;
-	}
-
-	getReplayControls().stop();
-	mixpanel.opt_out_tracking();
 };
 
 export const initMixpanel = () => {
@@ -274,56 +275,30 @@ export const initMixpanel = () => {
 	mixpanel.init(MIXPANEL_TOKEN, config);
 	isMixpanelInitialized = true;
 	registerSuperProperties(captureFirstTouchAttribution());
-
-	if (hasAnalyticsConsent()) {
-		mixpanel.opt_in_tracking();
-	} else {
-		mixpanel.opt_out_tracking();
-	}
+	getSessionReplayControls().start();
 	flushPendingEvents();
 
 	return true;
 };
 
-export const identifyAnonymousMixpanelUser = () => {
-	if (!hasAnalyticsConsent()) {
+export const ensureMixpanelSessionReplay = () => {
+	if (!isMixpanelInitialized || MIXPANEL_REPLAY_PERCENT <= 0) {
 		return;
 	}
+
+	getSessionReplayControls().start();
+};
+
+export const identifyAnonymousMixpanelUser = () => {
 	syncAnonymousProfile();
 };
 
-export const trackMixpanelPageView = (pathname: string, search = '') => {
-	if (!isMixpanelInitialized || !hasAnalyticsConsent() || !pathname) {
-		return;
-	}
-
-	const pagePath = search ? `${pathname}?${search}` : pathname;
-	if (pagePath === lastTrackedPage) {
-		return;
-	}
-
-	lastTrackedPage = pagePath;
-
-	mixpanel.track(
-		ANALYTICS_EVENTS.PAGE_VIEWED,
-		cleanProperties({
-			page: pagePath,
-			pathname,
-			search,
-			title: typeof document !== 'undefined' ? document.title : '',
-			full_url: typeof window !== 'undefined' ? window.location.href : '',
-			referrer: typeof document !== 'undefined' ? document.referrer || 'direct' : '',
-			...readFirstTouchAttribution()
-		})
-	);
-};
-
 export const trackMixpanelEvent = (eventName: string, properties?: Record<string, unknown>) => {
-	if (!eventName || !hasAnalyticsConsent()) {
+	if (!eventName) {
 		return;
 	}
 
-	const payload = cleanProperties({
+	const payload = formatCustomProperties({
 		...getPageContext(),
 		...(properties ?? {})
 	});
@@ -347,37 +322,60 @@ export const trackClientError = (payload: {
 	columnNumber?: number;
 	context?: string;
 }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.CLIENT_ERROR_CAPTURED, {
-		source: payload.source,
-		message: payload.message,
-		stack: payload.stack,
-		file_name: payload.fileName,
-		line_number: payload.lineNumber,
-		column_number: payload.columnNumber,
-		context: payload.context
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			eventName: getClientErrorEventName(payload.source)
+		}),
+		{
+			source: payload.source,
+			message: payload.message,
+			stack: payload.stack,
+			file_name: payload.fileName,
+			line_number: payload.lineNumber,
+			column_number: payload.columnNumber,
+			context: payload.context
+		}
+	);
 
 export const trackCtaClicked = (payload: { label: string; location: string; destination?: string; context?: string }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.CTA_CLICKED, {
-		cta_label: payload.label,
-		cta_location: payload.location,
-		cta_destination: payload.destination,
-		cta_context: payload.context
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: `${titleCase(payload.label)} Clicked`
+		}),
+		{
+			cta_label: payload.label,
+			cta_location: payload.location,
+			cta_destination: payload.destination,
+			cta_context: payload.context
+		}
+	);
 
 export const trackInstructorCtaClicked = (payload: { location: string; destination?: string; context?: string }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.INSTRUCTOR_CTA_CLICKED, {
-		cta_location: payload.location,
-		cta_destination: payload.destination,
-		cta_context: payload.context
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: 'Become Instructor Clicked'
+		}),
+		{
+			cta_location: payload.location,
+			cta_destination: payload.destination,
+			cta_context: payload.context
+		}
+	);
 
 export const trackWhatsAppCtaClicked = (payload: { location: string; destination?: string; label?: string }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.WHATSAPP_CTA_CLICKED, {
-		cta_location: payload.location,
-		cta_destination: payload.destination,
-		cta_label: payload.label ?? 'Join Now'
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: `${titleCase(payload.label ?? 'Join Now')} Clicked`
+		}),
+		{
+			cta_location: payload.location,
+			cta_destination: payload.destination,
+			cta_label: payload.label ?? 'Join Now'
+		}
+	);
 
 export const trackEnrollClicked = (payload: {
 	location: string;
@@ -385,23 +383,35 @@ export const trackEnrollClicked = (payload: {
 	courseId?: string;
 	courseTitle?: string;
 }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.ENROLL_CLICKED, {
-		cta_location: payload.location,
-		cta_destination: payload.destination,
-		course_id: payload.courseId,
-		course_title: payload.courseTitle
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: 'Enroll Clicked'
+		}),
+		{
+			cta_location: payload.location,
+			cta_destination: payload.destination,
+			course_id: payload.courseId,
+			course_title: payload.courseTitle
+		}
+	);
 
 export const trackCourseFilterChanged = (payload: {
 	location: string;
 	selectedCategory: string;
 	previousCategory?: string;
 }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.COURSE_FILTER_CHANGED, {
-		location: payload.location,
-		selected_category: payload.selectedCategory,
-		previous_category: payload.previousCategory
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: 'Category Filter Changed'
+		}),
+		{
+			location: payload.location,
+			selected_category: payload.selectedCategory,
+			previous_category: payload.previousCategory
+		}
+	);
 
 export const trackCourseCardClicked = (payload: {
 	location: string;
@@ -409,9 +419,15 @@ export const trackCourseCardClicked = (payload: {
 	courseTitle: string;
 	destination: string;
 }) =>
-	trackMixpanelEvent(ANALYTICS_EVENTS.COURSE_CARD_CLICKED, {
-		location: payload.location,
-		course_id: payload.courseId,
-		course_title: payload.courseTitle,
-		destination: payload.destination
-	});
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: 'Course Card Clicked'
+		}),
+		{
+			location: payload.location,
+			course_id: payload.courseId,
+			course_title: payload.courseTitle,
+			destination: payload.destination
+		}
+	);

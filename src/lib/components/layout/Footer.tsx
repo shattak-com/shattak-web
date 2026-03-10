@@ -76,31 +76,6 @@ const Footer = () => {
 								Join Now
 							</Text>
 						</Link>
-						<Box
-							as="button"
-							type="button"
-							textAlign="left"
-							cursor="pointer"
-							_hover={{ opacity: 0.85 }}
-							_focusVisible={{
-								outline: '2px solid',
-								outlineColor: 'border.brand',
-								outlineOffset: '2px'
-							}}
-							aria-label="Open analytics preferences"
-							onClick={() => {
-								window.dispatchEvent(new Event('shattak:open-analytics-consent'));
-								trackCtaClicked({
-									label: 'Analytics Preferences',
-									location: 'footer_quick_links',
-									context: 'analytics_preferences'
-								});
-							}}
-						>
-							<Text fontSize="sm" color="text.onDarkMuted">
-								Analytics Preferences
-							</Text>
-						</Box>
 					</Stack>
 					<Stack spacing={3}>
 						<Text fontWeight="semibold">Contact</Text>

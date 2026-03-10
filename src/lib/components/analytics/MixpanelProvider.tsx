@@ -4,10 +4,10 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import {
+	ensureMixpanelSessionReplay,
 	identifyAnonymousMixpanelUser,
 	initMixpanel,
-	trackClientError,
-	trackMixpanelPageView
+	trackClientError
 } from '~/lib/analytics/mixpanel';
 
 const MixpanelProvider = () => {
@@ -20,6 +20,14 @@ const MixpanelProvider = () => {
 			identifyAnonymousMixpanelUser();
 		}
 	}, []);
+
+	useEffect(() => {
+		if (!hasInitialized.current || !pathname) {
+			return;
+		}
+
+		ensureMixpanelSessionReplay();
+	}, [pathname]);
 
 	useEffect(() => {
 		if (!hasInitialized.current) {
@@ -61,15 +69,6 @@ const MixpanelProvider = () => {
 			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 		};
 	}, []);
-
-	useEffect(() => {
-		if (!hasInitialized.current || !pathname) {
-			return;
-		}
-
-		const search = typeof window !== 'undefined' ? window.location.search.replace(/^\?/, '') : '';
-		trackMixpanelPageView(pathname, search);
-	}, [pathname]);
 
 	return null;
 };

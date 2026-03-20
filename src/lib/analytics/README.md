@@ -1,6 +1,6 @@
-# Mixpanel Integration Guide
+# Analytics Integration Guide
 
-This project uses a client-only Mixpanel integration with centralized helpers.
+This project uses client-only analytics integrations with centralized helpers for Mixpanel and Meta Pixel.
 
 Custom properties follow the `#property_name` convention.
 
@@ -9,13 +9,16 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 ## Architecture
 
 - Core helpers: `src/lib/analytics/mixpanel.ts`
+- Core helpers: `src/lib/analytics/meta-pixel.ts`
 - Route/page/error tracking bootstrap: `src/lib/components/analytics/MixpanelProvider.tsx`
+- Route-aware Meta Pixel bootstrap: `src/lib/components/analytics/MetaPixelProvider.tsx`
 - Provider wiring: `src/lib/providers/root.tsx`
 
 ## What Is Implemented
 
 - Safe browser-only initialization (`initMixpanel`)
 - Mixpanel auto page view tracking via autocapture
+- Meta Pixel initialization and `PageView` tracking across App Router transitions
 - Analytics collection for all users
 - Session replay ensured across all pages and App Router transitions
 - Temporary anonymous identify/profile sync (until real auth is added)
@@ -53,6 +56,9 @@ Set these in `.env` and deployment environments:
 - `NEXT_PUBLIC_MIXPANEL_AUTOCAPTURE`
 - `NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT`
 - `NEXT_PUBLIC_MIXPANEL_DEBUG`
+- `NEXT_PUBLIC_META_PIXEL_ID`
+- `NEXT_PUBLIC_META_PIXEL_ENABLED`
+- `NEXT_PUBLIC_META_PIXEL_TRACK_LOCALHOST`
 
 For QA or full capture across pages, set `NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT=100`.
 
@@ -85,3 +91,4 @@ When authentication is implemented, migrate to:
    - `Home - Courses - Course Card Clicked`
    - `Course - Hero - Enroll Clicked`
 4. Trigger a controlled client error and confirm an event like `Course - App - Client Error Captured`.
+5. Open Meta Pixel Helper or Events Manager Test Events and confirm `PageView` on the landing page plus route transitions such as `/about` and `/course/[id]`.

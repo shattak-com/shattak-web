@@ -13,6 +13,8 @@ type RootLayoutProps = {
 const APP_NAME = 'Shattak – Live Classes That Build Real Skills & Portfolio Projects';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const GA_MEASUREMENT_ID = 'G-75NBV2Y1D8';
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? '';
+const META_PIXEL_ENABLED = process.env.NEXT_PUBLIC_META_PIXEL_ENABLED ?? 'true';
 const MANIFEST_PATH = '/assets/site.webmanifest';
 const FAVICON_ICO = '/assets/favicon.ico';
 const FAVICON_16 = '/assets/favicon-16x16.png';
@@ -35,6 +37,8 @@ const bodyFont = Plus_Jakarta_Sans({
 	variable: '--font-body',
 	weight: ['400', '500', '600', '700']
 });
+
+const shouldRenderMetaPixelNoscript = Boolean(META_PIXEL_ID) && META_PIXEL_ENABLED !== 'false';
 
 export const metadata: Metadata = {
 	title: { default: APP_NAME, template: '%s | Shattak' },
@@ -125,6 +129,18 @@ const RootLayout = async ({ children }: RootLayoutProps) => (
 			<RootProviders>
 				<Layout>{children}</Layout>
 			</RootProviders>
+			{shouldRenderMetaPixelNoscript ? (
+				<noscript>
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						height="1"
+						width="1"
+						style={{ display: 'none' }}
+						src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+						alt=""
+					/>
+				</noscript>
+			) : null}
 		</body>
 	</html>
 );

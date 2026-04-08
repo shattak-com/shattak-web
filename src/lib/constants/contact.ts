@@ -1,0 +1,3 @@
+export const DEFAULT_WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/EIKGl8e6GpAHfVLO1ckjc1';
+
+export const WHATSAPP_GROUP_URL = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? DEFAULT_WHATSAPP_GROUP_URL;

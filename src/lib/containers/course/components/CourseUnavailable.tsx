@@ -1,22 +1,23 @@
 'use client';
 
-import { Box, Button, Container, Heading, HStack, Icon, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Heading, Icon, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiAlertCircle, FiClock, FiMessageCircle } from 'react-icons/fi';
+
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 
 type CourseUnavailableProps = {
 	variant?: 'draft' | 'missing';
 	title?: string;
-	slug?: string;
 };
 
-const CourseUnavailable = ({ variant = 'draft', title, slug }: CourseUnavailableProps) => {
+const CourseUnavailable = ({ variant = 'draft', title }: CourseUnavailableProps) => {
 	const isDraft = variant === 'draft';
 	const heading = isDraft ? 'Course not published yet' : 'Course Not Available';
 	const description = isDraft
 		? 'This course is currently in draft and will be available once it is published. Please check back soon.'
 		: 'The course you are looking for is currently unavailable.';
-	const whatsappUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '#';
+	const whatsappUrl = WHATSAPP_GROUP_URL;
 
 	return (
 		<Box
@@ -66,7 +67,7 @@ const CourseUnavailable = ({ variant = 'draft', title, slug }: CourseUnavailable
 					maxW="3xl"
 					mx="auto"
 				>
-						<Stack spacing={4} textAlign="center" align="center">
+					<Stack spacing={4} textAlign="center" align="center">
 						<Box
 							w="56px"
 							h="56px"
@@ -99,13 +100,7 @@ const CourseUnavailable = ({ variant = 'draft', title, slug }: CourseUnavailable
 							p={{ base: 4, md: 5 }}
 							w="full"
 						>
-							<Stack
-								direction="column"
-								spacing={{ base: 3, md: 4 }}
-								align="center"
-								justify="center"
-								textAlign="center"
-							>
+							<Stack direction="column" spacing={{ base: 3, md: 4 }} align="center" justify="center" textAlign="center">
 								<Box
 									w="40px"
 									h="40px"

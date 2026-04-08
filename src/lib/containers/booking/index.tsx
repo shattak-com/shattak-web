@@ -9,8 +9,9 @@ import { FiAlertCircle, FiMessageCircle, FiUsers, FiClock, FiCheckCircle } from 
 
 import Footer from '~/lib/components/layout/Footer';
 import Header from '~/lib/components/layout/Header';
-import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 import { courseDetailsMock } from '~/lib/containers/course/mock';
+import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type BookingUnavailablePageProps = {
 	sourceSlug: string;
@@ -44,7 +45,6 @@ const float = keyframes`
 
 const MotionBox = motion(Box);
 const MotionStack = motion(Stack);
-const MotionHStack = motion(HStack);
 
 const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => {
 	const [status, setStatus] = useState<'checking' | 'full'>('checking');
@@ -104,7 +104,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 		return `Starting From ${item.badge.day} ${item.badge.month} - ${startTime}`;
 	}, []);
 
-	const whatsappUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '#';
+	const whatsappUrl = WHATSAPP_GROUP_URL;
 
 	return (
 		<>
@@ -551,4 +551,3 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 };
 
 export default BookingUnavailablePage;
-

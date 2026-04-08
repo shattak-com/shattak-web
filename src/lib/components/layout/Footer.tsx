@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { FiInstagram, FiLinkedin, FiTwitter, FiYoutube } from 'react-icons/fi';
 
 import { trackCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 import { navLinks } from '~/lib/constants/landing';
 
 const Footer = () => {
-	const joinNowUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '/#whatsapp';
+	const joinNowUrl = WHATSAPP_GROUP_URL;
 	const isJoinNowExternal = /^https?:\/\//i.test(joinNowUrl);
 
 	return (

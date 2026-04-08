@@ -7,6 +7,7 @@ import { FiMessageCircle } from 'react-icons/fi';
 
 import { trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
 import Reveal from '~/lib/components/Reveal';
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 
 type WhatsAppBannerProps = {
 	title?: string;
@@ -21,7 +22,7 @@ const WhatsAppBanner = ({
 	ctaUrl,
 	icon = FiMessageCircle
 }: WhatsAppBannerProps) => {
-	const whatsappUrl = ctaUrl ?? process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '';
+	const whatsappUrl = ctaUrl ?? WHATSAPP_GROUP_URL;
 
 	return (
 		<Box as="section" id="whatsapp" py={{ base: 10, md: 12 }}>

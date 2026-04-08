@@ -4,10 +4,11 @@ import { Box, Button, Container, HStack, Heading, Stack, Text } from '@chakra-ui
 import Link from 'next/link';
 
 import { trackCtaClicked, trackInstructorCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 import { instructorApplicationUrl } from '~/lib/containers/about/constants';
 
 const AboutHero = () => {
-	const joinNowUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '/#whatsapp';
+	const joinNowUrl = WHATSAPP_GROUP_URL;
 	const isJoinNowExternal = /^https?:\/\//i.test(joinNowUrl);
 
 	return (

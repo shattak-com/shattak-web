@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 
 import Reveal from '~/lib/components/Reveal';
+import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
 import { scrollToId } from '~/lib/utils/scroll';
 
 type FormValues = {
@@ -38,7 +39,7 @@ const FinalCTA = () => {
 	};
 
 	const bookingUrl = process.env.NEXT_PUBLIC_RAZORPAY_BOOKING_URL;
-	const whatsappUrl = process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL ?? '#cta';
+	const whatsappUrl = WHATSAPP_GROUP_URL;
 
 	const handleBookNow = () => {
 		if (bookingUrl) {
@@ -112,7 +113,13 @@ const FinalCTA = () => {
 										<Textarea placeholder="What do you want to learn?" {...register('message')} />
 									</Field.Root>
 
-									<Button type="submit" borderRadius="full" bg="bg.inverse" color="text.inverse" _hover={{ bg: 'bg.inverseHover' }}>
+									<Button
+										type="submit"
+										borderRadius="full"
+										bg="bg.inverse"
+										color="text.inverse"
+										_hover={{ bg: 'bg.inverseHover' }}
+									>
 										Submit
 									</Button>
 								</Stack>

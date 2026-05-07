@@ -10,7 +10,14 @@ const AboutWhy = () => (
 					title="Why we exist"
 					subtitle="We are here to bridge the gap between college learning and industry expectations."
 				/>
-				<Box bg="bg.card" borderRadius="card" border="1px solid" borderColor="border.default" p={{ base: 5, md: 7 }} boxShadow="card">
+				<Box
+					bg="bg.card"
+					borderRadius="card"
+					border="1px solid"
+					borderColor="border.default"
+					p={{ base: 5, md: 7 }}
+					boxShadow="card"
+				>
 					<Stack gap={4}>
 						<Text color="text.secondary" lineHeight="relaxed">
 							Many learners complete coursework but still struggle to apply skills in real project environments. Shattak

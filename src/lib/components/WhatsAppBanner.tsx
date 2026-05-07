@@ -36,7 +36,7 @@ const WhatsAppBanner = ({
 						_dark={{ bg: 'bg.card', border: '1px solid', borderColor: 'border.subtle', boxShadow: 'soft' }}
 					>
 						<Grid templateColumns={{ base: '1fr auto', md: '1fr auto' }} gap={{ base: 4, md: 6 }} alignItems="center">
-							<HStack spacing={3} minW={0}>
+							<HStack gap={3} minW={0}>
 								<Icon as={icon} color="icon.success" boxSize={{ base: 9, md: 10 }} />
 								<Text
 									color="text.inverse"

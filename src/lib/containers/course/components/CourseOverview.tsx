@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { FiChevronLeft, FiChevronRight, FiExternalLink } from 'react-icons/fi';
 
-import type { CourseDetails, CourseGalleryItem } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseDetails, CourseGalleryItem } from '~/lib/containers/course/types';
 
 type CourseOverviewProps = {
 	course: CourseDetails;
@@ -19,7 +19,9 @@ const CourseGalleryCarousel = ({ items }: { items: CourseGalleryItem[] }) => {
 	const total = slides.length;
 
 	useEffect(() => {
-		if (total <= 1) return;
+		if (total <= 1) {
+			return undefined;
+		}
 		const intervalId = setInterval(() => {
 			setActiveIndex(prev => (prev + 1) % total);
 		}, 5000);
@@ -45,7 +47,7 @@ const CourseGalleryCarousel = ({ items }: { items: CourseGalleryItem[] }) => {
 	}
 
 	return (
-		<Stack spacing={3}>
+		<Stack gap={3}>
 			<Box
 				position="relative"
 				borderRadius="panel"
@@ -108,15 +110,17 @@ const CourseGalleryCarousel = ({ items }: { items: CourseGalleryItem[] }) => {
 			</Box>
 
 			{total > 1 ? (
-				<HStack spacing={2} justify="center">
+				<HStack gap={2} justify="center">
 					{slides.map((item, index) => (
-						<Box
+						<Button
 							key={item.id}
-							as="button"
 							type="button"
+							aria-label={`Show preview ${index + 1}`}
 							onClick={() => setActiveIndex(index)}
+							minW="10px"
 							w="10px"
 							h="10px"
+							p={0}
 							borderRadius="full"
 							bg={index === activeIndex ? 'primary' : 'bg.card'}
 							border="1px solid"
@@ -133,7 +137,7 @@ const CourseGalleryCarousel = ({ items }: { items: CourseGalleryItem[] }) => {
 const CourseOverview = ({ course }: CourseOverviewProps) => (
 	<Box as="section" py={{ base: 12, md: 16 }}>
 		<Container maxW="7xl">
-			<Stack spacing={8}>
+			<Stack gap={8}>
 				<SectionHeader title="Outcomes Of This Sessions" subtitle="What you will build during the live classes." />
 
 				<Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={{ base: 6, lg: 8 }} alignItems="stretch">
@@ -156,7 +160,7 @@ const CourseOverview = ({ course }: CourseOverviewProps) => (
 						p={{ base: 6, md: 7 }}
 						boxShadow="card"
 					>
-						<Stack spacing={4}>
+						<Stack gap={4}>
 							<Text fontWeight="semibold" fontSize="lg">
 								About the Project
 							</Text>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Box, Button, Container, Grid, Heading, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
@@ -76,7 +76,7 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 	];
 	const renderScheduleItem = (item: (typeof scheduleDisplayItems)[number]) => (
 		<Box key={item.id} bg="bg.accent" borderRadius="soft" p={3} border="1px solid" borderColor="border.accentSoft">
-			<HStack align="start" spacing={3}>
+			<HStack align="start" gap={3}>
 				<Box
 					minW="48px"
 					borderRadius="md"
@@ -93,9 +93,9 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 						{item.badge.month}
 					</Text>
 				</Box>
-				<Stack spacing={1} flex="1">
+				<Stack gap={1} flex="1">
 					<Text fontSize="sm" color="text.secondary">
-						{item.label} • {item.day} • {item.durationLabel}
+						{item.label} � {item.day} � {item.durationLabel}
 					</Text>
 					<Text fontSize="sm" fontWeight="bold" color="text.primary">
 						{item.timeRange}
@@ -171,8 +171,8 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 						</Box>
 					</Box>
 
-					<Stack spacing={{ base: 5, md: 6 }}>
-						<Stack spacing={2}>
+					<Stack gap={{ base: 5, md: 6 }}>
+						<Stack gap={2}>
 							<Text fontSize="sm" color="text.muted">
 								Level: {course.level}
 							</Text>
@@ -184,12 +184,12 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 							</Text>
 						</Stack>
 
-						<HStack spacing={5} flexWrap="wrap" color="text.secondary">
-							<HStack spacing={2}>
+						<HStack gap={5} flexWrap="wrap" color="text.secondary">
+							<HStack gap={2}>
 								<Icon as={FiStar} color="icon.warning" />
 								<Text fontWeight="semibold">{course.rating.toFixed(1)}</Text>
 							</HStack>
-							<HStack spacing={2}>
+							<HStack gap={2}>
 								<Icon as={FiUsers} />
 								<Text>{formatCount(course.enrollmentCount)} learners</Text>
 							</HStack>
@@ -231,13 +231,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 								display="flex"
 								flexDirection="column"
 							>
-								<HStack spacing={2} color="text.muted" mb={3}>
+								<HStack gap={2} color="text.muted" mb={3}>
 									<Icon as={FiCalendar} />
 									<Text fontSize="md" fontWeight="semibold">
 										Session Schedule
 									</Text>
 								</HStack>
-								<Stack spacing={4} flex="1">
+								<Stack gap={4} flex="1">
 									{scheduleDisplayItems.map(renderScheduleItem)}
 								</Stack>
 							</Box>
@@ -253,17 +253,17 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 								display="flex"
 								flexDirection="column"
 							>
-								<Stack spacing={2} flex="1">
+								<Stack gap={2} flex="1">
 									<Box>
 										<Text fontWeight="semibold" fontSize="md">
 											Get Life Time Access
 										</Text>
-										<HStack spacing={3} align="baseline" mt={2}>
+										<HStack gap={3} align="baseline" mt={2}>
 											<Text fontSize="2xl" fontWeight="bold">
-												₹{formatCurrency(course.price)}
+												?{formatCurrency(course.price)}
 											</Text>
 											<Text fontSize="sm" color="text.muted" textDecoration="line-through">
-												₹{formatCurrency(course.originalPrice)}
+												?{formatCurrency(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -272,17 +272,17 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 											</Text>
 										) : null}
 									</Box>
-									<Stack spacing={1} color="text.muted" fontSize="sm">
+									<Stack gap={1} color="text.muted" fontSize="sm">
 										<HStack justify="space-between">
 											<Text>Course Fee</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												₹{formatCurrency(course.price)}
+												?{formatCurrency(course.price)}
 											</Text>
 										</HStack>
 										<HStack justify="space-between">
 											<Text>Worth of</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												₹{formatCurrency(course.originalPrice)}
+												?{formatCurrency(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -294,13 +294,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 											</HStack>
 										) : null}
 									</Stack>
-									<Stack spacing={1} color="text.muted" fontSize="sm">
+									<Stack gap={1} color="text.muted" fontSize="sm">
 										<Text fontWeight="semibold" color="text.secondary">
 											Includes
 										</Text>
-										<Text>• Expert Designed Curriculum</Text>
-										<Text>• Doubt Clearing Session</Text>
-										<Text>• Forever Community Access</Text>
+										<Text>� Expert Designed Curriculum</Text>
+										<Text>� Doubt Clearing Session</Text>
+										<Text>� Forever Community Access</Text>
 									</Stack>
 									<Button
 										asChild

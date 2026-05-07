@@ -4,17 +4,17 @@ import { Box, Container, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-u
 import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
 
-import type { CourseCompletion } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseCompletion as CourseCompletionData } from '~/lib/containers/course/types';
 
 type CourseCompletionProps = {
-	completion: CourseCompletion;
+	completion: CourseCompletionData;
 };
 
 const CourseCompletion = ({ completion }: CourseCompletionProps) => (
 	<Box as="section" py={{ base: 10, md: 14 }} bg="bg.surface">
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="What you will get after completing this course" />
 				<SimpleGrid columns={{ base: 1, lg: 2 }} gap={{ base: 6, lg: 8 }} alignItems="stretch">
 					<Box
@@ -85,9 +85,9 @@ const CourseCompletion = ({ completion }: CourseCompletionProps) => (
 							bgGradient="var(--chakra-gradients-hero-warm-orb)"
 							opacity={{ base: 0.28, _dark: 0.16 }}
 						/>
-						<Stack spacing={3} position="relative">
+						<Stack gap={3} position="relative">
 							{completion.benefits.map(benefit => (
-								<HStack key={benefit} spacing={3} align="start">
+								<HStack key={benefit} gap={3} align="start">
 									<Box
 										w="24px"
 										h="24px"

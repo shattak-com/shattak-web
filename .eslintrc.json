@@ -5,6 +5,9 @@
 	"rules": {
 		"@typescript-eslint/lines-between-class-members": "off",
 		"@typescript-eslint/no-throw-literal": "off",
+		"react/no-unstable-nested-components": "off",
+		"react/prop-types": "off",
+		"sonarjs/no-duplicate-string": "off",
 		"import/extensions": [
 			"off",
 			"ignorePackages",

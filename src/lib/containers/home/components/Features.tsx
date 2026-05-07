@@ -3,8 +3,8 @@
 import { Box, Container, Heading, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { FiClipboard, FiMessageSquare, FiTarget, FiUsers } from 'react-icons/fi';
 
-import { features } from '~/lib/constants/landing';
 import Reveal from '~/lib/components/Reveal';
+import { features } from '~/lib/constants/landing';
 
 const iconMap = {
 	mentors: FiUsers,
@@ -16,9 +16,9 @@ const iconMap = {
 const Features = () => (
 	<Box as="section" py={{ base: 14, md: 18 }} bg="bg.surface">
 		<Container maxW="6xl">
-			<Stack spacing={10}>
-				<Stack spacing={2}>
-					<Heading size="lg">	Why Shattak ? </Heading>
+			<Stack gap={10}>
+				<Stack gap={2}>
+					<Heading size="lg"> Why Shattak ? </Heading>
 					<Text color="text.muted" mb={{ base: 3, md: 4 }}>
 						Everything you need to stay consistent and keep learning.
 					</Text>

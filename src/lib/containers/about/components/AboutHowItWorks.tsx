@@ -18,7 +18,10 @@ const AboutHowItWorks = () => (
 	<Box as="section" id="how-shattak-works" py={{ base: 12, md: 16 }} bg="bg.surface">
 		<Container maxW="6xl">
 			<Stack gap={8}>
-				<SectionHeader title="How Shattak works" subtitle="A focused system designed to build practical, job-ready skills." />
+				<SectionHeader
+					title="How Shattak works"
+					subtitle="A focused system designed to build practical, job-ready skills."
+				/>
 				<SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={{ base: 6, md: 8 }}>
 					{features.map((feature, index) => (
 						<Reveal key={feature.id} delay={index * 0.05} hover hoverLift={6}>

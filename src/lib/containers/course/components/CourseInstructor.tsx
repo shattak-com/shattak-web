@@ -1,22 +1,22 @@
 'use client';
 
-import { Box, Button, Container, Heading, HStack, Icon, Separator, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Heading, Icon, Separator, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FiLinkedin } from 'react-icons/fi';
 
 import Reveal from '~/lib/components/Reveal';
-import type { CourseInstructor } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseInstructor as CourseInstructorData } from '~/lib/containers/course/types';
 
 type CourseInstructorProps = {
-	instructors: CourseInstructor[];
+	instructors: CourseInstructorData[];
 };
 
 const CourseInstructor = ({ instructors }: CourseInstructorProps) => (
 	<Box as="section" py={{ base: 10, md: 14 }}>
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="Learn From Expert Instructor" subtitle="Meet the mentors leading the live sessions." />
 				<SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={{ base: 6, md: 8 }} alignItems="stretch">
 					{instructors?.map((instructor, index) => (
@@ -51,7 +51,7 @@ const CourseInstructor = ({ instructors }: CourseInstructorProps) => (
 										style={{ objectFit: 'cover', objectPosition: '50% 20%' }}
 									/>
 								</Box>
-								<Stack spacing={3} flex="1">
+								<Stack gap={3} flex="1">
 									<Heading size="md" lineClamp={1} lineHeight="compact">
 										{instructor.name}
 									</Heading>
@@ -87,4 +87,3 @@ const CourseInstructor = ({ instructors }: CourseInstructorProps) => (
 );
 
 export default CourseInstructor;
-

@@ -5,8 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FiExternalLink, FiHeart } from 'react-icons/fi';
 
-import type { CourseProject } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseProject } from '~/lib/containers/course/types';
 
 type CourseProjectsProps = {
 	projects: CourseProject[];
@@ -24,7 +24,7 @@ const getInitials = (name: string) =>
 const CourseProjects = ({ projects }: CourseProjectsProps) => (
 	<Box as="section" py={{ base: 10, md: 14 }} bg="bg.surface">
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="See what they have build" />
 				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 4, md: 6 }}>
 					{projects.map(project => (
@@ -37,8 +37,8 @@ const CourseProjects = ({ projects }: CourseProjectsProps) => (
 							p={5}
 							boxShadow="card"
 						>
-							<Stack spacing={4}>
-								<HStack spacing={3}>
+							<Stack gap={4}>
+								<HStack gap={3}>
 									<Box
 										w="36px"
 										h="36px"
@@ -61,10 +61,16 @@ const CourseProjects = ({ projects }: CourseProjectsProps) => (
 									</Box>
 								</HStack>
 								<Box position="relative" aspectRatio="4 / 3" borderRadius="panel" overflow="hidden" bg="bg.subtle">
-									<Image src={project.previewImage} alt={project.title} fill sizes="280px" style={{ objectFit: 'cover' }} />
+									<Image
+										src={project.previewImage}
+										alt={project.title}
+										fill
+										sizes="280px"
+										style={{ objectFit: 'cover' }}
+									/>
 								</Box>
 								<HStack justify="space-between">
-									<HStack spacing={2} color="text.muted">
+									<HStack gap={2} color="text.muted">
 										<Icon as={FiHeart} />
 										<Text fontSize="sm">{project.likes} Likes</Text>
 									</HStack>

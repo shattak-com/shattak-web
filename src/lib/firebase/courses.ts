@@ -14,7 +14,7 @@ export const COURSES_COLLECTION = 'courses';
 export type CourseTool = {
 	id: string;
 	name: string;
-	image : string; 
+	image: string;
 };
 
 export type LandingCourseCard = {
@@ -30,7 +30,7 @@ export type LandingCourseCard = {
 	price: number | null;
 	originalPrice: number;
 	tools: CourseTool[];
-	promoImageBrand : string;
+	promoImageBrand: string;
 };
 
 type CourseFetchOptions = {
@@ -55,14 +55,18 @@ const asCourseLevel = (value: unknown): CourseLevel =>
 	value === 'Beginner' || value === 'Intermediate' || value === 'Advanced' ? value : 'Beginner';
 const asCourseMode = (value: unknown): CourseMode =>
 	value === 'Live' || value === 'Recorded' || value === 'Hybrid' ? value : 'Live';
-const asCourseStatus = (value: unknown): CourseStatus =>
-	value === 'Draft' || value === 'Published' || value === 'draft' || value === 'published'
-		? value === 'draft'
-			? 'Draft'
-			: value === 'published'
-				? 'Published'
-				: value
-		: 'Published';
+const asCourseStatus = (value: unknown): CourseStatus => {
+	if (value === 'draft') {
+		return 'Draft';
+	}
+	if (value === 'published') {
+		return 'Published';
+	}
+	if (value === 'Draft' || value === 'Published') {
+		return value;
+	}
+	return 'Published';
+};
 
 const toCategories = (data: Partial<CourseDetails>) => {
 	const categories = asArray<string>(data.categories)
@@ -88,6 +92,13 @@ const formatDuration = (hours: number, minutes: number) => {
 		return `${safeHours}h`;
 	}
 	return `${safeHours}h ${safeMinutes}m`;
+};
+
+const formatCourseMode = (mode: CourseMode) => {
+	if (mode === 'Recorded' || mode === 'Hybrid') {
+		return mode;
+	}
+	return 'Live Class';
 };
 
 const normalizeCourseDetails = (id: string, data: Partial<CourseDetails>): CourseDetails => {
@@ -134,7 +145,7 @@ const normalizeCourseDetails = (id: string, data: Partial<CourseDetails>): Cours
 		tools: asArray(data.tools),
 		instructors: asArray(data.instructors),
 		reviews: asArray(data.reviews),
-		promoImageBrand : asString(data.promoImageBrand),
+		promoImageBrand: asString(data.promoImageBrand)
 	};
 };
 
@@ -145,13 +156,13 @@ const toLandingCourseCard = (course: CourseDetails): LandingCourseCard => ({
 	image: course.promoImage || course.thumbnailImage,
 	level: course.level,
 	duration: formatDuration(course.durationHours, course.durationMinutes),
-	format: course.mode === 'Recorded' ? 'Recorded' : course.mode === 'Hybrid' ? 'Hybrid' : 'Live Class',
+	format: formatCourseMode(course.mode),
 	rating: course.rating,
 	learners: course.enrollmentCount,
 	price: course.price > 0 ? course.price : null,
 	originalPrice: course.originalPrice,
 	tools: course.tools,
-	promoImageBrand:  course.promoImageBrand
+	promoImageBrand: course.promoImageBrand
 });
 
 export const getCourseById = async (id: string, options?: CourseFetchOptions): Promise<CourseDetails | null> => {

@@ -1,12 +1,12 @@
-import CoursesSection from '~/lib/containers/home/components/CoursesSection';
-import Features from '~/lib/containers/home/components/Features';
 import Footer from '~/lib/components/layout/Footer';
 import Header from '~/lib/components/layout/Header';
-import Hero from '~/lib/containers/home/components/Hero';
-import InstructorCTA from '~/lib/containers/home/components/InstructorCTA';
 import Testimonials from '~/lib/components/Testimonials';
 import WhatsAppBanner from '~/lib/components/WhatsAppBanner';
 import { testimonials } from '~/lib/constants/landing';
+import CoursesSection from '~/lib/containers/home/components/CoursesSection';
+import Features from '~/lib/containers/home/components/Features';
+import Hero from '~/lib/containers/home/components/Hero';
+import InstructorCTA from '~/lib/containers/home/components/InstructorCTA';
 import { getPublishedLandingCourseCards, type LandingCourseCard } from '~/lib/firebase/courses';
 
 const HomePage = async () => {

@@ -16,7 +16,7 @@ import {
 	VisuallyHidden,
 	Wrap,
 	WrapItem,
-	Avatar
+	Image as ChakraImage
 } from '@chakra-ui/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -67,6 +67,17 @@ type CoursesSectionProps = {
 	courses: LandingCourseCard[];
 };
 
+type LogoImageProps = {
+	src: string;
+	alt: string;
+	boxSize: string;
+	borderRadius?: string;
+};
+
+const LogoImage = ({ src, alt, boxSize, borderRadius = 'full' }: LogoImageProps) => (
+	<ChakraImage src={src} alt={alt} boxSize={boxSize} borderRadius={borderRadius} objectFit="cover" />
+);
+
 const CoursesSection = ({ courses }: CoursesSectionProps) => {
 	const categories = courseCategories as readonly string[];
 	const pathname = usePathname();
@@ -106,8 +117,9 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 		}
 
 		const query = nextParams.toString();
+		const queryString = query ? `?${query}` : '';
 		const hash = typeof window === 'undefined' ? '' : window.location.hash;
-		const nextUrl = `${pathname}${query ? `?${query}` : ''}${hash}`;
+		const nextUrl = `${pathname}${queryString}${hash}`;
 
 		if (typeof window !== 'undefined') {
 			window.history.replaceState(window.history.state, '', nextUrl);
@@ -118,9 +130,9 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 	return (
 		<Box as="section" id="courses" py={{ base: 14, md: 20 }}>
 			<Container maxW={{ base: '6xl', xl: '7xl' }}>
-				<Stack spacing={6}>
+				<Stack gap={6}>
 					<Box>
-						<Wrap spacing={{ base: 3, md: 4 }} align="center" mb={{ base: 4, md: 6 }}>
+						<Wrap gap={{ base: 3, md: 4 }} align="center" mb={{ base: 4, md: 6 }}>
 							{categories.map(category => (
 								<WrapItem key={category}>
 									<Button
@@ -146,7 +158,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 						</Wrap>
 					</Box>
 
-					<Stack mb={{ base: 4, md: 6 }} spacing={2}>
+					<Stack mb={{ base: 4, md: 6 }} gap={2}>
 						<Heading ref={headingRef} size="lg">
 							Live Class From Expert Mentors
 						</Heading>
@@ -226,39 +238,17 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 												borderRadius="full"
 												bg="bg.badgeStrong"
 											>
-												{course.tools?.[0]?.image && (
-													<Avatar.Root boxSize="27px" variant="solid">
-														<Avatar.Image src={course.tools[0].image} />
-													</Avatar.Root>
-												)}
-
-												{course.tools?.[1]?.image && (
-													<Avatar.Root boxSize="27px" variant="solid">
-														<Avatar.Image src={course.tools[1].image} />
-													</Avatar.Root>
-												)}
-
-												{course.tools?.[2]?.image && (
-													<Avatar.Root boxSize="27px" variant="solid">
-														<Avatar.Image src={course.tools[2].image} />
-													</Avatar.Root>
-												)}
-
-												{course.tools?.[3]?.image && (
-													<Avatar.Root boxSize="27px" variant="solid">
-														<Avatar.Image src={course.tools[3].image} />
-													</Avatar.Root>
-												)}
-
-												{course.tools?.[4]?.image && (
-													<Avatar.Root boxSize="27px" variant="solid">
-														<Avatar.Image src={course.tools[4].image} />
-													</Avatar.Root>
-												)}
+												{course.tools
+													?.slice(0, 5)
+													.map(tool =>
+														tool.image ? (
+															<LogoImage key={tool.id} src={tool.image} alt={tool.name} boxSize="27px" />
+														) : null
+													)}
 											</HStack>
 
 											<HStack position="absolute" top={2} right={3} zIndex={1}>
-												<HStack spacing={1} px={3} py={3} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
+												<HStack gap={1} px={3} py={3} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
 													<Icon as={FiHeart} boxSize={6} color="red.400" _dark={{ color: 'red.400' }} />
 												</HStack>
 											</HStack>
@@ -274,14 +264,19 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 												bg="bg.badgeStrong"
 												boxShadow="soft"
 											>
-												<Avatar.Root boxSize="50px" shape="sm">
-													<Avatar.Image src={course.promoImageBrand} />
-												</Avatar.Root>
+												{course.promoImageBrand ? (
+													<LogoImage
+														src={course.promoImageBrand}
+														alt={`${course.title} brand`}
+														boxSize="50px"
+														borderRadius="sm"
+													/>
+												) : null}
 											</HStack>
 
-											<HStack position="absolute" bottom={3} right={3} spacing={2} zIndex={1}>
+											<HStack position="absolute" bottom={3} right={3} gap={2} zIndex={1}>
 												<HStack
-													spacing={1.5}
+													gap={1.5}
 													px={3}
 													py={1}
 													borderRadius="full"
@@ -295,7 +290,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													</Text>
 												</HStack>
 
-												<HStack spacing={1} px={2.5} py={1} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
+												<HStack gap={1} px={2.5} py={1} borderRadius="full" bg="bg.badgeStrong" boxShadow="soft">
 													<Icon as={FiStar} boxSize={3} color="yellow.400" _dark={{ color: 'yellow.500' }} />
 													<Text fontSize="xs" fontWeight="semibold" color="text.inverse">
 														{course.rating.toFixed(1)}
@@ -303,28 +298,28 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 												</HStack>
 											</HStack>
 										</Box>
-										<Stack spacing={3} flex="1">
+										<Stack gap={3} flex="1">
 											<Heading size="md" lineClamp={2} lineHeight="compact">
 												{course.title}
 											</Heading>
 											<Separator borderColor="border.default" />
 
-											<HStack spacing={3} color="text.muted" fontSize="xs" flexWrap="wrap">
-												<HStack spacing={1}>
+											<HStack gap={3} color="text.muted" fontSize="xs" flexWrap="wrap">
+												<HStack gap={1}>
 													<Icon as={FiBarChart2} />
 													<Text>{course.level}</Text>
 												</HStack>
-												<HStack spacing={1}>
+												<HStack gap={1}>
 													<Icon as={FiClock} />
 													<Text>{course.duration}</Text>
 												</HStack>
-												<HStack spacing={1}>
+												<HStack gap={1}>
 													<Icon as={FiVideo} />
 													<Text>{course.format}</Text>
 												</HStack>
 											</HStack>
 											<HStack justify="space-between" align="center" mt="auto">
-												<HStack spacing={2} align="baseline">
+												<HStack gap={2} align="baseline">
 													<Text fontSize="sm" color="text.muted" textDecoration="line-through">
 														₹{course.originalPrice}
 													</Text>
@@ -346,10 +341,11 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 													color="text.inverse"
 													_hover={{ bg: 'bg.inverseHover' }}
 													asChild
-													target="_blank"
 												>
 													<Link
 														href={courseHref}
+														target="_blank"
+														rel="noopener noreferrer"
 														onClick={() =>
 															trackCourseCardClicked({
 																location: 'home_courses_button',

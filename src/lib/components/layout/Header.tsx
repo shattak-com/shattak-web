@@ -1,9 +1,7 @@
 'use client';
 
-import { Box, Button, Container, Flex, HStack, IconButton, Text, Drawer } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, HStack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { FiMenu, FiX } from 'react-icons/fi';
 
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
 import ThemeToggle from '~/lib/components/ThemeToggle';
@@ -24,9 +22,6 @@ const headerLinks = [
 ];
 
 const Header = () => {
-	const mobileMenuEnabled = false;
-	const [isOpen, setIsOpen] = useState(false);
-
 	return (
 		<Box
 			as="header"
@@ -54,7 +49,7 @@ const Header = () => {
 					>
 						<ThemeToggle />
 					</Box>
-					<HStack spacing={6} display={{ base: 'none', md: 'flex' }}>
+					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
 						{headerLinks.map(link => (
 							<Link
 								key={link.id}
@@ -100,83 +95,6 @@ const Header = () => {
 						</Button>
 						<ThemeToggle />
 					</HStack>
-
-					{mobileMenuEnabled ? (
-						<Drawer.Root placement="right" open={isOpen} onOpenChange={({ open }) => setIsOpen(open)}>
-							<Drawer.Trigger asChild>
-								<IconButton
-									display={{ base: 'inline-flex', md: 'none' }}
-									aria-label="Open menu"
-									variant="outline"
-									borderRadius="full"
-								>
-									<FiMenu />
-								</IconButton>
-							</Drawer.Trigger>
-							<Drawer.Backdrop />
-							<Drawer.Positioner>
-								<Drawer.Content borderRadius="card" p={6}>
-									<Flex align="center" justify="space-between" mb={6}>
-										<Text fontWeight="bold" fontSize="xl">
-											Shattak
-										</Text>
-										<Drawer.CloseTrigger asChild>
-											<IconButton aria-label="Close menu" variant="ghost">
-												<FiX />
-											</IconButton>
-										</Drawer.CloseTrigger>
-									</Flex>
-									<Flex direction="column" gap={4}>
-										{headerLinks.map(link => (
-											<Link
-												key={link.id}
-												href={link.href}
-												onClick={() => {
-													trackCtaClicked({
-														label: link.label,
-														location: 'header_drawer',
-														destination: link.href,
-														context: link.id
-													});
-													setIsOpen(false);
-												}}
-												target={link.external ? '_blank' : undefined}
-												rel={link.external ? 'noopener noreferrer' : undefined}
-											>
-												<Text fontSize="md" fontWeight="medium">
-													{link.label}
-												</Text>
-											</Link>
-										))}
-										<Button
-											asChild
-											bg="primary"
-											color="text.inverse"
-											_hover={{ bg: 'primaryHover' }}
-											borderRadius="full"
-											mt={2}
-											onClick={() => setIsOpen(false)}
-										>
-											<Link
-												href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
-												target="_blank"
-												rel="noopener noreferrer"
-												onClick={() =>
-													trackInstructorCtaClicked({
-														location: 'header_primary',
-														destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7',
-														context: 'mobile_drawer'
-													})
-												}
-											>
-												Become an Instructor
-											</Link>
-										</Button>
-									</Flex>
-								</Drawer.Content>
-							</Drawer.Positioner>
-						</Drawer.Root>
-					) : null}
 				</Flex>
 			</Container>
 		</Box>

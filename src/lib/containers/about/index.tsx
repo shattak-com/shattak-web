@@ -1,6 +1,7 @@
 import Footer from '~/lib/components/layout/Footer';
 import Header from '~/lib/components/layout/Header';
 import Testimonials from '~/lib/components/Testimonials';
+import { testimonials } from '~/lib/constants/landing';
 import AboutAudience from '~/lib/containers/about/components/AboutAudience';
 import AboutFaq from '~/lib/containers/about/components/AboutFaq';
 import AboutFinalCta from '~/lib/containers/about/components/AboutFinalCta';
@@ -9,7 +10,6 @@ import AboutHowItWorks from '~/lib/containers/about/components/AboutHowItWorks';
 import AboutPortfolio from '~/lib/containers/about/components/AboutPortfolio';
 import AboutValues from '~/lib/containers/about/components/AboutValues';
 import AboutWhy from '~/lib/containers/about/components/AboutWhy';
-import { testimonials } from '~/lib/constants/landing';
 
 const AboutPage = () => {
 	const testimonialItems = testimonials.slice(0, 3);

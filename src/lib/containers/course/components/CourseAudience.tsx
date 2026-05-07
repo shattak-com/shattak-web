@@ -3,8 +3,8 @@
 import { Box, Container, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { FiCheck } from 'react-icons/fi';
 
-import type { CourseAudienceCard } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseAudienceCard } from '~/lib/containers/course/types';
 
 type CourseAudienceProps = {
 	audience: CourseAudienceCard[];
@@ -20,7 +20,7 @@ const toneStyles = {
 const CourseAudience = ({ audience }: CourseAudienceProps) => (
 	<Box as="section" py={{ base: 10, md: 14 }} bg="bg.surface">
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="You should join this course if you" />
 				<SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={{ base: 4, md: 5 }}>
 					{audience.map(card => {
@@ -50,13 +50,13 @@ const CourseAudience = ({ audience }: CourseAudienceProps) => (
 									bgGradient={styles.glow}
 									opacity={{ base: 0.2, _dark: 0.12 }}
 								/>
-								<Stack spacing={4}>
+								<Stack gap={4}>
 									<Text fontWeight="semibold" fontSize="md">
 										{card.title}
 									</Text>
-									<Stack spacing={2}>
+									<Stack gap={2}>
 										{card.bullets.map(bullet => (
-											<HStack key={bullet} spacing={3} align="start">
+											<HStack key={bullet} gap={3} align="start">
 												<Box
 													w="22px"
 													h="22px"

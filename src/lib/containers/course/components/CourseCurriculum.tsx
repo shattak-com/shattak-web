@@ -1,6 +1,7 @@
 'use client';
 
 import { Accordion, Box, Container, Heading, HStack, Icon, Stack, Text, Switch } from '@chakra-ui/react';
+import type { ElementType } from 'react';
 import { useMemo, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 
@@ -55,6 +56,11 @@ const toneStyles = {
 	}
 } as const;
 
+const AccordionItem = Accordion.Item as ElementType;
+const AccordionItemContent = Accordion.ItemContent as ElementType;
+const AccordionItemTrigger = Accordion.ItemTrigger as ElementType;
+const SwitchControl = Switch.Control as ElementType;
+
 const CurriculumGroup = ({ id, title, description, tone, sections, values, onValueChange }: CurriculumGroupProps) => {
 	const styles = toneStyles[tone];
 
@@ -76,12 +82,12 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 			</Box>
 			<Box px={{ base: 4, md: 5 }} py={{ base: 4, md: 5 }}>
 				<Accordion.Root multiple collapsible value={values} onValueChange={({ value }) => onValueChange(value)}>
-					<Stack spacing={3}>
+					<Stack gap={3}>
 						{sections.map(section => {
 							const itemValue = `${id}-${section.sectionName}`;
 
 							return (
-								<Accordion.Item key={section.sectionName} value={itemValue}>
+								<AccordionItem key={section.sectionName} value={itemValue}>
 									<Box
 										bg={styles.itemBg}
 										borderRadius="soft"
@@ -90,7 +96,7 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 										overflow="hidden"
 										_dark={{ bg: 'bg.card', borderColor: styles.itemBorderDark }}
 									>
-										<Accordion.ItemTrigger
+										<AccordionItemTrigger
 											display="flex"
 											alignItems="center"
 											justifyContent="space-between"
@@ -105,12 +111,12 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 										>
 											<Text fontWeight="semibold">{section.sectionName}</Text>
 											<Accordion.ItemIndicator />
-										</Accordion.ItemTrigger>
-										<Accordion.ItemContent>
+										</AccordionItemTrigger>
+										<AccordionItemContent>
 											<Accordion.ItemBody px={4} pb={4}>
-												<Stack spacing={2}>
+												<Stack gap={2}>
 													{section.subsections.map(item => (
-														<HStack key={`${section.sectionName}-${item.title}`} spacing={3} align="center">
+														<HStack key={`${section.sectionName}-${item.title}`} gap={3} align="center">
 															<Icon as={FiArrowRight} color="icon.brand" />
 															<Text color="text.secondary" flex="1">
 																{item.title}
@@ -122,9 +128,9 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 													))}
 												</Stack>
 											</Accordion.ItemBody>
-										</Accordion.ItemContent>
+										</AccordionItemContent>
 									</Box>
-								</Accordion.Item>
+								</AccordionItem>
 							);
 						})}
 					</Stack>
@@ -175,8 +181,8 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 	return (
 		<Box as="section" py={{ base: 12, md: 16 }} bg="bg.surface">
 			<Container maxW="7xl">
-				<Stack spacing={6}>
-					<Stack spacing={2}>
+				<Stack gap={6}>
+					<Stack gap={2}>
 						<HStack justify="space-between" align="center">
 							<Heading fontSize={{ base: 'xl', md: '2xl' }} lineHeight="title" letterSpacing="subtle">
 								Course Curriculum
@@ -186,9 +192,9 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 								onCheckedChange={({ checked }) => handleToggle(checked)}
 								aria-label="Expand all sections"
 							>
-								<Switch.Control>
+								<SwitchControl>
 									<Switch.Thumb />
-								</Switch.Control>
+								</SwitchControl>
 								<Switch.HiddenInput />
 							</Switch.Root>
 						</HStack>
@@ -197,7 +203,7 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 						</Text>
 					</Stack>
 
-					<Stack spacing={6} mt={{ base: 2, md: 4 }}>
+					<Stack gap={6} mt={{ base: 2, md: 4 }}>
 						<CurriculumGroup
 							id="prerequisites"
 							title="Pre-Requisites Content"

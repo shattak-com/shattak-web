@@ -25,7 +25,13 @@ const parseTimeOfDay = (value?: string) => {
 	const rawHours = Number(timeMatch[1]);
 	const minutes = timeMatch[2] ? Number(timeMatch[2]) : 0;
 	const meridiem = timeMatch[3].toUpperCase();
-	const hours = meridiem === 'PM' && rawHours !== 12 ? rawHours + 12 : meridiem === 'AM' && rawHours === 12 ? 0 : rawHours;
+	let hours = rawHours;
+	if (meridiem === 'PM' && rawHours !== 12) {
+		hours = rawHours + 12;
+	}
+	if (meridiem === 'AM' && rawHours === 12) {
+		hours = 0;
+	}
 	return { hours, minutes };
 };
 
@@ -148,8 +154,7 @@ export const buildScheduleDisplayItems = (
 	return items.map((item, index) => {
 		const parsedDate = parseDate(item.time);
 		const timeOfDay = parseTimeOfDay(item.time) ?? initialTime;
-		const durationMinutesValue =
-			parseDurationMinutes(item.duration) ?? (fallbackDuration > 0 ? fallbackDuration : 90);
+		const durationMinutesValue = parseDurationMinutes(item.duration) ?? (fallbackDuration > 0 ? fallbackDuration : 90);
 		const date =
 			shouldAutoSchedule || !parsedDate || isPastDate(parsedDate, today)
 				? getWeekendDate(baseSaturday, index)

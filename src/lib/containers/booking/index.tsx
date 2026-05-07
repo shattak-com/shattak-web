@@ -180,7 +180,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.6 }}
 						>
-							<Stack spacing={{ base: 6, md: 7 }} textAlign="center" align="center">
+							<Stack gap={{ base: 6, md: 7 }} textAlign="center" align="center">
 								{/* Course Info Card */}
 								<MotionBox
 									bg="bg.accent"
@@ -193,7 +193,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 									animate={{ opacity: 1, scale: 1 }}
 									transition={{ duration: 0.5, delay: 0.2 }}
 								>
-									<HStack spacing={4} align="center" justify="center" flexWrap="wrap">
+									<HStack gap={4} align="center" justify="center" flexWrap="wrap">
 										<MotionBox
 											w={{ base: '64px', md: '72px' }}
 											h={{ base: '64px', md: '72px' }}
@@ -208,12 +208,12 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 											<Image src={courseDetailsMock.thumbnailImage} alt="Course preview" w="60%" h="60%" />
 										</MotionBox>
 										<Stack
-											spacing={1}
+											gap={1}
 											align={{ base: 'center', md: 'flex-start' }}
 											textAlign={{ base: 'center', md: 'left' }}
 										>
 											<Text fontWeight="semibold">{courseDetailsMock.title}</Text>
-											<HStack spacing={2} fontSize="sm" color="text.muted">
+											<HStack gap={2} fontSize="sm" color="text.muted">
 												<Icon as={FiClock} boxSize={3.5} />
 												<Text>{startSession}</Text>
 											</HStack>
@@ -341,7 +341,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 								<AnimatePresence>
 									{status === 'checking' && (
 										<MotionStack
-											spacing={2}
+											gap={2}
 											w="full"
 											align="stretch"
 											initial={{ opacity: 0, y: -10 }}
@@ -357,7 +357,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 													transition={{ duration: 0.3, delay: index * 0.1 }}
 												>
 													<HStack
-														spacing={3}
+														gap={3}
 														p={3}
 														bg="bg.muted"
 														borderRadius="lg"
@@ -410,7 +410,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 									{status === 'checking' ? (
 										<MotionStack
 											key="checking-message"
-											spacing={2}
+											gap={2}
 											initial={{ opacity: 0, y: 10 }}
 											animate={{ opacity: 1, y: 0 }}
 											exit={{ opacity: 0, y: -10 }}
@@ -426,7 +426,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 									) : (
 										<MotionStack
 											key="full-message"
-											spacing={2}
+											gap={2}
 											initial={{ opacity: 0, y: 10 }}
 											animate={{ opacity: 1, y: 0 }}
 											exit={{ opacity: 0, y: -10 }}
@@ -469,7 +469,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 													animation={`${float} 3s ease-in-out infinite`}
 												/>
 
-												<Stack spacing={4} align="center" textAlign="center" position="relative">
+												<Stack gap={4} align="center" textAlign="center" position="relative">
 													<MotionBox
 														w="52px"
 														h="52px"
@@ -490,7 +490,7 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 														<Icon as={FiMessageCircle} color="white" boxSize={6} />
 													</MotionBox>
 
-													<Stack spacing={1}>
+													<Stack gap={1}>
 														<Text fontWeight="bold" fontSize="lg">
 															Join Our WhatsApp Group
 														</Text>
@@ -520,8 +520,8 @@ const BookingUnavailablePage = ({ sourceSlug }: BookingUnavailablePageProps) => 
 														</Button>
 													</MotionBox>
 
-													<HStack spacing={4} pt={2} fontSize="xs" color="text.muted">
-														<HStack spacing={1}>
+													<HStack gap={4} pt={2} fontSize="xs" color="text.muted">
+														<HStack gap={1}>
 															<Icon as={FiUsers} boxSize={3} />
 															<Text>500+ members</Text>
 														</HStack>

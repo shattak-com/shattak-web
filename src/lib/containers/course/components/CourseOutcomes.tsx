@@ -3,8 +3,8 @@
 import { Box, Container, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { FiCheckCircle } from 'react-icons/fi';
 
-import type { CourseOutcomeCard } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseOutcomeCard } from '~/lib/containers/course/types';
 
 type CourseOutcomesProps = {
 	outcomes: CourseOutcomeCard[];
@@ -13,7 +13,7 @@ type CourseOutcomesProps = {
 const CourseOutcomes = ({ outcomes }: CourseOutcomesProps) => (
 	<Box as="section" py={{ base: 8, md: 10 }} bg="bg.surface">
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="After this course, you can" />
 				<SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={{ base: 4, lg: 5 }}>
 					{outcomes.map(item => (
@@ -40,7 +40,7 @@ const CourseOutcomes = ({ outcomes }: CourseOutcomesProps) => (
 								bg="bg.accent"
 								opacity={{ base: 0.35, _dark: 0.18 }}
 							/>
-							<HStack spacing={3} align="start">
+							<HStack gap={3} align="start">
 								<Box
 									w="32px"
 									h="32px"

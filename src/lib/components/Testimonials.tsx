@@ -86,9 +86,9 @@ const Testimonials = ({
 				bgGradient={modernOrbs[index % modernOrbs.length]}
 				opacity={{ base: 0.25, _dark: 0.14 }}
 			/>
-			<HStack spacing={3} mb={4} align="center">
+			<HStack gap={3} mb={4} align="center">
 				<HStack
-					spacing={2}
+					gap={2}
 					px={3}
 					py={1}
 					borderRadius="full"
@@ -103,7 +103,7 @@ const Testimonials = ({
 				</HStack>
 				{typeof testimonial.likes === 'number' ? (
 					<HStack
-						spacing={1.5}
+						gap={1.5}
 						ml="auto"
 						color="text.muted"
 						px={2.5}
@@ -122,7 +122,7 @@ const Testimonials = ({
 			<Text fontSize="sm" color="text.secondary" lineHeight="relaxed" mb={6} lineClamp={8}>
 				{testimonial.body}
 			</Text>
-			<HStack spacing={3} mt="auto">
+			<HStack gap={3} mt="auto">
 				{testimonial.avatar ? (
 					<Box
 						position="relative"
@@ -165,8 +165,8 @@ const Testimonials = ({
 	return (
 		<Box as="section" id={sectionId} py={{ base: 14, md: 20 }} bg={background}>
 			<Container maxW={containerMaxW}>
-				<Stack spacing={8}>
-					<Stack spacing={2}>
+				<Stack gap={8}>
+					<Stack gap={2}>
 						<Heading fontSize={{ base: 'xl', md: '2xl' }} lineHeight="title" letterSpacing="subtle">
 							{title}
 						</Heading>
@@ -191,11 +191,11 @@ const Testimonials = ({
 											borderColor="border.default"
 											boxShadow="card"
 										>
-											<HStack spacing={2} mb={4}>
+											<HStack gap={2} mb={4}>
 												<Icon as={FiStar} color="icon.warning" />
 												<Text fontWeight="semibold">{testimonial.rating}</Text>
 												{typeof testimonial.likes === 'number' ? (
-													<HStack spacing={1} ml="auto" color="text.muted">
+													<HStack gap={1} ml="auto" color="text.muted">
 														<Icon as={FiHeart} boxSize={3.5} />
 														<Text fontSize="xs" fontWeight="medium">
 															{testimonial.likes}
@@ -206,7 +206,7 @@ const Testimonials = ({
 											<Text fontSize="sm" color="text.secondary" mb={6} lineClamp={12}>
 												{testimonial.body}
 											</Text>
-											<HStack spacing={3} mt="auto">
+											<HStack gap={3} mt="auto">
 												{testimonial.avatar ? (
 													<Box
 														position="relative"
@@ -262,13 +262,13 @@ const Testimonials = ({
 								scrollSnapType="x mandatory"
 								pb={3}
 								className="hide-scrollbar"
-								sx={{
+								css={{
 									'&::-webkit-scrollbar': { height: '0px' },
 									scrollbarWidth: 'none',
 									msOverflowStyle: 'none'
 								}}
 							>
-								<HStack spacing={4} w="max-content" pr={{ base: 6, md: 0 }} align="stretch">
+								<HStack gap={4} w="max-content" pr={{ base: 6, md: 0 }} align="stretch">
 									{items.map((testimonial, index) => (
 										<Box key={testimonial.id} scrollSnapAlign="start">
 											{isModern ? (
@@ -287,11 +287,11 @@ const Testimonials = ({
 													borderColor="border.default"
 													boxShadow="card"
 												>
-													<HStack spacing={2} mb={4}>
+													<HStack gap={2} mb={4}>
 														<Icon as={FiStar} color="icon.warning" />
 														<Text fontWeight="semibold">{testimonial.rating}</Text>
 														{typeof testimonial.likes === 'number' ? (
-															<HStack spacing={1} ml="auto" color="text.muted">
+															<HStack gap={1} ml="auto" color="text.muted">
 																<Icon as={FiHeart} boxSize={3.5} />
 																<Text fontSize="xs" fontWeight="medium">
 																	{testimonial.likes}
@@ -302,7 +302,7 @@ const Testimonials = ({
 													<Text fontSize="sm" color="text.secondary" mb={6} lineClamp={3}>
 														{testimonial.body}
 													</Text>
-													<HStack spacing={3} mt="auto">
+													<HStack gap={3} mt="auto">
 														{testimonial.avatar ? (
 															<Box
 																position="relative"

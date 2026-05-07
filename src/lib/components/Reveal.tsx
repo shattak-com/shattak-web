@@ -29,7 +29,7 @@ const Reveal = ({
 	const prefersReducedMotion = useReducedMotion();
 
 	if (prefersReducedMotion) {
-		return <>{children}</>;
+		return children;
 	}
 
 	return (

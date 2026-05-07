@@ -67,7 +67,7 @@ const CourseUnavailable = ({ variant = 'draft', title }: CourseUnavailableProps)
 					maxW="3xl"
 					mx="auto"
 				>
-					<Stack spacing={4} textAlign="center" align="center">
+					<Stack gap={4} textAlign="center" align="center">
 						<Box
 							w="56px"
 							h="56px"
@@ -100,7 +100,7 @@ const CourseUnavailable = ({ variant = 'draft', title }: CourseUnavailableProps)
 							p={{ base: 4, md: 5 }}
 							w="full"
 						>
-							<Stack direction="column" spacing={{ base: 3, md: 4 }} align="center" justify="center" textAlign="center">
+							<Stack direction="column" gap={{ base: 3, md: 4 }} align="center" justify="center" textAlign="center">
 								<Box
 									w="40px"
 									h="40px"
@@ -112,7 +112,7 @@ const CourseUnavailable = ({ variant = 'draft', title }: CourseUnavailableProps)
 								>
 									<Icon as={FiMessageCircle} color="white" boxSize={5} />
 								</Box>
-								<Stack spacing={1} align="center">
+								<Stack gap={1} align="center">
 									<Text fontWeight="semibold">Join Our WhatsApp Group for Updates</Text>
 									<Text fontSize="xs" color="text.muted">
 										Get notified when the course is available.

@@ -81,16 +81,16 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 					transition="all 0.2s ease"
 				>
 					<Box display={{ base: 'none', md: 'block' }}>
-						<HStack spacing={6} align="center">
-							<HStack spacing={6} flex="1" minW="0">
-								<Stack spacing={1} flex="1" minW="0">
+						<HStack gap={6} align="center">
+							<HStack gap={6} flex="1" minW="0">
+								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
 										Starting From
 									</Text>
 									<Text fontWeight="semibold">{startingSession ?? 'TBD'}</Text>
 								</Stack>
 								<Box w="1px" h="40px" bg="border.default" />
-								<Stack spacing={1} flex="1" minW="0">
+								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
 										Live Session
 									</Text>
@@ -99,12 +99,12 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 									</Text>
 								</Stack>
 							</HStack>
-							<HStack spacing={4} justify="flex-end" flex="1">
-								<Stack spacing={1} flex="1" minW="0">
+							<HStack gap={4} justify="flex-end" flex="1">
+								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
 										Get Life Time Access
 									</Text>
-									<HStack spacing={2} align="baseline">
+									<HStack gap={2} align="baseline">
 										<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
 										<Text fontSize="sm" color="text.muted" textDecoration="line-through">
 											INR {formatCurrency(course.originalPrice)}
@@ -145,12 +145,12 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 					</Box>
 
 					<Box display={{ base: 'block', md: 'none' }}>
-						<HStack justify="space-between" align="center" spacing={3}>
-							<Stack spacing={1}>
+						<HStack justify="space-between" align="center" gap={3}>
+							<Stack gap={1}>
 								<Text fontSize="xs" color="text.muted">
 									Get Life Time Access
 								</Text>
-								<HStack spacing={2} align="baseline">
+								<HStack gap={2} align="baseline">
 									<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
 									<Text fontSize="xs" color="text.muted" textDecoration="line-through">
 										INR {formatCurrency(course.originalPrice)}

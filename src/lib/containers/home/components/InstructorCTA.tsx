@@ -1,19 +1,39 @@
 'use client';
 
-import { Box, Button, Container, Heading, HStack, Stack, Text } from '@chakra-ui/react';
+import {
+	Box as ChakraBox,
+	Button,
+	Container,
+	Heading as ChakraHeading,
+	HStack as ChakraHStack,
+	Stack,
+	Text as ChakraText
+} from '@chakra-ui/react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import type { MotionProps, MotionStyle } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback } from 'react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { ComponentProps, ComponentType, ElementType, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
 
-const Reveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
+type MotionCompatibleProps<T extends ElementType> = Omit<ComponentProps<T>, keyof MotionProps | 'style'> &
+	MotionProps & {
+		style?: MotionStyle;
+	};
+type MotionCompatibleComponent<T extends ElementType> = ComponentType<MotionCompatibleProps<T>>;
+
+const Box = ChakraBox as MotionCompatibleComponent<typeof ChakraBox>;
+const Heading = ChakraHeading as MotionCompatibleComponent<typeof ChakraHeading>;
+const HStack = ChakraHStack as MotionCompatibleComponent<typeof ChakraHStack>;
+const Text = ChakraText as MotionCompatibleComponent<typeof ChakraText>;
+
+const Reveal = ({ children, delay = 0 }: { children: ReactNode; delay?: number }) => {
 	const prefersReducedMotion = useReducedMotion();
 
 	if (prefersReducedMotion) {
-		return <>{children}</>;
+		return children;
 	}
 
 	return (
@@ -27,6 +47,17 @@ const Reveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 			{children}
 		</Box>
 	);
+};
+
+type FloatingParticleProps = {
+	delay: number;
+	duration: number;
+	xRange: number[];
+	yRange: number[];
+	top?: string;
+	left?: string;
+	right?: string;
+	bottom?: string;
 };
 
 const InstructorCTA = () => {
@@ -61,7 +92,7 @@ const InstructorCTA = () => {
 	}, [x, y]);
 
 	// Floating particles
-	const FloatingParticle = ({ delay, duration, xRange, yRange, top, left, right, bottom }: any) => (
+	const FloatingParticle = ({ delay, duration, xRange, yRange, top, left, right, bottom }: FloatingParticleProps) => (
 		<Box
 			as={motion.div}
 			position="absolute"
@@ -172,7 +203,7 @@ const InstructorCTA = () => {
 
 						<Stack
 							direction={{ base: 'column', lg: 'row' }}
-							spacing={{ base: 8, lg: 12 }}
+							gap={{ base: 8, lg: 12 }}
 							align="center"
 							position="relative"
 						>
@@ -237,7 +268,7 @@ const InstructorCTA = () => {
 										Share your expertise, run live sessions, and inspire the next wave of learners across India.
 									</Text>
 
-									<HStack mt={6} spacing={3} flexWrap="wrap">
+									<HStack mt={6} gap={3} flexWrap="wrap">
 										<Button
 											asChild
 											size="lg"
@@ -266,7 +297,7 @@ const InstructorCTA = () => {
 											</Link>
 										</Button>
 										<Button
-											as="a"
+											asChild
 											size="lg"
 											borderRadius="full"
 											bg="bg.card"
@@ -281,25 +312,28 @@ const InstructorCTA = () => {
 											}}
 											transition="all 0.3s ease"
 											boxShadow="neutral"
-											href={pitchDeckUrl}
-											download="mentor-pitch-deck.pdf"
 											px={7}
 											fontWeight="semibold"
-											onClick={() =>
-												trackCtaClicked({
-													label: 'Know More',
-													location: 'instructor_cta',
-													destination: pitchDeckUrl,
-													context: 'pitch_deck'
-												})
-											}
 										>
-											Know More
+											<Link
+												href={pitchDeckUrl}
+												download="mentor-pitch-deck.pdf"
+												onClick={() =>
+													trackCtaClicked({
+														label: 'Know More',
+														location: 'instructor_cta',
+														destination: pitchDeckUrl,
+														context: 'pitch_deck'
+													})
+												}
+											>
+												Know More
+											</Link>
 										</Button>
 									</HStack>
 
 									{/* Feature tags */}
-									<HStack mt={6} spacing={3} flexWrap="wrap">
+									<HStack mt={6} gap={3} flexWrap="wrap">
 										<Box
 											as={motion.div}
 											px={3}
@@ -353,7 +387,13 @@ const InstructorCTA = () => {
 							</Reveal>
 
 							<Reveal delay={0.1}>
-								<Box flex="1" display="flex" justifyContent="center" sx={{ perspective: '1000px' }} position="relative">
+								<Box
+									flex="1"
+									display="flex"
+									justifyContent="center"
+									css={{ perspective: '1000px' }}
+									position="relative"
+								>
 									<Box
 										as={motion.div}
 										style={

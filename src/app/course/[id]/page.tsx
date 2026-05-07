@@ -10,7 +10,7 @@ import { getCourseById } from '~/lib/firebase/courses';
 export const dynamic = 'force-dynamic';
 
 type CoursePageProps = {
-	params: { id: string } | Promise<{ id: string }>;
+	params: Promise<{ id: string }>;
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -26,20 +26,22 @@ const formatIsoDuration = (hours: number, minutes: number) => {
 	}
 	const durationHours = Math.floor(totalMinutes / 60);
 	const durationMinutes = totalMinutes % 60;
-	return `PT${durationHours ? `${durationHours}H` : ''}${durationMinutes ? `${durationMinutes}M` : ''}`;
+	const hoursPart = durationHours ? `${durationHours}H` : '';
+	const minutesPart = durationMinutes ? `${durationMinutes}M` : '';
+	return `PT${hoursPart}${minutesPart}`;
 };
 
 const getCourse = cache(async (id: string) => getCourseById(id, { includeDrafts: true }));
 
 export const generateMetadata = async ({ params }: CoursePageProps): Promise<Metadata> => {
-	const { id: rawId } = await Promise.resolve(params);
+	const { id: rawId } = await params;
 	const id = decodeURIComponent(rawId).trim();
 	const canonicalPath = `/course/${encodeURIComponent(id)}/`;
 
 	let course: CourseDetails | null = null;
 	try {
 		course = await getCourse(id);
-	} catch (error) {
+	} catch {
 		return {
 			title: 'Course Not Available',
 			description: 'The course you are looking for is currently unavailable.',
@@ -95,18 +97,12 @@ export const generateMetadata = async ({ params }: CoursePageProps): Promise<Met
 };
 
 const CoursePage = async ({ params }: CoursePageProps) => {
-	const { id: rawId } = await Promise.resolve(params);
+	const { id: rawId } = await params;
 	const id = decodeURIComponent(rawId).trim();
-	let course: CourseDetails | null = null;
-
-	try {
-		course = await getCourse(id);
-	} catch (error) {
-		throw error;
-	}
+	const course = await getCourse(id);
 
 	if (!course) {
-		return <CourseUnavailable variant="missing" slug={id} />;
+		return <CourseUnavailable variant="missing" />;
 	}
 
 	if (course.status === 'Draft') {

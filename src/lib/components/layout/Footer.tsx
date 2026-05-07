@@ -16,14 +16,14 @@ const Footer = () => {
 		<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
 			<Container maxW="6xl">
 				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
-					<Stack spacing={4}>
+					<Stack gap={4}>
 						<Heading size="md">Shattak</Heading>
 
 						<Text fontSize="sm" color="text.onDarkMuted">
 							Learn from Experts. Build What Matters.
 						</Text>
 
-						<HStack spacing={3}>
+						<HStack gap={3}>
 							<Link href="https://www.instagram.com/shattakofficial/" target="_blank" rel="noopener noreferrer">
 								<Icon as={FiInstagram} boxSize={8} cursor="pointer" />
 							</Link>
@@ -41,7 +41,7 @@ const Footer = () => {
 							</Link>
 						</HStack>
 					</Stack>
-					<Stack spacing={3}>
+					<Stack gap={3}>
 						<Text fontWeight="semibold">Quick Links</Text>
 						{navLinks.map(link => (
 							<Link
@@ -78,7 +78,7 @@ const Footer = () => {
 							</Text>
 						</Link>
 					</Stack>
-					<Stack spacing={3}>
+					<Stack gap={3}>
 						<Text fontWeight="semibold">Contact</Text>
 						<Text fontSize="sm" color="text.onDarkMuted">
 							hello@shattak.com

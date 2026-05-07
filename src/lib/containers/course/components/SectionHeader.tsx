@@ -6,7 +6,7 @@ type SectionHeaderProps = {
 };
 
 const SectionHeader = ({ title, subtitle }: SectionHeaderProps) => (
-	<Stack spacing={2}>
+	<Stack gap={2}>
 		<Heading fontSize={{ base: 'xl', md: '2xl' }} lineHeight="title" letterSpacing="subtle">
 			{title}
 		</Heading>

@@ -1,13 +1,52 @@
 'use client';
 
-import { Box, Button, Container, HStack, Heading, Stack, Text } from '@chakra-ui/react';
+import {
+	Box as ChakraBox,
+	Button,
+	Container,
+	HStack as ChakraHStack,
+	Heading as ChakraHeading,
+	Stack,
+	Text as ChakraText
+} from '@chakra-ui/react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import type { MotionProps, MotionStyle } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { ComponentProps, ComponentType, ElementType, MouseEvent as ReactMouseEvent } from 'react';
 
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+
+type MotionCompatibleProps<T extends ElementType> = Omit<ComponentProps<T>, keyof MotionProps | 'style'> &
+	MotionProps & {
+		style?: MotionStyle;
+	};
+type MotionCompatibleComponent<T extends ElementType> = ComponentType<MotionCompatibleProps<T>>;
+
+const Box = ChakraBox as MotionCompatibleComponent<typeof ChakraBox>;
+const Heading = ChakraHeading as MotionCompatibleComponent<typeof ChakraHeading>;
+const HStack = ChakraHStack as MotionCompatibleComponent<typeof ChakraHStack>;
+const Text = ChakraText as MotionCompatibleComponent<typeof ChakraText>;
+
+type TypingLineProps = {
+	text: string;
+	color?: string;
+	delay?: number;
+	reducedMotion: boolean | null;
+};
+
+type FloatingParticleProps = {
+	delay: number;
+	duration: number;
+	xRange: number[];
+	yRange: number[];
+	reducedMotion: boolean | null;
+	top?: string;
+	left?: string;
+	right?: string;
+	bottom?: string;
+};
 
 const Hero = () => {
 	const prefersReducedMotion = useReducedMotion();
@@ -35,14 +74,14 @@ const Hero = () => {
 		y.set(0);
 	}, [x, y]);
 
-	const TypingLine = ({ text, color, delay = 0 }: { text: string; color?: string; delay?: number }) => {
+	const TypingLine = ({ text, color, delay = 0, reducedMotion }: TypingLineProps) => {
 		const [displayedText, setDisplayedText] = useState('');
 		const [showCursor, setShowCursor] = useState(false);
 
 		useEffect(() => {
-			if (prefersReducedMotion) {
+			if (reducedMotion) {
 				setDisplayedText(text);
-				return;
+				return undefined;
 			}
 
 			let currentTimeout: NodeJS.Timeout;
@@ -56,7 +95,7 @@ const Hero = () => {
 				typingInterval = setInterval(() => {
 					if (currentIndex < text.length) {
 						setDisplayedText(text.slice(0, currentIndex + 1));
-						currentIndex++;
+						currentIndex += 1;
 					} else {
 						clearInterval(typingInterval);
 						currentTimeout = setTimeout(() => {
@@ -64,7 +103,7 @@ const Hero = () => {
 							erasingInterval = setInterval(() => {
 								if (eraseIndex > 0) {
 									setDisplayedText(text.slice(0, eraseIndex - 1));
-									eraseIndex--;
+									eraseIndex -= 1;
 								} else {
 									clearInterval(erasingInterval);
 									currentTimeout = setTimeout(() => startCycle(), 500);
@@ -82,7 +121,7 @@ const Hero = () => {
 				clearInterval(typingInterval);
 				clearInterval(erasingInterval);
 			};
-		}, [text, delay, prefersReducedMotion]);
+		}, [text, delay, reducedMotion]);
 
 		return (
 			<Box as="span" display="inline-flex" alignItems="center" color={color}>
@@ -101,7 +140,7 @@ const Hero = () => {
 						h="1em"
 						bg="currentColor"
 						animate={{ opacity: [0, 1, 0] }}
-						transition={{ duration: 0.9, repeat: Infinity, ease: 'steps(2)' }}
+						transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
 					/>
 				)}
 			</Box>
@@ -109,7 +148,17 @@ const Hero = () => {
 	};
 
 	// Floating particles
-	const FloatingParticle = ({ delay, duration, xRange, yRange, top, left, right, bottom }: any) => (
+	const FloatingParticle = ({
+		delay,
+		duration,
+		xRange,
+		yRange,
+		reducedMotion,
+		top,
+		left,
+		right,
+		bottom
+	}: FloatingParticleProps) => (
 		<Box
 			as={motion.div}
 			position="absolute"
@@ -123,7 +172,7 @@ const Hero = () => {
 			bgGradient="var(--chakra-gradients-brand-accent)"
 			opacity={0.4}
 			animate={
-				prefersReducedMotion
+				reducedMotion
 					? undefined
 					: {
 							x: xRange,
@@ -182,14 +231,46 @@ const Hero = () => {
 				/>
 
 				{/* Floating particles */}
-				<FloatingParticle delay={0} duration={8} xRange={[0, 100, 0]} yRange={[0, -80, 0]} top="20%" left="15%" />
-				<FloatingParticle delay={2} duration={10} xRange={[0, -120, 0]} yRange={[0, 100, 0]} top="60%" right="20%" />
-				<FloatingParticle delay={4} duration={12} xRange={[0, 80, 0]} yRange={[0, -100, 0]} bottom="25%" left="25%" />
-				<FloatingParticle delay={1} duration={9} xRange={[0, -90, 0]} yRange={[0, 70, 0]} top="40%" right="35%" />
+				<FloatingParticle
+					delay={0}
+					duration={8}
+					xRange={[0, 100, 0]}
+					yRange={[0, -80, 0]}
+					reducedMotion={prefersReducedMotion}
+					top="20%"
+					left="15%"
+				/>
+				<FloatingParticle
+					delay={2}
+					duration={10}
+					xRange={[0, -120, 0]}
+					yRange={[0, 100, 0]}
+					reducedMotion={prefersReducedMotion}
+					top="60%"
+					right="20%"
+				/>
+				<FloatingParticle
+					delay={4}
+					duration={12}
+					xRange={[0, 80, 0]}
+					yRange={[0, -100, 0]}
+					reducedMotion={prefersReducedMotion}
+					bottom="25%"
+					left="25%"
+				/>
+				<FloatingParticle
+					delay={1}
+					duration={9}
+					xRange={[0, -90, 0]}
+					yRange={[0, 70, 0]}
+					reducedMotion={prefersReducedMotion}
+					top="40%"
+					right="35%"
+				/>
 			</Box>
 
 			<Container maxW="6xl" position="relative">
-				<Stack direction={{ base: 'column', lg: 'row' }} align="center" spacing={{ base: 8, lg: 10 }}>
+				<Stack direction={{ base: 'column', lg: 'row' }} align="center" gap={{ base: 8, lg: 10 }}>
 					<Box
 						as={motion.div}
 						initial={{ opacity: 0, y: 32 }}
@@ -251,7 +332,7 @@ const Hero = () => {
 								position="relative"
 								minH="1.2em"
 							>
-								<TypingLine text="Learn From Experts." delay={0.2} />
+								<TypingLine text="Learn From Experts." delay={0.2} reducedMotion={prefersReducedMotion} />
 							</Text>
 							<Text
 								as={motion.span}
@@ -261,7 +342,12 @@ const Hero = () => {
 								position="relative"
 								minH="1.2em"
 							>
-								<TypingLine text="Build What Matters." delay={1.8} color="text.brand" />
+								<TypingLine
+									text="Build What Matters."
+									delay={1.8}
+									color="text.brand"
+									reducedMotion={prefersReducedMotion}
+								/>
 							</Text>
 						</Heading>
 
@@ -271,7 +357,7 @@ const Hero = () => {
 
 						<HStack
 							as={motion.div}
-							spacing={{ base: 3, md: 4 }}
+							gap={{ base: 3, md: 4 }}
 							mt={8}
 							flexWrap={{ base: 'nowrap', md: 'wrap' }}
 							justify={{ base: 'center', lg: 'flex-start' }}
@@ -356,7 +442,7 @@ const Hero = () => {
 						display={{ base: 'none', lg: 'block' }}
 						flex={{ base: 'unset', lg: 1 }}
 						w={{ base: '100%', md: '80%', lg: '48%' }}
-						sx={{ perspective: '900px' }}
+						css={{ perspective: '900px' }}
 						position="relative"
 					>
 						<Box

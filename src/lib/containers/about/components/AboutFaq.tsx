@@ -1,9 +1,14 @@
 'use client';
 
 import { Accordion, Box, Container, Stack, Text } from '@chakra-ui/react';
+import type { ElementType } from 'react';
 
 import { aboutFaqItems } from '~/lib/containers/about/constants';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+
+const AccordionItem = Accordion.Item as ElementType;
+const AccordionItemContent = Accordion.ItemContent as ElementType;
+const AccordionItemTrigger = Accordion.ItemTrigger as ElementType;
 
 const AboutFaq = () => (
 	<Box as="section" id="about-faq" py={{ base: 12, md: 16 }} bg="bg.surface">
@@ -16,9 +21,9 @@ const AboutFaq = () => (
 				<Accordion.Root multiple collapsible defaultValue={[aboutFaqItems[0]?.id ?? '']}>
 					<Stack gap={3}>
 						{aboutFaqItems.map(item => (
-							<Accordion.Item key={item.id} value={item.id}>
+							<AccordionItem key={item.id} value={item.id}>
 								<Box bg="bg.card" borderRadius="soft" border="1px solid" borderColor="border.default" overflow="hidden">
-									<Accordion.ItemTrigger
+									<AccordionItemTrigger
 										display="flex"
 										alignItems="center"
 										justifyContent="space-between"
@@ -29,14 +34,14 @@ const AboutFaq = () => (
 									>
 										<Text fontWeight="semibold">{item.question}</Text>
 										<Accordion.ItemIndicator />
-									</Accordion.ItemTrigger>
-									<Accordion.ItemContent>
+									</AccordionItemTrigger>
+									<AccordionItemContent>
 										<Accordion.ItemBody px={4} pb={4}>
 											<Text color="text.secondary">{item.answer}</Text>
 										</Accordion.ItemBody>
-									</Accordion.ItemContent>
+									</AccordionItemContent>
 								</Box>
-							</Accordion.Item>
+							</AccordionItem>
 						))}
 					</Stack>
 				</Accordion.Root>

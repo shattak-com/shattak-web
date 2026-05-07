@@ -1,10 +1,9 @@
 'use client';
 
-import { Box, Container, SimpleGrid, Stack, Text , Avatar} from '@chakra-ui/react';
-import Image from 'next/image';
+import { Box, Container, Image, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 
-import type { CourseTool } from '~/lib/containers/course/types';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
+import type { CourseTool } from '~/lib/containers/course/types';
 
 type CourseToolsProps = {
 	tools: CourseTool[];
@@ -13,7 +12,7 @@ type CourseToolsProps = {
 const CourseTools = ({ tools }: CourseToolsProps) => (
 	<Box as="section" py={{ base: 10, md: 14 }} bg="bg.surface">
 		<Container maxW="7xl">
-			<Stack spacing={6}>
+			<Stack gap={6}>
 				<SectionHeader title="Tools you are going to use" />
 				<Box
 					bg="bg.card"
@@ -41,7 +40,7 @@ const CourseTools = ({ tools }: CourseToolsProps) => (
 								key={tool.id}
 								role="group"
 								align="center"
-								spacing={3}
+								gap={3}
 								bg="bg.subtle"
 								borderRadius="tile"
 								border="1px solid"
@@ -56,7 +55,6 @@ const CourseTools = ({ tools }: CourseToolsProps) => (
 									w="60px"
 									h="60px"
 									borderRadius="full"
-								
 									border="1px solid"
 									borderColor="border.default"
 									display="flex"
@@ -64,11 +62,7 @@ const CourseTools = ({ tools }: CourseToolsProps) => (
 									justifyContent="center"
 								>
 									{tool.image ? (
-										
-										<Avatar.Root  size="xl">
-											
-											<Avatar.Image src={`${tool.image}`}  />
-										</Avatar.Root>
+										<Image src={tool.image} alt={tool.name} maxW="44px" maxH="44px" objectFit="contain" />
 									) : (
 										<Text fontWeight="semibold" fontSize="md">
 											{tool.name.slice(0, 1).toUpperCase()}

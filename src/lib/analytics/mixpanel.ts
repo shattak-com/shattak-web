@@ -98,12 +98,8 @@ const getPageNameFromPath = (pathname: string) => {
 			return 'Course';
 		case 'booking':
 			return 'Booking';
-		case 'add-course':
-			return 'Add Course';
 		case 'admin':
 			return 'Admin';
-		case 'xample':
-			return 'Xample';
 		default:
 			return titleCase(firstSegment);
 	}

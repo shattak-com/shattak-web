@@ -19,8 +19,9 @@ const getPublishedCourseSlugs = async () => {
 	}
 
 	try {
-		const [{ getApp, getApps, initializeApp }, { collection, getDocs, getFirestore, query, where }] =
-			await Promise.all([import('firebase/app'), import('firebase/firestore')]);
+		const [{ getApp, getApps, initializeApp }, { collection, getDocs, getFirestore, query, where }] = await Promise.all(
+			[import('firebase/app'), import('firebase/firestore')]
+		);
 
 		const firebaseConfig = {
 			apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -48,7 +49,7 @@ const getPublishedCourseSlugs = async () => {
 const NextSitemapConfig = {
 	siteUrl: SITE_URL,
 	generateRobotsTxt: true,
-	exclude: ['/admin/login', '/add-course', '/booking', '/booking/*', '/manifest.webmanifest'],
+	exclude: ['/booking', '/booking/*', '/manifest.webmanifest'],
 	transform: async (config, path) => ({
 		loc: path,
 		changefreq: path === '/' ? 'daily' : 'weekly',

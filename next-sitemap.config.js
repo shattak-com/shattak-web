@@ -1,46 +1,38 @@
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-const COURSES_COLLECTION = 'courses';
-const PUBLISHED_STATUSES = ['Published', 'published'];
-const FIREBASE_ENV_KEYS = [
-	'NEXT_PUBLIC_FIREBASE_API_KEY',
-	'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-	'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-	'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-	'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-	'NEXT_PUBLIC_FIREBASE_APP_ID'
-];
 
-const hasRequiredFirebaseEnv = () => FIREBASE_ENV_KEYS.every(key => Boolean(process.env[key]));
+const trimTrailingSlash = value => value.replace(/\/+$/, '');
+
+const getApiBaseUrl = () => {
+	const configuredBaseUrl = process.env.SHATTAK_API_BASE_URL ?? process.env.NEXT_PUBLIC_SHATTAK_API_BASE_URL;
+	const fallbackBaseUrl =
+		process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api/v1' : new URL('/api/v1', SITE_URL).toString();
+	const baseUrl = configuredBaseUrl || fallbackBaseUrl;
+
+	return trimTrailingSlash(baseUrl.startsWith('http') ? baseUrl : new URL(baseUrl, SITE_URL).toString());
+};
 
 const getPublishedCourseSlugs = async () => {
-	if (!hasRequiredFirebaseEnv()) {
-		console.warn('[next-sitemap] Firebase env vars missing. Dynamic course URLs were skipped.');
-		return [];
-	}
-
 	try {
-		const [{ getApp, getApps, initializeApp }, { collection, getDocs, getFirestore, query, where }] = await Promise.all(
-			[import('firebase/app'), import('firebase/firestore')]
-		);
+		const response = await fetch(`${getApiBaseUrl()}/courses`, {
+			headers: {
+				Accept: 'application/json'
+			}
+		});
 
-		const firebaseConfig = {
-			apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-			authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-			projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-			storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-			messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-			appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-			measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-		};
+		if (!response.ok) {
+			console.warn(`[next-sitemap] Course sitemap API request failed with status ${response.status}.`);
+			return [];
+		}
 
-		const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-		const db = getFirestore(app);
-		const publishedQuery = query(collection(db, COURSES_COLLECTION), where('status', 'in', PUBLISHED_STATUSES));
-		const snapshot = await getDocs(publishedQuery);
+		const body = await response.json();
+		if (!body?.success || !Array.isArray(body.data)) {
+			console.warn('[next-sitemap] Course sitemap API response was not in the expected format.');
+			return [];
+		}
 
-		return snapshot.docs.map(docSnap => docSnap.id).filter(Boolean);
+		return body.data.map(course => course?.id).filter(Boolean);
 	} catch (error) {
-		console.warn('[next-sitemap] Failed to fetch dynamic course URLs from Firestore.', error);
+		console.warn('[next-sitemap] Failed to fetch dynamic course URLs from Shattak API.', error);
 		return [];
 	}
 };

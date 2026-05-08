@@ -25,9 +25,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
 import { trackCourseCardClicked, trackCourseFilterChanged } from '~/lib/analytics/mixpanel';
+import type { LandingCourseCard } from '~/lib/api/courses';
 import Reveal from '~/lib/components/Reveal';
 import { courseCategories } from '~/lib/constants/landing';
-import type { LandingCourseCard } from '~/lib/firebase/courses';
 
 const formatLearners = (count: number) => {
 	if (count >= 1000) {

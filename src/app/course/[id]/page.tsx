@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
+import { getCourseById } from '~/lib/api/courses';
 import CourseDetailsPage from '~/lib/containers/course';
 import CourseUnavailable from '~/lib/containers/course/components/CourseUnavailable';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
-import { getCourseById } from '~/lib/firebase/courses';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +31,7 @@ const formatIsoDuration = (hours: number, minutes: number) => {
 	return `PT${hoursPart}${minutesPart}`;
 };
 
-const getCourse = cache(async (id: string) => getCourseById(id, { includeDrafts: true }));
+const getCourse = cache(async (id: string) => getCourseById(id));
 
 export const generateMetadata = async ({ params }: CoursePageProps): Promise<Metadata> => {
 	const { id: rawId } = await params;

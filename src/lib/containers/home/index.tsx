@@ -1,3 +1,4 @@
+import { getPublishedLandingCourseCards, type LandingCourseCard } from '~/lib/api/courses';
 import Footer from '~/lib/components/layout/Footer';
 import Header from '~/lib/components/layout/Header';
 import Testimonials from '~/lib/components/Testimonials';
@@ -7,7 +8,6 @@ import CoursesSection from '~/lib/containers/home/components/CoursesSection';
 import Features from '~/lib/containers/home/components/Features';
 import Hero from '~/lib/containers/home/components/Hero';
 import InstructorCTA from '~/lib/containers/home/components/InstructorCTA';
-import { getPublishedLandingCourseCards, type LandingCourseCard } from '~/lib/firebase/courses';
 
 const HomePage = async () => {
 	const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';

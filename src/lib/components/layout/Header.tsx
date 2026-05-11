@@ -2,8 +2,11 @@
 
 import { Box, Button, Container, Flex, HStack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
+import UserAvatar from '~/lib/components/auth/UserAvatar';
 import ThemeToggle from '~/lib/components/ThemeToggle';
 
 const headerLinks = [
@@ -14,12 +17,6 @@ const headerLinks = [
 		external: false
 	},
 	{
-		id: 'login',
-		label: 'Login',
-		href: '/login',
-		external: false
-	},
-	{
 		id: 'campus-ambassador',
 		label: 'Campus Ambassador Program',
 		href: 'https://forms.gle/HqTLJG6EcNzgNRcW9',
@@ -27,7 +24,38 @@ const headerLinks = [
 	}
 ];
 
+const getFirstName = (user: AuthenticatedUser) => {
+	const source = user.name.trim() || user.email.trim();
+	const firstName = source.split(/\s+/)[0] ?? 'User';
+
+	return firstName.split('@')[0] || 'User';
+};
+
 const Header = () => {
+	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+
+	useEffect(() => {
+		let isMounted = true;
+
+		getCurrentUser()
+			.then(result => {
+				if (isMounted) {
+					setCurrentUser(result.user);
+				}
+			})
+			.catch(() => {
+				if (isMounted) {
+					setCurrentUser(null);
+				}
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
+	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
+
 	return (
 		<Box
 			as="header"
@@ -99,6 +127,51 @@ const Header = () => {
 								Become an Instructor
 							</Link>
 						</Button>
+						{currentUser ? (
+							<Link href="/profile" aria-label="Open profile">
+								<HStack
+									bg="primary"
+									color="text.inverse"
+									borderRadius="full"
+									pl={4}
+									pr={2}
+									py={1.5}
+									gap={3}
+									boxShadow="soft"
+									maxW="180px"
+									_hover={{ bg: 'primaryHover' }}
+								>
+									<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
+										{firstName}
+									</Text>
+									<UserAvatar user={currentUser} label={firstName} />
+								</HStack>
+							</Link>
+						) : (
+							<Button
+								asChild
+								bg="primary"
+								color="text.inverse"
+								_hover={{ bg: 'primaryHover' }}
+								borderRadius="full"
+								px={7}
+								boxShadow="soft"
+							>
+								<Link
+									href="/login"
+									onClick={() =>
+										trackCtaClicked({
+											label: 'Login',
+											location: 'header_nav',
+											destination: '/login',
+											context: 'login'
+										})
+									}
+								>
+									Login
+								</Link>
+							</Button>
+						)}
 						<ThemeToggle />
 					</HStack>
 				</Flex>

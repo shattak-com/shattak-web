@@ -1,18 +1,26 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
 import { getCurrentUser, loginWithGoogleCredential } from '~/lib/api/auth';
+import { getOnboardingStatus } from '~/lib/api/onboarding';
+import { getOnboardingRedirectPath } from '~/lib/utils/onboarding';
 import type { GoogleCredentialResponse } from '~/types/google-identity';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
-const shouldSuppressOneTap = (pathname: string | null) => !googleClientId || pathname?.startsWith('/admin');
+const shouldSuppressOneTap = (pathname: string | null) =>
+	!googleClientId ||
+	pathname?.startsWith('/admin') ||
+	pathname?.startsWith('/login') ||
+	pathname?.startsWith('/onboarding') ||
+	pathname?.startsWith('/profile');
 
 const GoogleOneTapProvider = () => {
 	const pathname = usePathname();
+	const router = useRouter();
 	const initializedRef = useRef(false);
 	const [scriptReady, setScriptReady] = useState(false);
 
@@ -42,7 +50,10 @@ const GoogleOneTapProvider = () => {
 
 					try {
 						await loginWithGoogleCredential(response.credential);
+						const onboardingStatus = await getOnboardingStatus();
 						window.google?.accounts.id.cancel();
+						router.push(getOnboardingRedirectPath(onboardingStatus.profile));
+						router.refresh();
 					} catch {
 						window.google?.accounts.id.disableAutoSelect();
 					}
@@ -63,7 +74,7 @@ const GoogleOneTapProvider = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [pathname, scriptReady]);
+	}, [pathname, router, scriptReady]);
 
 	if (!googleClientId) {
 		return null;

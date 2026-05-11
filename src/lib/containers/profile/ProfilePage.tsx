@@ -6,15 +6,19 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { getCurrentUser, logout, type AuthenticatedUser } from '~/lib/api/auth';
+import { logout, type AuthenticatedUser } from '~/lib/api/auth';
+import { getOnboardingStatus, type OnboardingProfile } from '~/lib/api/onboarding';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
 import Header from '~/lib/components/layout/Header';
+import LearningProfileSection from '~/lib/containers/profile/components/LearningProfileSection';
+import { getProtectedUserRouteRedirectPath } from '~/lib/utils/onboarding';
 
 const getDisplayName = (user: AuthenticatedUser) => user.name.trim() || user.email;
 
 const ProfilePage = () => {
 	const router = useRouter();
 	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+	const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
@@ -23,15 +27,24 @@ const ProfilePage = () => {
 	useEffect(() => {
 		let isMounted = true;
 
-		getCurrentUser()
+		getOnboardingStatus()
 			.then(result => {
 				if (isMounted) {
+					const redirectPath = getProtectedUserRouteRedirectPath(result.profile);
+
+					if (redirectPath) {
+						router.replace(redirectPath);
+						return;
+					}
+
 					setCurrentUser(result.user);
+					setOnboardingProfile(result.profile);
 				}
 			})
 			.catch(() => {
 				if (isMounted) {
 					setCurrentUser(null);
+					setOnboardingProfile(null);
 				}
 			})
 			.finally(() => {
@@ -43,7 +56,7 @@ const ProfilePage = () => {
 		return () => {
 			isMounted = false;
 		};
-	}, []);
+	}, [router]);
 
 	const handleLogout = useCallback(async () => {
 		setIsLoggingOut(true);
@@ -98,6 +111,12 @@ const ProfilePage = () => {
 						</Box>
 					</Stack>
 				</Box>
+
+				<LearningProfileSection
+					profile={onboardingProfile}
+					onProfileUpdated={setOnboardingProfile}
+					onRefreshRequested={() => router.refresh()}
+				/>
 
 				<Stack gap={3} align="flex-start">
 					<Button

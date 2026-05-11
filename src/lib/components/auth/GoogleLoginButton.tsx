@@ -10,7 +10,7 @@ import type { GoogleCredentialResponse } from '~/types/google-identity';
 
 type GoogleLoginButtonProps = {
 	context: 'user' | 'admin';
-	onSuccess?: (user: AuthenticatedUser) => void;
+	onSuccess?: (user: AuthenticatedUser) => void | Promise<void>;
 };
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
@@ -42,7 +42,7 @@ const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
 						context === 'admin'
 							? await loginAdminWithGoogleCredential(response.credential)
 							: await loginWithGoogleCredential(response.credential);
-					onSuccess?.(result.user);
+					await onSuccess?.(result.user);
 				} catch {
 					setErrorMessage(
 						context === 'admin'

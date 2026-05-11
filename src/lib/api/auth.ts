@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '~/lib/api/config';
+import { getJson, postJson } from '~/lib/api/client';
 
 export type RoleKey = 'STUDENT' | 'MENTOR' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -27,69 +27,6 @@ export type AdminInvitation = {
 	expiresAt: string;
 	createdAt: string;
 	updatedAt: string;
-};
-
-type ApiSuccessResponse<T> = {
-	success: true;
-	message: string;
-	data: T;
-};
-
-type ApiErrorResponse = {
-	success: false;
-	message: string;
-	error?: {
-		code?: string;
-		details?: unknown;
-	};
-};
-
-type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-const getApiUrl = (path: string) => `${getApiBaseUrl()}${path}`;
-
-const readApiData = async <T>(response: Response): Promise<T> => {
-	const body = (await response.json()) as ApiResponse<T>;
-
-	if (!body.success) {
-		throw new Error(body.message || `Shattak API request failed with status ${response.status}`);
-	}
-
-	return body.data;
-};
-
-const postJson = async <T>(path: string, body?: unknown): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
-		method: 'POST',
-		credentials: 'include',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json'
-		},
-		body: body === undefined ? undefined : JSON.stringify(body)
-	});
-
-	if (!response.ok) {
-		throw new Error(`Shattak API request failed with status ${response.status}`);
-	}
-
-	return readApiData<T>(response);
-};
-
-const getJson = async <T>(path: string): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
-		method: 'GET',
-		credentials: 'include',
-		headers: {
-			Accept: 'application/json'
-		}
-	});
-
-	if (!response.ok) {
-		throw new Error(`Shattak API request failed with status ${response.status}`);
-	}
-
-	return readApiData<T>(response);
 };
 
 export const loginWithGoogleCredential = (credential: string) =>

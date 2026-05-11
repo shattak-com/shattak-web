@@ -14,6 +14,12 @@ const headerLinks = [
 		external: false
 	},
 	{
+		id: 'login',
+		label: 'Login',
+		href: '/login',
+		external: false
+	},
+	{
 		id: 'campus-ambassador',
 		label: 'Campus Ambassador Program',
 		href: 'https://forms.gle/HqTLJG6EcNzgNRcW9',

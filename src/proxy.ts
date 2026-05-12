@@ -152,7 +152,7 @@ const handleAdminRoute = async (request: NextRequest) => {
 
 		const adminSession = await getAdminSession(request);
 
-		return adminSession ? redirectTo(request, '/admin/users') : NextResponse.next();
+		return adminSession ? redirectTo(request, '/admin/courses') : NextResponse.next();
 	}
 
 	if (!hasAdminCookie) {
@@ -166,7 +166,7 @@ const handleAdminRoute = async (request: NextRequest) => {
 	}
 
 	if (pathname === '/admin') {
-		return redirectTo(request, '/admin/users');
+		return redirectTo(request, '/admin/courses');
 	}
 
 	return NextResponse.next();

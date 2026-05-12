@@ -84,6 +84,22 @@ export const postJson = async <T>(path: string, body?: unknown, init?: RequestIn
 	return readApiData<T>(response);
 };
 
+export const patchJson = async <T>(path: string, body?: unknown, init?: RequestInit): Promise<T> => {
+	const response = await fetch(getApiUrl(path), {
+		...init,
+		method: 'PATCH',
+		credentials: 'include',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			...init?.headers
+		},
+		body: body === undefined ? undefined : JSON.stringify(body)
+	});
+
+	return readApiData<T>(response);
+};
+
 export const deleteJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 	const response = await fetch(getApiUrl(path), {
 		...init,

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 const AdminPanelIndexPage = () => {
-	redirect('/admin/users');
+	redirect('/admin/courses');
 };
 
 export default AdminPanelIndexPage;

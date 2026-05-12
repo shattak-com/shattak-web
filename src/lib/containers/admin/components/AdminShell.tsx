@@ -14,6 +14,11 @@ type AdminShellProps = {
 
 const adminNavItems = [
 	{
+		id: 'courses',
+		label: 'Courses',
+		href: '/admin/courses'
+	},
+	{
 		id: 'invitations',
 		label: 'Invites',
 		href: '/admin/invitations'
@@ -38,6 +43,10 @@ export const useAdminShellUser = () => {
 };
 
 const getActiveSection = (pathname: string) => {
+	if (pathname.startsWith('/admin/courses')) {
+		return 'courses';
+	}
+
 	if (pathname.startsWith('/admin/invitations')) {
 		return 'invitations';
 	}
@@ -54,6 +63,11 @@ const AdminShell = ({ children }: AdminShellProps) => {
 	const [errorMessage, setErrorMessage] = useState('');
 	const roleLabel = useMemo(() => adminUser?.roles.join(', ') ?? '', [adminUser]);
 	const activeSection = getActiveSection(pathname);
+	const activeTitle = {
+		courses: 'Course Management',
+		invitations: 'Admin Invitations',
+		users: 'User Management'
+	}[activeSection];
 
 	useEffect(() => {
 		let isMounted = true;
@@ -204,7 +218,7 @@ const AdminShell = ({ children }: AdminShellProps) => {
 										Admin Panel
 									</Text>
 									<Text mt={1} fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" lineHeight="short">
-										{activeSection === 'users' ? 'User Management' : 'Admin Invitations'}
+										{activeTitle}
 									</Text>
 								</Box>
 								<Button asChild variant="outline" borderRadius="full" display={{ base: 'none', md: 'inline-flex' }}>

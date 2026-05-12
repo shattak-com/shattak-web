@@ -9,7 +9,6 @@ import type { ReactNode } from 'react';
 import { logout, type AuthenticatedUser } from '~/lib/api/auth';
 import { getOnboardingStatus, type OnboardingProfile } from '~/lib/api/onboarding';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
-import Header from '~/lib/components/layout/Header';
 import LearningProfileSection from '~/lib/containers/profile/components/LearningProfileSection';
 import { getProtectedUserRouteRedirectPath } from '~/lib/utils/onboarding';
 
@@ -152,12 +151,9 @@ const ProfilePage = () => {
 	}
 
 	return (
-		<>
-			<Header />
-			<Container maxW="3xl" py={{ base: 12, md: 16 }}>
-				{content}
-			</Container>
-		</>
+		<Container maxW="3xl" py={{ base: 12, md: 16 }}>
+			{content}
+		</Container>
 	);
 };
 

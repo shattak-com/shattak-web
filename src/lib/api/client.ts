@@ -83,3 +83,17 @@ export const postJson = async <T>(path: string, body?: unknown, init?: RequestIn
 
 	return readApiData<T>(response);
 };
+
+export const deleteJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+	const response = await fetch(getApiUrl(path), {
+		...init,
+		method: 'DELETE',
+		credentials: 'include',
+		headers: {
+			Accept: 'application/json',
+			...init?.headers
+		}
+	});
+
+	return readApiData<T>(response);
+};

@@ -4,7 +4,7 @@ import { Box, Container, HStack, Stack, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getCurrentAdmin, getCurrentUser } from '~/lib/api/auth';
+import { getCurrentUser } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
 import Header from '~/lib/components/layout/Header';
@@ -31,14 +31,6 @@ const LoginPage = () => {
 			try {
 				await getCurrentUser();
 				await redirectToOnboarding();
-				return;
-			} catch {
-				// Continue to admin-session check.
-			}
-			try {
-				await getCurrentAdmin();
-				router.replace('/admin');
-				router.refresh();
 			} catch {
 				if (isMounted) setIsCheckingSession(false);
 			}

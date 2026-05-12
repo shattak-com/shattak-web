@@ -33,6 +33,7 @@ const getFirstName = (user: AuthenticatedUser) => {
 
 const Header = () => {
 	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+	const [isCheckingUser, setIsCheckingUser] = useState(true);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -47,6 +48,11 @@ const Header = () => {
 				if (isMounted) {
 					setCurrentUser(null);
 				}
+			})
+			.finally(() => {
+				if (isMounted) {
+					setIsCheckingUser(false);
+				}
 			});
 
 		return () => {
@@ -55,6 +61,71 @@ const Header = () => {
 	}, []);
 
 	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
+	const authAction = (() => {
+		if (isCheckingUser) {
+			return (
+				<Box
+					w="104px"
+					h="40px"
+					borderRadius="full"
+					bg="bg.card"
+					border="1px solid"
+					borderColor="border.default"
+					aria-hidden="true"
+				/>
+			);
+		}
+
+		if (currentUser) {
+			return (
+				<Link href="/profile" aria-label="Open profile">
+					<HStack
+						bg="primary"
+						color="text.inverse"
+						borderRadius="full"
+						pl={4}
+						pr={2}
+						py={1.5}
+						gap={3}
+						boxShadow="soft"
+						maxW="180px"
+						_hover={{ bg: 'primaryHover' }}
+					>
+						<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
+							{firstName}
+						</Text>
+						<UserAvatar user={currentUser} label={firstName} />
+					</HStack>
+				</Link>
+			);
+		}
+
+		return (
+			<Button
+				asChild
+				bg="primary"
+				color="text.inverse"
+				_hover={{ bg: 'primaryHover' }}
+				borderRadius="full"
+				px={7}
+				boxShadow="soft"
+			>
+				<Link
+					href="/login"
+					onClick={() =>
+						trackCtaClicked({
+							label: 'Login',
+							location: 'header_nav',
+							destination: '/login',
+							context: 'login'
+						})
+					}
+				>
+					Login
+				</Link>
+			</Button>
+		);
+	})();
 
 	return (
 		<Box
@@ -127,51 +198,7 @@ const Header = () => {
 								Become an Instructor
 							</Link>
 						</Button>
-						{currentUser ? (
-							<Link href="/profile" aria-label="Open profile">
-								<HStack
-									bg="primary"
-									color="text.inverse"
-									borderRadius="full"
-									pl={4}
-									pr={2}
-									py={1.5}
-									gap={3}
-									boxShadow="soft"
-									maxW="180px"
-									_hover={{ bg: 'primaryHover' }}
-								>
-									<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
-										{firstName}
-									</Text>
-									<UserAvatar user={currentUser} label={firstName} />
-								</HStack>
-							</Link>
-						) : (
-							<Button
-								asChild
-								bg="primary"
-								color="text.inverse"
-								_hover={{ bg: 'primaryHover' }}
-								borderRadius="full"
-								px={7}
-								boxShadow="soft"
-							>
-								<Link
-									href="/login"
-									onClick={() =>
-										trackCtaClicked({
-											label: 'Login',
-											location: 'header_nav',
-											destination: '/login',
-											context: 'login'
-										})
-									}
-								>
-									Login
-								</Link>
-							</Button>
-						)}
+						{authAction}
 						<ThemeToggle />
 					</HStack>
 				</Flex>

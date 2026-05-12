@@ -18,7 +18,7 @@ const AdminLoginPage = () => {
 		const checkAdminSession = async () => {
 			try {
 				await getCurrentAdmin();
-				router.replace('/admin');
+				router.replace('/admin/courses/');
 				router.refresh();
 			} catch {
 				if (isMounted) {
@@ -39,7 +39,7 @@ const AdminLoginPage = () => {
 	}, [router]);
 
 	const handleSuccess = useCallback(() => {
-		router.push('/admin');
+		router.push('/admin/courses/');
 		router.refresh();
 	}, [router]);
 

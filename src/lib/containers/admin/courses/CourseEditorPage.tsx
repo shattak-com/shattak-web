@@ -26,6 +26,7 @@ import {
 	type AdminCourseMode,
 	type AdminCourseStatus
 } from '~/lib/api/admin-courses';
+import ImageUrlUploadField from '~/lib/components/forms/ImageUrlUploadField';
 import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
 import { courseCategories } from '~/lib/constants/course-categories';
 
@@ -537,6 +538,34 @@ const FormField = ({
 	);
 };
 
+const ImageField = ({
+	label,
+	name,
+	control,
+	errors,
+	placeholder
+}: {
+	label: string;
+	name: Path<CourseEditorFormValues>;
+	control: Control<CourseEditorFormValues>;
+	errors: FieldErrors<CourseEditorFormValues>;
+	placeholder?: string;
+}) => (
+	<Controller
+		control={control}
+		name={name}
+		render={({ field }) => (
+			<ImageUrlUploadField
+				label={label}
+				value={typeof field.value === 'string' ? field.value : ''}
+				onChange={field.onChange}
+				error={getFieldError(errors, name)}
+				placeholder={placeholder}
+			/>
+		)}
+	/>
+);
+
 const TextareaField = ({
 	label,
 	name,
@@ -818,7 +847,7 @@ const ToolsEditor = ({ control, register, errors }: CourseEditorSectionProps) =>
 				<EditorCard key={field.id} title={`Tool ${index + 1}`} onRemove={() => remove(index)}>
 					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
 						<FormField label="Name" name={`tools.${index}.name`} register={register} errors={errors} />
-						<FormField label="Image URL" name={`tools.${index}.image`} register={register} errors={errors} />
+						<ImageField label="Image" name={`tools.${index}.image`} control={control} errors={errors} />
 					</SimpleGrid>
 				</EditorCard>
 			))}
@@ -826,12 +855,12 @@ const ToolsEditor = ({ control, register, errors }: CourseEditorSectionProps) =>
 	);
 };
 
-const CompletionEditor = ({ register, errors }: Pick<CourseEditorSectionProps, 'register' | 'errors'>) => (
+const CompletionEditor = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={3}>
 		<Text fontSize="sm" fontWeight="semibold">
 			Completion
 		</Text>
-		<FormField label="Certificate image URL" name="completionCertificateImage" register={register} errors={errors} />
+		<ImageField label="Certificate image" name="completionCertificateImage" control={control} errors={errors} />
 		<TextareaField
 			label="Completion benefits"
 			name="completionBenefitsText"
@@ -865,7 +894,7 @@ const GalleryEditor = ({ control, register, errors }: CourseEditorSectionProps) 
 			{fields.map((field, index) => (
 				<EditorCard key={field.id} title={`Gallery item ${index + 1}`} onRemove={() => remove(index)}>
 					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
-						<FormField label="Image URL" name={`projectGallery.${index}.image`} register={register} errors={errors} />
+						<ImageField label="Image" name={`projectGallery.${index}.image`} control={control} errors={errors} />
 						<FormField label="Alt text" name={`projectGallery.${index}.alt`} register={register} errors={errors} />
 					</SimpleGrid>
 				</EditorCard>
@@ -900,10 +929,10 @@ const ProjectsEditor = ({ control, register, errors }: CourseEditorSectionProps)
 					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
 						<FormField label="Title" name={`projects.${index}.title`} register={register} errors={errors} />
 						<FormField label="Author" name={`projects.${index}.author`} register={register} errors={errors} />
-						<FormField
-							label="Preview image URL"
+						<ImageField
+							label="Preview image"
 							name={`projects.${index}.previewImage`}
-							register={register}
+							control={control}
 							errors={errors}
 						/>
 						<FormField label="Live URL" name={`projects.${index}.liveUrl`} register={register} errors={errors} />
@@ -947,7 +976,7 @@ const InstructorsEditor = ({ control, register, errors }: CourseEditorSectionPro
 					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
 						<FormField label="Name" name={`instructors.${index}.name`} register={register} errors={errors} />
 						<FormField label="Role" name={`instructors.${index}.role`} register={register} errors={errors} />
-						<FormField label="Photo URL" name={`instructors.${index}.photo`} register={register} errors={errors} />
+						<ImageField label="Photo" name={`instructors.${index}.photo`} control={control} errors={errors} />
 						<FormField
 							label="LinkedIn URL"
 							name={`instructors.${index}.linkedInUrl`}
@@ -1046,7 +1075,7 @@ const ReviewsEditor = ({ control, register, errors }: CourseEditorSectionProps) 
 							errors={errors}
 							type="number"
 						/>
-						<FormField label="Avatar URL" name={`reviews.${index}.avatar`} register={register} errors={errors} />
+						<ImageField label="Avatar" name={`reviews.${index}.avatar`} control={control} errors={errors} />
 					</SimpleGrid>
 					<TextareaField
 						label="Review body"
@@ -1139,7 +1168,7 @@ const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => 
 	</Stack>
 );
 
-const MediaStep = ({ register, errors }: Pick<CourseEditorSectionProps, 'register' | 'errors'>) => (
+const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={4}>
 		<SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
 			<FormField label="Price" name="price" register={register} errors={errors} type="number" />
@@ -1150,9 +1179,9 @@ const MediaStep = ({ register, errors }: Pick<CourseEditorSectionProps, 'registe
 			<FormField label="Enrollment count" name="enrollmentCount" register={register} errors={errors} type="number" />
 		</SimpleGrid>
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-			<FormField label="Thumbnail image URL" name="thumbnailImage" register={register} errors={errors} />
-			<FormField label="Promo image URL" name="promoImage" register={register} errors={errors} />
-			<FormField label="Promo brand image URL" name="promoImageBrand" register={register} errors={errors} />
+			<ImageField label="Thumbnail image" name="thumbnailImage" control={control} errors={errors} />
+			<ImageField label="Promo image" name="promoImage" control={control} errors={errors} />
+			<ImageField label="Promo brand image" name="promoImageBrand" control={control} errors={errors} />
 			<FormField label="Payment link" name="paymentLink" register={register} errors={errors} />
 			<FormField label="Live URL" name="liveUrl" register={register} errors={errors} />
 		</SimpleGrid>
@@ -1169,7 +1198,7 @@ const ValueStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 			minH="100px"
 			placeholder="One requirement per line"
 		/>
-		<CompletionEditor register={register} errors={errors} />
+		<CompletionEditor control={control} register={register} errors={errors} />
 		<HighlightsEditor control={control} register={register} errors={errors} />
 		<ScheduleEditor control={control} register={register} errors={errors} />
 		<OutcomesEditor control={control} register={register} errors={errors} />
@@ -1262,7 +1291,7 @@ const CourseEditorStepFields = ({
 		case 'basics':
 			return <BasicsStep control={control} register={register} errors={errors} />;
 		case 'media':
-			return <MediaStep register={register} errors={errors} />;
+			return <MediaStep control={control} register={register} errors={errors} />;
 		case 'value':
 			return <ValueStep control={control} register={register} errors={errors} />;
 		case 'proof':

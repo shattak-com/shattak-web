@@ -84,6 +84,21 @@ export const postJson = async <T>(path: string, body?: unknown, init?: RequestIn
 	return readApiData<T>(response);
 };
 
+export const postFormData = async <T>(path: string, body: FormData, init?: RequestInit): Promise<T> => {
+	const response = await fetch(getApiUrl(path), {
+		...init,
+		method: 'POST',
+		credentials: 'include',
+		headers: {
+			Accept: 'application/json',
+			...init?.headers
+		},
+		body
+	});
+
+	return readApiData<T>(response);
+};
+
 export const patchJson = async <T>(path: string, body?: unknown, init?: RequestInit): Promise<T> => {
 	const response = await fetch(getApiUrl(path), {
 		...init,

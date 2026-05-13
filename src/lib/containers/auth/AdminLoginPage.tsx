@@ -7,10 +7,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { getCurrentAdmin } from '~/lib/api/auth';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
+import { AuthPageSkeleton, BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 
 const AdminLoginPage = () => {
 	const router = useRouter();
 	const [isCheckingSession, setIsCheckingSession] = useState(true);
+	const [loginProgressMessage, setLoginProgressMessage] = useState('');
 
 	useEffect(() => {
 		let isMounted = true;
@@ -39,14 +41,18 @@ const AdminLoginPage = () => {
 	}, [router]);
 
 	const handleSuccess = useCallback(() => {
+		setLoginProgressMessage('Opening the admin workspace...');
 		router.push('/admin/courses/');
 		router.refresh();
 	}, [router]);
 
 	return (
 		<Container maxW="5xl" py={{ base: 10, md: 16 }}>
+			{loginProgressMessage ? (
+				<BlockingProgressOverlay title="Admin login successful" message={loginProgressMessage} />
+			) : null}
 			{isCheckingSession ? (
-				<Text color="text.muted">Checking admin session...</Text>
+				<AuthPageSkeleton />
 			) : (
 				<Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '0.9fr 1.1fr' }} gap={{ base: 5, lg: 6 }}>
 					<Box border="1px solid" borderColor="border.default" borderRadius="2xl" bg="bg.card" p={{ base: 6, md: 8 }}>
@@ -62,7 +68,12 @@ const AdminLoginPage = () => {
 									Use an invited admin Google account. Normal student accounts cannot access the admin panel.
 								</Text>
 							</Box>
-							<GoogleLoginButton context="admin" onSuccess={handleSuccess} />
+							<GoogleLoginButton
+								context="admin"
+								onAuthStart={() => setLoginProgressMessage('Verifying your admin access...')}
+								onAuthError={() => setLoginProgressMessage('')}
+								onSuccess={handleSuccess}
+							/>
 							<HStack gap={3} flexWrap="wrap">
 								<Button asChild variant="outline" borderRadius="full">
 									<Link href="/">Back to site</Link>

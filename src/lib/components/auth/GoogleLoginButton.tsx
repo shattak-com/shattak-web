@@ -6,21 +6,33 @@ import { useEffect, useRef, useState } from 'react';
 
 import { loginAdminWithGoogleCredential, loginWithGoogleCredential } from '~/lib/api/auth';
 import type { AuthenticatedUser } from '~/lib/api/auth';
+import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 import type { GoogleCredentialResponse } from '~/types/google-identity';
 
 type GoogleLoginButtonProps = {
 	context: 'user' | 'admin';
+	onAuthError?: () => void;
+	onAuthStart?: () => void;
 	onSuccess?: (user: AuthenticatedUser) => void | Promise<void>;
 };
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
-const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
+const getButtonOpacity = (scriptReady: boolean, isSubmitting: boolean) => {
+	if (!scriptReady) {
+		return 0;
+	}
+
+	return isSubmitting ? 0.28 : 1;
+};
+
+const GoogleLoginButton = ({ context, onAuthError, onAuthStart, onSuccess }: GoogleLoginButtonProps) => {
 	const buttonRef = useRef<HTMLDivElement | null>(null);
 	const renderedRef = useRef(false);
 	const [scriptReady, setScriptReady] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
+	const statusLabel = context === 'admin' ? 'Verifying admin access...' : 'Signing you in...';
 
 	useEffect(() => {
 		if (!googleClientId || !scriptReady || renderedRef.current || !buttonRef.current || !window.google?.accounts.id) {
@@ -36,6 +48,7 @@ const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
 
 				setIsSubmitting(true);
 				setErrorMessage('');
+				onAuthStart?.();
 
 				try {
 					const result =
@@ -49,6 +62,7 @@ const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
 							? 'This Google account does not have admin access.'
 							: 'Google login failed. Please try again.'
 					);
+					onAuthError?.();
 				} finally {
 					setIsSubmitting(false);
 				}
@@ -71,7 +85,7 @@ const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
 		});
 
 		renderedRef.current = true;
-	}, [context, onSuccess, scriptReady]);
+	}, [context, onAuthError, onAuthStart, onSuccess, scriptReady, statusLabel]);
 
 	if (!googleClientId) {
 		return (
@@ -93,11 +107,41 @@ const GoogleLoginButton = ({ context, onSuccess }: GoogleLoginButtonProps) => {
 				onLoad={() => setScriptReady(true)}
 				onReady={() => setScriptReady(true)}
 			/>
-			<Box ref={buttonRef} minH="44px" display="flex" alignItems="center" />
+			<Box position="relative" w="320px" maxW="100%" minH="44px">
+				<Box
+					ref={buttonRef}
+					minH="44px"
+					display="flex"
+					alignItems="center"
+					opacity={getButtonOpacity(scriptReady, isSubmitting)}
+					pointerEvents={isSubmitting ? 'none' : 'auto'}
+				/>
+				{scriptReady ? null : <SkeletonBlock position="absolute" inset={0} borderRadius="full" />}
+				{isSubmitting ? (
+					<Box
+						position="absolute"
+						inset={0}
+						border="1px solid"
+						borderColor="border.default"
+						borderRadius="full"
+						bg="bg.card"
+						display="flex"
+						alignItems="center"
+						justifyContent="center"
+						gap={2}
+						px={4}
+					>
+						<Spinner size="sm" color="primary" />
+						<Text fontSize="sm" fontWeight="semibold">
+							{statusLabel}
+						</Text>
+					</Box>
+				) : null}
+			</Box>
 			{isSubmitting ? (
 				<Box display="flex" alignItems="center" gap={2} mt={3} color="text.muted">
 					<Spinner size="sm" />
-					<Text fontSize="sm">Signing you in...</Text>
+					<Text fontSize="sm">Please wait while we finish securely with Google.</Text>
 				</Box>
 			) : null}
 			{errorMessage ? (

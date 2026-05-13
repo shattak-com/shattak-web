@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { getCurrentUser, loginWithGoogleCredential } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
+import { BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 import { getOnboardingRedirectPath } from '~/lib/utils/onboarding';
 import type { GoogleCredentialResponse } from '~/types/google-identity';
 
@@ -23,6 +24,13 @@ const GoogleOneTapProvider = () => {
 	const router = useRouter();
 	const initializedRef = useRef(false);
 	const [scriptReady, setScriptReady] = useState(false);
+	const [loginProgressMessage, setLoginProgressMessage] = useState('');
+
+	useEffect(() => {
+		if (loginProgressMessage && shouldSuppressOneTap(pathname)) {
+			setLoginProgressMessage('');
+		}
+	}, [loginProgressMessage, pathname]);
 
 	useEffect(() => {
 		if (!scriptReady || shouldSuppressOneTap(pathname) || initializedRef.current || !window.google?.accounts.id) {
@@ -49,12 +57,16 @@ const GoogleOneTapProvider = () => {
 					}
 
 					try {
+						setLoginProgressMessage('Signing in with Google...');
 						await loginWithGoogleCredential(response.credential);
+						setLoginProgressMessage('Preparing your learning profile...');
 						const onboardingStatus = await getOnboardingStatus();
+						setLoginProgressMessage('Taking you to the next step...');
 						window.google?.accounts.id.cancel();
 						router.push(getOnboardingRedirectPath(onboardingStatus.profile));
 						router.refresh();
 					} catch {
+						setLoginProgressMessage('');
 						window.google?.accounts.id.disableAutoSelect();
 					}
 				},
@@ -81,12 +93,17 @@ const GoogleOneTapProvider = () => {
 	}
 
 	return (
-		<Script
-			src="https://accounts.google.com/gsi/client"
-			strategy="afterInteractive"
-			onLoad={() => setScriptReady(true)}
-			onReady={() => setScriptReady(true)}
-		/>
+		<>
+			<Script
+				src="https://accounts.google.com/gsi/client"
+				strategy="afterInteractive"
+				onLoad={() => setScriptReady(true)}
+				onReady={() => setScriptReady(true)}
+			/>
+			{loginProgressMessage ? (
+				<BlockingProgressOverlay title="Login successful" message={loginProgressMessage} />
+			) : null}
+		</>
 	);
 };
 

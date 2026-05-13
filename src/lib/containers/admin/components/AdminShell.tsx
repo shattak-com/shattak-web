@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 
 import { getCurrentAdmin, logoutAdmin, type AuthenticatedUser } from '~/lib/api/auth';
+import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 
 type AdminShellProps = {
 	children: ReactNode;
@@ -112,8 +113,26 @@ const AdminShell = ({ children }: AdminShellProps) => {
 
 	if (isLoading) {
 		return (
-			<Container maxW="6xl" py={{ base: 12, md: 16 }}>
-				<Text color="text.muted">Loading admin session...</Text>
+			<Container maxW="none" px={{ base: 3, md: 5 }} py={{ base: 3, md: 4 }}>
+				<Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '220px minmax(0, 1fr)' }} gap={{ base: 4, lg: 5 }}>
+					<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={3}>
+						<Stack gap={4}>
+							<SkeletonBlock h="28px" w="148px" />
+							<SkeletonBlock h="14px" w="180px" />
+							<SkeletonBlock h="14px" w="132px" />
+							<Box h="1px" bg="border.default" />
+							<SkeletonBlock h="40px" w="100%" borderRadius="full" />
+							<SkeletonBlock h="40px" w="100%" borderRadius="full" />
+							<SkeletonBlock h="40px" w="100%" borderRadius="full" />
+						</Stack>
+					</Box>
+					<Stack gap={4}>
+						<SkeletonBlock h="18px" w="112px" />
+						<SkeletonBlock h="38px" w="280px" maxW="100%" />
+						<SkeletonBlock h="184px" w="100%" borderRadius="xl" />
+						<SkeletonBlock h="420px" w="100%" borderRadius="xl" />
+					</Stack>
+				</Box>
 			</Container>
 		);
 	}

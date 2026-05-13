@@ -9,7 +9,9 @@ export const RootProviders = ({ children }: { children: React.ReactNode }) => (
 	<>
 		<MetaPixelProvider />
 		<MixpanelProvider />
-		<GoogleOneTapProvider />
-		<ChakraProvider>{children}</ChakraProvider>
+		<ChakraProvider>
+			<GoogleOneTapProvider />
+			{children}
+		</ChakraProvider>
 	</>
 );

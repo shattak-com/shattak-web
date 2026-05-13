@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { getOnboardingStatus, skipMobileNumber, submitMobileNumber } from '~/lib/api/onboarding';
+import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
 import OnboardingFrame from '~/lib/containers/onboarding/components/OnboardingFrame';
 import { getPostMobileSkipPath, isEducationProfileComplete } from '~/lib/utils/onboarding';
 
@@ -105,68 +106,76 @@ const MobileNumberPage = () => {
 	}, [router]);
 
 	return (
-		<OnboardingFrame
-			eyebrow="Step 1 of 2"
-			title="Add your mobile number"
-			description="This helps us keep your learning profile complete. You can skip this during initial setup until the configured limit is reached."
-		>
-			{isLoading ? (
-				<Text color="text.muted">Loading onboarding...</Text>
-			) : (
-				<form onSubmit={handleSubmit}>
-					<Stack gap={5}>
-						<Stack gap={2}>
-							<Text fontSize="sm" color="text.muted">
-								Mobile number
+		<>
+			{isSubmitting ? (
+				<BlockingProgressOverlay
+					title="Saving your profile"
+					message="Please wait while we update your onboarding step."
+				/>
+			) : null}
+			<OnboardingFrame
+				eyebrow="Step 1 of 2"
+				title="Add your mobile number"
+				description="This helps us keep your learning profile complete. You can skip this during initial setup until the configured limit is reached."
+			>
+				{isLoading ? (
+					<OnboardingStepSkeleton />
+				) : (
+					<form onSubmit={handleSubmit}>
+						<Stack gap={5}>
+							<Stack gap={2}>
+								<Text fontSize="sm" color="text.muted">
+									Mobile number
+								</Text>
+								<HStack gap={3}>
+									<Input value="+91" readOnly w="86px" aria-label="Country code" />
+									<Input
+										type="tel"
+										value={mobileNumber}
+										onChange={event => setMobileNumber(event.target.value)}
+										placeholder="9876543210"
+										autoComplete="tel"
+										inputMode="tel"
+									/>
+								</HStack>
+							</Stack>
+
+							<Text fontSize="sm" color={canSkipMobile ? 'text.muted' : 'red.500'}>
+								{canSkipMobile ? skipText : 'A valid mobile number is required to continue.'}
 							</Text>
-							<HStack gap={3}>
-								<Input value="+91" readOnly w="86px" aria-label="Country code" />
-								<Input
-									type="tel"
-									value={mobileNumber}
-									onChange={event => setMobileNumber(event.target.value)}
-									placeholder="9876543210"
-									autoComplete="tel"
-									inputMode="tel"
-								/>
+
+							{errorMessage ? (
+								<Alert.Root status="error" borderRadius="md">
+									<Alert.Indicator />
+									<Alert.Content>
+										<Alert.Title>{errorMessage}</Alert.Title>
+									</Alert.Content>
+								</Alert.Root>
+							) : null}
+
+							<HStack gap={3} flexWrap="wrap">
+								<Button type="submit" bg="primary" color="text.inverse" borderRadius="full" disabled={isSubmitting}>
+									{isSubmitting ? 'Saving...' : 'Continue'}
+								</Button>
+								{canSkipMobile ? (
+									<Button
+										type="button"
+										variant="outline"
+										borderRadius="full"
+										disabled={isSubmitting}
+										onClick={() => {
+											handleSkip().catch(() => undefined);
+										}}
+									>
+										Skip for now
+									</Button>
+								) : null}
 							</HStack>
 						</Stack>
-
-						<Text fontSize="sm" color={canSkipMobile ? 'text.muted' : 'red.500'}>
-							{canSkipMobile ? skipText : 'A valid mobile number is required to continue.'}
-						</Text>
-
-						{errorMessage ? (
-							<Alert.Root status="error" borderRadius="md">
-								<Alert.Indicator />
-								<Alert.Content>
-									<Alert.Title>{errorMessage}</Alert.Title>
-								</Alert.Content>
-							</Alert.Root>
-						) : null}
-
-						<HStack gap={3} flexWrap="wrap">
-							<Button type="submit" bg="primary" color="text.inverse" borderRadius="full" disabled={isSubmitting}>
-								{isSubmitting ? 'Saving...' : 'Continue'}
-							</Button>
-							{canSkipMobile ? (
-								<Button
-									type="button"
-									variant="outline"
-									borderRadius="full"
-									disabled={isSubmitting}
-									onClick={() => {
-										handleSkip().catch(() => undefined);
-									}}
-								>
-									Skip for now
-								</Button>
-							) : null}
-						</HStack>
-					</Stack>
-				</form>
-			)}
-		</OnboardingFrame>
+					</form>
+				)}
+			</OnboardingFrame>
+		</>
 	);
 };
 

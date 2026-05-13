@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import { logout, type AuthenticatedUser } from '~/lib/api/auth';
 import { getOnboardingStatus, type OnboardingProfile } from '~/lib/api/onboarding';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
+import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import LearningProfileSection from '~/lib/containers/profile/components/LearningProfileSection';
 import { getProtectedUserRouteRedirectPath } from '~/lib/utils/onboarding';
 
@@ -73,11 +74,13 @@ const ProfilePage = () => {
 		}
 	}, [router]);
 
+	if (isLoading) {
+		return <ProfilePageSkeleton />;
+	}
+
 	let content: ReactNode;
 
-	if (isLoading) {
-		content = <Text color="text.muted">Loading profile...</Text>;
-	} else if (currentUser) {
+	if (currentUser) {
 		content = (
 			<Stack gap={8}>
 				<HStack gap={5} align="center">

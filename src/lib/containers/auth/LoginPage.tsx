@@ -7,17 +7,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { getCurrentUser } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
+import { AuthPageSkeleton, BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 import Header from '~/lib/components/layout/Header';
 import { getOnboardingRedirectPath } from '~/lib/utils/onboarding';
 
 const COURSES = [
-	{ emoji: '📘', subject: 'Mathematics', chapter: 'Ch. 4 · Calculus', pct: 72 },
-	{ emoji: '🧪', subject: 'Physics', chapter: 'Ch. 2 · Mechanics', pct: 45 }
+	{ marker: 'M', subject: 'Mathematics', chapter: 'Ch. 4 - Calculus', pct: 72 },
+	{ marker: 'P', subject: 'Physics', chapter: 'Ch. 2 - Mechanics', pct: 45 }
 ];
 
 const LoginPage = () => {
 	const router = useRouter();
 	const [isCheckingSession, setIsCheckingSession] = useState(true);
+	const [loginProgressMessage, setLoginProgressMessage] = useState('');
 
 	const redirectToOnboarding = useCallback(async () => {
 		const onboardingStatus = await getOnboardingStatus();
@@ -27,24 +29,33 @@ const LoginPage = () => {
 
 	useEffect(() => {
 		let isMounted = true;
+
 		const checkSession = async () => {
 			try {
 				await getCurrentUser();
 				await redirectToOnboarding();
 			} catch {
-				if (isMounted) setIsCheckingSession(false);
+				if (isMounted) {
+					setIsCheckingSession(false);
+				}
 			}
 		};
+
 		checkSession().catch(() => {
-			if (isMounted) setIsCheckingSession(false);
+			if (isMounted) {
+				setIsCheckingSession(false);
+			}
 		});
+
 		return () => {
 			isMounted = false;
 		};
-	}, [redirectToOnboarding, router]);
+	}, [redirectToOnboarding]);
 
 	const handleSuccess = useCallback(async () => {
+		setLoginProgressMessage('Preparing your learning profile...');
 		const onboardingStatus = await getOnboardingStatus();
+		setLoginProgressMessage('Taking you to the next step...');
 		router.push(getOnboardingRedirectPath(onboardingStatus.profile));
 		router.refresh();
 	}, [router]);
@@ -52,9 +63,12 @@ const LoginPage = () => {
 	return (
 		<>
 			<Header />
+			{loginProgressMessage ? (
+				<BlockingProgressOverlay title="Login successful" message={loginProgressMessage} />
+			) : null}
 			<Container maxW="6xl" py={{ base: 10, md: 14 }}>
 				{isCheckingSession ? (
-					<Text color="text.muted">Checking session...</Text>
+					<AuthPageSkeleton />
 				) : (
 					<Box
 						display="grid"
@@ -62,7 +76,6 @@ const LoginPage = () => {
 						gap={{ base: 4, lg: 4 }}
 						alignItems="stretch"
 					>
-						{/* ── Left: Login ── */}
 						<Box
 							border="1px solid"
 							borderColor="border.default"
@@ -71,9 +84,7 @@ const LoginPage = () => {
 							p={{ base: 6, md: 10 }}
 							display="flex"
 							flexDirection="column"
-							gap={0}
 						>
-							{/* Pill tag */}
 							<HStack
 								display="inline-flex"
 								gap={2}
@@ -96,7 +107,7 @@ const LoginPage = () => {
 								as="h1"
 								fontSize={{ base: '3xl', md: '4.5xl' }}
 								lineHeight="1.1"
-								letterSpacing="-0.03em"
+								letterSpacing="0"
 								fontWeight="bold"
 							>
 								Welcome
@@ -108,7 +119,14 @@ const LoginPage = () => {
 							</Text>
 
 							<Box h="1px" bg="border.default" mb={7} />
-							<GoogleLoginButton context="user" onSuccess={handleSuccess} />
+							<Box alignSelf="center" w="320px" maxW="100%">
+								<GoogleLoginButton
+									context="user"
+									onAuthStart={() => setLoginProgressMessage('Signing in with Google...')}
+									onAuthError={() => setLoginProgressMessage('')}
+									onSuccess={handleSuccess}
+								/>
+							</Box>
 
 							<Text mt={4} fontSize="xs" color="text.subtle" textAlign="center" lineHeight="tall">
 								By signing in you agree to our{' '}
@@ -123,7 +141,6 @@ const LoginPage = () => {
 							</Text>
 						</Box>
 
-						{/* ── Right: Dashboard preview ── */}
 						<Box border="1px solid" borderColor="border.default" borderRadius="2xl" bg="bg.subtle" overflow="hidden">
 							<Stack gap={4} p={{ base: 5, md: 7 }} h="full">
 								<Text
@@ -136,7 +153,6 @@ const LoginPage = () => {
 									Your dashboard
 								</Text>
 
-								{/* Hero metric */}
 								<Box bg="primary" borderRadius="xl" p={5} position="relative" overflow="hidden">
 									<Box
 										position="absolute"
@@ -164,7 +180,6 @@ const LoginPage = () => {
 									</Box>
 								</Box>
 
-								{/* Stats */}
 								<HStack gap={3}>
 									{[
 										{ n: '12', l: 'Courses enrolled', pct: 75, color: 'primary' },
@@ -192,7 +207,6 @@ const LoginPage = () => {
 									))}
 								</HStack>
 
-								{/* Course rows */}
 								<Text
 									fontSize="xs"
 									fontWeight="medium"
@@ -203,7 +217,7 @@ const LoginPage = () => {
 									Continue learning
 								</Text>
 								<Stack gap={2}>
-									{COURSES.map(({ emoji, subject, chapter, pct }) => (
+									{COURSES.map(({ marker, subject, chapter, pct }) => (
 										<HStack
 											key={subject}
 											bg="bg.card"
@@ -222,9 +236,10 @@ const LoginPage = () => {
 												alignItems="center"
 												justifyContent="center"
 												fontSize="sm"
+												fontWeight="bold"
 												flexShrink={0}
 											>
-												{emoji}
+												{marker}
 											</Box>
 											<Box flex="1">
 												<Text fontSize="xs" fontWeight="semibold">
@@ -241,7 +256,6 @@ const LoginPage = () => {
 									))}
 								</Stack>
 
-								{/* Footer nav */}
 								<HStack mt="auto" pt={2} justify="space-between">
 									<HStack gap={1.5}>
 										<Box boxSize="6px" borderRadius="full" bg="primary" />

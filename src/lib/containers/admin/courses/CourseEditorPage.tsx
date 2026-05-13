@@ -30,6 +30,7 @@ import {
 import ImageUrlUploadField from '~/lib/components/forms/ImageUrlUploadField';
 import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
 import { courseCategories } from '~/lib/constants/course-categories';
+import CourseCurriculumEditor from '~/lib/containers/admin/courses/CourseCurriculumEditor';
 
 type CourseEditorPageProps = {
 	courseId?: string;
@@ -212,24 +213,6 @@ const courseEditorSchema = z.object({
 			answer: z.string().max(1200)
 		})
 	),
-	prerequisites: z.array(
-		z.object({
-			sectionName: z.string().max(180),
-			subsectionsText: z.string()
-		})
-	),
-	liveSessions: z.array(
-		z.object({
-			sectionName: z.string().max(180),
-			subsectionsText: z.string()
-		})
-	),
-	postSessionMaterials: z.array(
-		z.object({
-			sectionName: z.string().max(180),
-			subsectionsText: z.string()
-		})
-	),
 	tools: z.array(
 		z.object({
 			id: z.string(),
@@ -320,9 +303,6 @@ const defaultFormValues: CourseEditorFormValues = {
 	audience: [],
 	projects: [],
 	faqs: [],
-	prerequisites: [],
-	liveSessions: [],
-	postSessionMaterials: [],
 	tools: [],
 	instructors: [],
 	reviews: []
@@ -466,19 +446,6 @@ const getString = (value: unknown) => (typeof value === 'string' ? value : '');
 
 const getNumber = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 
-const sectionItemsToText = (items: Array<{ title: string; time: string }>) =>
-	items.map(item => (item.time ? [item.title, item.time].join(' | ') : item.title)).join('\n');
-
-const textToSectionItems = (value: string) =>
-	textLinesToArray(value).map(line => {
-		const [title = '', time = ''] = line.split('|').map(part => part.trim());
-
-		return {
-			title,
-			time
-		};
-	});
-
 const getCourseCategories = (course: AdminCourse) => {
 	if (course.categories.length) {
 		return course.categories;
@@ -549,18 +516,6 @@ const courseToFormValues = (course: AdminCourse): CourseEditorFormValues => ({
 		id: item.id || createRowId('faq'),
 		question: item.question,
 		answer: item.answer
-	})),
-	prerequisites: course.prerequisites.map(item => ({
-		sectionName: item.sectionName,
-		subsectionsText: sectionItemsToText(item.subsections)
-	})),
-	liveSessions: course.liveSessions.map(item => ({
-		sectionName: item.sectionName,
-		subsectionsText: sectionItemsToText(item.subsections)
-	})),
-	postSessionMaterials: course.postSessionMaterials.map(item => ({
-		sectionName: item.sectionName,
-		subsectionsText: sectionItemsToText(item.subsections)
 	})),
 	tools: course.tools.map(item => ({
 		id: item.id || createRowId('tool'),
@@ -669,15 +624,6 @@ const formValuesToPayload = (values: CourseEditorFormValues): AdminCourseInput =
 		faqs: values.faqs
 			.filter(item => hasAnyValue([item.question, item.answer]))
 			.map(item => ({ id: item.id || createRowId('faq'), question: item.question.trim(), answer: item.answer.trim() })),
-		prerequisites: values.prerequisites
-			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
-		liveSessions: values.liveSessions
-			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
-		postSessionMaterials: values.postSessionMaterials
-			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
 		tools: values.tools
 			.filter(item => hasAnyValue([item.name, item.image]))
 			.map(item => ({ id: item.id || createRowId('tool'), name: item.name.trim(), image: item.image.trim() })),
@@ -1357,51 +1303,6 @@ const ReviewsEditor = ({ control, register, errors }: CourseEditorSectionProps) 
 	);
 };
 
-const SessionSectionsEditor = ({
-	title,
-	name,
-	control,
-	register,
-	errors
-}: CourseEditorSectionProps & {
-	title: string;
-	name: 'prerequisites' | 'liveSessions' | 'postSessionMaterials';
-}) => {
-	const { fields, append, remove } = useFieldArray({ control, name });
-
-	return (
-		<Stack gap={3}>
-			<EditorSectionHeader
-				title={title}
-				action={
-					<Button
-						size="sm"
-						variant="outline"
-						borderRadius="full"
-						onClick={() => append({ sectionName: '', subsectionsText: '' })}
-					>
-						Add section
-					</Button>
-				}
-			/>
-			{fields.length ? null : <EmptyEditorState label={`${title} sections`} />}
-			{fields.map((field, index) => (
-				<EditorCard key={field.id} title={`${title} ${index + 1}`} onRemove={() => remove(index)}>
-					<FormField label="Section name" name={`${name}.${index}.sectionName`} register={register} errors={errors} />
-					<TextareaField
-						label="Items"
-						name={`${name}.${index}.subsectionsText`}
-						register={register}
-						errors={errors}
-						minH="100px"
-						placeholder="One item per line. Use: Title | Time"
-					/>
-				</EditorCard>
-			))}
-		</Stack>
-	);
-};
-
 const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={4}>
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
@@ -1493,40 +1394,31 @@ const ReviewsFaqsStep = ({ control, register, errors }: CourseEditorSectionProps
 	</Stack>
 );
 
-const PrerequisitesStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={5}>
-		<SessionSectionsEditor
-			title="Prerequisites"
-			name="prerequisites"
-			control={control}
-			register={register}
-			errors={errors}
-		/>
-	</Stack>
+const PrerequisitesStep = ({ courseId }: { courseId?: string }) => (
+	<CourseCurriculumEditor
+		courseId={courseId}
+		sectionKey="prerequisites"
+		title="Prerequisites"
+		description="Build ordered pre-course modules, preview rows, and enrolled-only prep content."
+	/>
 );
 
-const LiveSessionsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={5}>
-		<SessionSectionsEditor
-			title="Live sessions"
-			name="liveSessions"
-			control={control}
-			register={register}
-			errors={errors}
-		/>
-	</Stack>
+const LiveSessionsStep = ({ courseId }: { courseId?: string }) => (
+	<CourseCurriculumEditor
+		courseId={courseId}
+		sectionKey="liveSessions"
+		title="Live sessions"
+		description="Organize live-session modules and attach content learners unlock after enrollment."
+	/>
 );
 
-const PostSessionMaterialsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={5}>
-		<SessionSectionsEditor
-			title="Post-session materials"
-			name="postSessionMaterials"
-			control={control}
-			register={register}
-			errors={errors}
-		/>
-	</Stack>
+const PostSessionMaterialsStep = ({ courseId }: { courseId?: string }) => (
+	<CourseCurriculumEditor
+		courseId={courseId}
+		sectionKey="postSessionMaterials"
+		title="Post-session materials"
+		description="Manage follow-up modules, references, recordings, PDFs, and presentations."
+	/>
 );
 
 const ReviewStep = ({
@@ -1567,11 +1459,13 @@ const CourseEditorStepFields = ({
 	register,
 	errors,
 	summaryItems,
-	course
+	course,
+	courseId
 }: CourseEditorSectionProps & {
 	activeStepId: CourseEditorStepId;
 	summaryItems: Array<{ label: string; value: string | number }>;
 	course: AdminCourse | null;
+	courseId?: string;
 }) => {
 	switch (activeStepId) {
 		case 'basics':
@@ -1589,11 +1483,11 @@ const CourseEditorStepFields = ({
 		case 'reviews':
 			return <ReviewsFaqsStep control={control} register={register} errors={errors} />;
 		case 'prerequisites':
-			return <PrerequisitesStep control={control} register={register} errors={errors} />;
+			return <PrerequisitesStep courseId={courseId} />;
 		case 'liveSessions':
-			return <LiveSessionsStep control={control} register={register} errors={errors} />;
+			return <LiveSessionsStep courseId={courseId} />;
 		case 'postSessionMaterials':
-			return <PostSessionMaterialsStep control={control} register={register} errors={errors} />;
+			return <PostSessionMaterialsStep courseId={courseId} />;
 		case 'review':
 			return <ReviewStep summaryItems={summaryItems} course={course} />;
 		default:
@@ -1861,6 +1755,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								errors={errors}
 								summaryItems={summaryItems}
 								course={course}
+								courseId={courseId}
 							/>
 
 							{feedback ? (

@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 
 import { getCurrentAdmin, logoutAdmin, type AuthenticatedUser } from '~/lib/api/auth';
 import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
+import ThemeToggle from '~/lib/components/ThemeToggle';
 
 type AdminShellProps = {
 	children: ReactNode;
@@ -240,9 +241,12 @@ const AdminShell = ({ children }: AdminShellProps) => {
 										{activeTitle}
 									</Text>
 								</Box>
-								<Button asChild variant="outline" borderRadius="full" display={{ base: 'none', md: 'inline-flex' }}>
-									<Link href="/">Open site</Link>
-								</Button>
+								<HStack gap={2}>
+									<Button asChild variant="outline" borderRadius="full" display={{ base: 'none', md: 'inline-flex' }}>
+										<Link href="/">Open site</Link>
+									</Button>
+									<ThemeToggle />
+								</HStack>
 							</HStack>
 							{children}
 						</Box>

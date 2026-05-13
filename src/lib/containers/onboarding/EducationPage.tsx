@@ -11,7 +11,7 @@ import { collegeOptions, departmentOptions, interestOptions } from '~/lib/consta
 import InterestSelector from '~/lib/containers/onboarding/components/InterestSelector';
 import OnboardingFrame from '~/lib/containers/onboarding/components/OnboardingFrame';
 import SearchableSelect from '~/lib/containers/onboarding/components/SearchableSelect';
-import { isEducationProfileComplete } from '~/lib/utils/onboarding';
+import { hasMobileGateAccess, isEducationProfileComplete } from '~/lib/utils/onboarding';
 
 const maxInterestCount = 5;
 
@@ -29,6 +29,7 @@ const EducationPage = () => {
 
 	useEffect(() => {
 		let isMounted = true;
+		let hasRedirected = false;
 
 		getOnboardingStatus()
 			.then(status => {
@@ -37,16 +38,19 @@ const EducationPage = () => {
 				}
 
 				if (!status.profile.mobileNumberE164 && status.profile.mobileSkipCount === 0) {
+					hasRedirected = true;
 					router.replace('/onboarding/mobile');
 					return;
 				}
 
-				if (!status.profile.mobileNumberE164 && !status.profile.canSkipMobile) {
+				if (!hasMobileGateAccess(status.profile)) {
+					hasRedirected = true;
 					router.replace('/onboarding/mobile');
 					return;
 				}
 
 				if (status.profile.mobileNumberE164 && isEducationProfileComplete(status.profile)) {
+					hasRedirected = true;
 					router.replace('/profile');
 					return;
 				}
@@ -56,10 +60,11 @@ const EducationPage = () => {
 				setInterests(status.profile.interests);
 			})
 			.catch(() => {
+				hasRedirected = true;
 				router.replace('/login');
 			})
 			.finally(() => {
-				if (isMounted) {
+				if (isMounted && !hasRedirected) {
 					setIsLoading(false);
 				}
 			});
@@ -97,11 +102,9 @@ const EducationPage = () => {
 
 		try {
 			await submitEducationProfile(college.trim(), department.trim(), interests);
-			router.push('/profile');
-			router.refresh();
+			router.replace('/profile');
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to save education details.');
-		} finally {
 			setIsSubmitting(false);
 		}
 	};

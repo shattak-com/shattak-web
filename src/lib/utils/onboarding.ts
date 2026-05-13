@@ -3,6 +3,9 @@ import type { OnboardingProfile } from '~/lib/api/onboarding';
 export const isEducationProfileComplete = (profile: OnboardingProfile) =>
 	Boolean(profile.college && profile.department && profile.interests.length > 0);
 
+export const hasMobileGateAccess = (profile: OnboardingProfile) =>
+	Boolean(profile.mobileNumberE164) || profile.mobileSkipCount <= profile.mobileSkipLimit;
+
 export const getOnboardingRedirectPath = (profile: OnboardingProfile, completedPath = '/profile') => {
 	if (profile.nextStep === 'MOBILE') {
 		return '/onboarding/mobile';
@@ -19,9 +22,7 @@ export const getPostMobileSkipPath = (profile: OnboardingProfile) =>
 	isEducationProfileComplete(profile) ? '/profile' : '/onboarding/education';
 
 export const getProtectedUserRouteRedirectPath = (profile: OnboardingProfile) => {
-	const hasMobileAccess = Boolean(profile.mobileNumberE164) || profile.canSkipMobile;
-
-	if (!hasMobileAccess) {
+	if (!hasMobileGateAccess(profile)) {
 		return '/onboarding/mobile';
 	}
 

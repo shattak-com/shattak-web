@@ -2,16 +2,17 @@
 
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 	Controller,
 	useFieldArray,
 	useForm,
+	useWatch,
 	type Control,
 	type FieldErrors,
 	type Path,
+	type SubmitErrorHandler,
 	type UseFormRegister
 } from 'react-hook-form';
 import { z } from 'zod';
@@ -34,20 +35,75 @@ type CourseEditorPageProps = {
 	courseId?: string;
 };
 
-type CourseEditorStepId = 'basics' | 'media' | 'value' | 'proof' | 'curriculum' | 'review';
+type CourseEditorStepId =
+	| 'basics'
+	| 'media'
+	| 'highlights'
+	| 'outcomes'
+	| 'instructors'
+	| 'gallery'
+	| 'reviews'
+	| 'prerequisites'
+	| 'liveSessions'
+	| 'postSessionMaterials'
+	| 'review';
 
 const courseEditorSteps: Array<{ id: CourseEditorStepId; label: string; description: string }> = [
 	{ id: 'basics', label: 'Basics', description: 'Public identity, categories, and course positioning.' },
 	{ id: 'media', label: 'Pricing & Media', description: 'Commercial details, links, images, and visible metrics.' },
 	{
-		id: 'value',
-		label: 'Course Value',
-		description: 'Outcomes, requirements, highlights, tools, and completion data.'
+		id: 'highlights',
+		label: 'Highlights',
+		description: 'Key stats and schedule items shown near the course overview.'
 	},
-	{ id: 'proof', label: 'People & Proof', description: 'Instructors, projects, reviews, gallery, and FAQs.' },
-	{ id: 'curriculum', label: 'Curriculum', description: 'Prerequisites, live sessions, and post-session materials.' },
+	{
+		id: 'outcomes',
+		label: 'Outcomes',
+		description: 'Requirements, learning outcomes, audience, tools, and completion benefits.'
+	},
+	{ id: 'instructors', label: 'Instructors', description: 'Mentor profile details shown on the course page.' },
+	{ id: 'gallery', label: 'Gallery', description: 'Project gallery and student project proof.' },
+	{ id: 'reviews', label: 'Reviews & FAQs', description: 'Testimonials and common course questions.' },
+	{ id: 'prerequisites', label: 'Prerequisites', description: 'Pre-course requirements and prep materials.' },
+	{ id: 'liveSessions', label: 'Live Sessions', description: 'Live class sections and session items.' },
+	{
+		id: 'postSessionMaterials',
+		label: 'Post-Session Materials',
+		description: 'Materials learners receive after sessions.'
+	},
 	{ id: 'review', label: 'Review', description: 'Confirm status and save the course.' }
 ];
+
+const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
+	basics: ['slug', 'title', 'subtitle', 'summary', 'categories', 'level', 'mode', 'status', 'about'],
+	media: [
+		'price',
+		'originalPrice',
+		'rating',
+		'enrollmentCount',
+		'thumbnailImage',
+		'promoImage',
+		'promoImageBrand',
+		'paymentLink',
+		'liveUrl'
+	],
+	highlights: ['highlights', 'schedule'],
+	outcomes: [
+		'requirementsText',
+		'completionCertificateImage',
+		'completionBenefitsText',
+		'outcomes',
+		'audience',
+		'tools'
+	],
+	instructors: ['instructors'],
+	gallery: ['projectGallery', 'projects'],
+	reviews: ['reviews', 'faqs'],
+	prerequisites: ['prerequisites'],
+	liveSessions: ['liveSessions'],
+	postSessionMaterials: ['postSessionMaterials'],
+	review: ['durationHours', 'durationMinutes']
+};
 
 const courseLevelOptions: Array<{ label: string; value: AdminCourseLevel }> = [
 	{ label: 'Beginner', value: 'BEGINNER' },
@@ -213,6 +269,26 @@ type CourseEditorSectionProps = {
 	errors: FieldErrors<CourseEditorFormValues>;
 };
 
+type CourseEditorFeedback = {
+	tone: 'success' | 'error' | 'info';
+	message: string;
+};
+
+const getFeedbackBorderColor = (tone: CourseEditorFeedback['tone']) =>
+	tone === 'error' ? 'red.400' : 'border.default';
+
+const getFeedbackTextColor = (tone: CourseEditorFeedback['tone']) => {
+	if (tone === 'error') {
+		return 'red.500';
+	}
+
+	if (tone === 'success') {
+		return 'green.500';
+	}
+
+	return 'text.muted';
+};
+
 const defaultFormValues: CourseEditorFormValues = {
 	slug: '',
 	title: '',
@@ -259,6 +335,126 @@ const textLinesToArray = (value: string) =>
 		.split(/\r?\n/)
 		.map(item => item.trim())
 		.filter(Boolean);
+
+const normalizeDurationParts = (hours: number, minutes: number) => {
+	const totalMinutes = Math.max(0, Math.trunc(hours) * 60 + Math.trunc(minutes));
+
+	return {
+		hours: Math.floor(totalMinutes / 60),
+		minutes: totalMinutes % 60
+	};
+};
+
+const formatDurationFromMinutes = (totalMinutes: number) => {
+	const { hours, minutes } = normalizeDurationParts(0, totalMinutes);
+	const parts: string[] = [];
+
+	if (hours) {
+		parts.push(`${hours}h`);
+	}
+
+	if (minutes) {
+		parts.push(`${minutes}m`);
+	}
+
+	return parts.length ? parts.join(' ') : '0m';
+};
+
+const formatDurationParts = (hours: number, minutes: number) => {
+	const normalizedDuration = normalizeDurationParts(hours, minutes);
+
+	return formatDurationFromMinutes(normalizedDuration.hours * 60 + normalizedDuration.minutes);
+};
+
+const parseDurationToMinutes = (value: string) => {
+	const normalizedValue = value.toLowerCase().replace(/\s+/g, ' ').trim();
+
+	if (!normalizedValue) {
+		return 0;
+	}
+
+	const colonMatch = normalizedValue.match(/^(\d+)\s*:\s*([0-5]?\d)$/);
+
+	if (colonMatch) {
+		return Number.parseInt(colonMatch[1] ?? '0', 10) * 60 + Number.parseInt(colonMatch[2] ?? '0', 10);
+	}
+
+	const hourMatch = normalizedValue.match(/(\d+)\s*(?:hours?|hrs?|h)/);
+	const minuteMatch = normalizedValue.match(/(\d+)\s*(?:minutes?|mins?|m)/);
+
+	if (hourMatch || minuteMatch) {
+		return Number.parseInt(hourMatch?.[1] ?? '0', 10) * 60 + Number.parseInt(minuteMatch?.[1] ?? '0', 10);
+	}
+
+	const plainNumber = Number.parseInt(normalizedValue, 10);
+
+	return Number.isFinite(plainNumber) ? plainNumber : 0;
+};
+
+const parseDurationParts = (value: string) => normalizeDurationParts(0, parseDurationToMinutes(value));
+
+const getScheduleTotalMinutes = (schedule: CourseEditorFormValues['schedule']) =>
+	schedule.reduce((total, item) => total + parseDurationToMinutes(item.duration), 0);
+
+const parseDurationInputValue = (value: string) => {
+	const parsedValue = Number.parseInt(value, 10);
+
+	return Number.isFinite(parsedValue) ? Math.max(0, parsedValue) : 0;
+};
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === 'object' && value !== null;
+
+const collectErrorPaths = (value: unknown, prefix = ''): string[] => {
+	if (!isObjectRecord(value)) {
+		return [];
+	}
+
+	if (typeof value.message === 'string') {
+		return prefix ? [prefix] : [];
+	}
+
+	return Object.entries(value).flatMap(([key, nestedValue]) => {
+		if (key === 'ref' || key === 'type' || key === 'message') {
+			return [];
+		}
+
+		const nextPrefix = prefix ? `${prefix}.${key}` : key;
+
+		return collectErrorPaths(nestedValue, nextPrefix);
+	});
+};
+
+const getStepForErrorPath = (errorPath: string): CourseEditorStepId => {
+	const rootField = errorPath.split('.')[0] ?? errorPath;
+
+	return (
+		courseEditorSteps.find(step =>
+			courseEditorStepFieldPrefixes[step.id].some(prefix => rootField === prefix || errorPath.startsWith(`${prefix}.`))
+		)?.id ?? 'basics'
+	);
+};
+
+const countErrorsByStep = (errorPaths: string[]) =>
+	courseEditorSteps.reduce<Record<CourseEditorStepId, number>>(
+		(counts, step) => ({
+			...counts,
+			[step.id]: errorPaths.filter(errorPath => getStepForErrorPath(errorPath) === step.id).length
+		}),
+		{
+			basics: 0,
+			media: 0,
+			highlights: 0,
+			outcomes: 0,
+			instructors: 0,
+			gallery: 0,
+			reviews: 0,
+			prerequisites: 0,
+			liveSessions: 0,
+			postSessionMaterials: 0,
+			review: 0
+		}
+	);
 
 const getFieldError = (errors: FieldErrors<CourseEditorFormValues>, name: Path<CourseEditorFormValues>) => {
 	const error = errors[name];
@@ -400,110 +596,115 @@ const hasAnyValue = (values: Array<string | number | boolean | undefined>) =>
 		return Boolean(value);
 	});
 
-const formValuesToPayload = (values: CourseEditorFormValues): AdminCourseInput => ({
-	slug: values.slug?.trim() || undefined,
-	title: values.title.trim(),
-	subtitle: values.subtitle.trim(),
-	summary: values.summary.trim(),
-	category: values.categories[0] ?? '',
-	categories: values.categories,
-	level: values.level,
-	price: values.price,
-	originalPrice: values.originalPrice,
-	durationHours: values.durationHours,
-	durationMinutes: values.durationMinutes,
-	mode: values.mode,
-	enrollmentCount: values.enrollmentCount,
-	rating: values.rating,
-	thumbnailImage: values.thumbnailImage.trim(),
-	promoImage: values.promoImage.trim(),
-	promoImageBrand: values.promoImageBrand.trim(),
-	paymentLink: values.paymentLink.trim(),
-	status: values.status,
-	about: values.about.trim(),
-	liveUrl: values.liveUrl.trim(),
-	requirements: textLinesToArray(values.requirementsText),
-	completion: {
-		...(values.completionCertificateImage.trim()
-			? {
-					certificateImage: values.completionCertificateImage.trim()
-				}
-			: {}),
-		benefits: textLinesToArray(values.completionBenefitsText)
-	},
-	highlights: values.highlights
-		.filter(item => hasAnyValue([item.label, item.value]))
-		.map(item => ({ id: item.id || createRowId('highlight'), label: item.label.trim(), value: item.value.trim() })),
-	schedule: values.schedule
-		.filter(item => hasAnyValue([item.label, item.time, item.duration]))
-		.map(item => ({
-			id: item.id || createRowId('schedule'),
-			label: item.label.trim(),
-			time: item.time.trim(),
-			...(item.duration.trim() ? { duration: item.duration.trim() } : {})
-		})),
-	projectGallery: values.projectGallery
-		.filter(item => hasAnyValue([item.image, item.alt]))
-		.map(item => ({ id: item.id || createRowId('gallery'), image: item.image.trim(), alt: item.alt.trim() })),
-	outcomes: values.outcomes
-		.filter(item => hasAnyValue([item.text]))
-		.map(item => ({ id: item.id || createRowId('outcome'), text: item.text.trim() })),
-	audience: values.audience
-		.filter(item => hasAnyValue([item.title, item.bulletsText]))
-		.map(item => ({
-			id: item.id || createRowId('audience'),
-			title: item.title.trim(),
-			...(item.tone ? { tone: item.tone } : {}),
-			bullets: textLinesToArray(item.bulletsText)
-		})),
-	projects: values.projects
-		.filter(item => hasAnyValue([item.title, item.author, item.previewImage, item.liveUrl, item.likes]))
-		.map(item => ({
-			id: item.id || createRowId('project'),
-			title: item.title.trim(),
-			author: item.author.trim(),
-			previewImage: item.previewImage.trim(),
-			likes: getNumber(item.likes),
-			liveUrl: item.liveUrl.trim()
-		})),
-	faqs: values.faqs
-		.filter(item => hasAnyValue([item.question, item.answer]))
-		.map(item => ({ id: item.id || createRowId('faq'), question: item.question.trim(), answer: item.answer.trim() })),
-	prerequisites: values.prerequisites
-		.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-		.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
-	liveSessions: values.liveSessions
-		.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-		.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
-	postSessionMaterials: values.postSessionMaterials
-		.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
-		.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
-	tools: values.tools
-		.filter(item => hasAnyValue([item.name, item.image]))
-		.map(item => ({ id: item.id || createRowId('tool'), name: item.name.trim(), image: item.image.trim() })),
-	instructors: values.instructors
-		.filter(item => hasAnyValue([item.name, item.role, item.photo, item.linkedInUrl, item.bio]))
-		.map(item => ({
-			id: item.id || createRowId('instructor'),
-			name: item.name.trim(),
-			role: item.role.trim(),
-			photo: item.photo.trim(),
-			linkedInUrl: item.linkedInUrl.trim(),
-			bio: item.bio.trim()
-		})),
-	reviews: values.reviews
-		.filter(item => hasAnyValue([item.name, item.affiliation, item.body, item.avatar, item.likes]))
-		.map(item => ({
-			id: item.id || createRowId('review'),
-			name: item.name.trim(),
-			affiliation: item.affiliation.trim(),
-			rating: getNumber(item.rating),
-			body: item.body.trim(),
-			...(item.avatar.trim() ? { avatar: item.avatar.trim() } : {}),
-			likes: getNumber(item.likes),
-			show: item.show
-		}))
-});
+const formValuesToPayload = (values: CourseEditorFormValues): AdminCourseInput => {
+	const totalScheduleMinutes = getScheduleTotalMinutes(values.schedule);
+	const calculatedDuration = normalizeDurationParts(0, totalScheduleMinutes);
+
+	return {
+		slug: values.slug?.trim() || undefined,
+		title: values.title.trim(),
+		subtitle: values.subtitle.trim(),
+		summary: values.summary.trim(),
+		category: values.categories[0] ?? '',
+		categories: values.categories,
+		level: values.level,
+		price: values.price,
+		originalPrice: values.originalPrice,
+		durationHours: calculatedDuration.hours,
+		durationMinutes: calculatedDuration.minutes,
+		mode: values.mode,
+		enrollmentCount: values.enrollmentCount,
+		rating: values.rating,
+		thumbnailImage: values.thumbnailImage.trim(),
+		promoImage: values.promoImage.trim(),
+		promoImageBrand: values.promoImageBrand.trim(),
+		paymentLink: values.paymentLink.trim(),
+		status: values.status,
+		about: values.about.trim(),
+		liveUrl: values.liveUrl.trim(),
+		requirements: textLinesToArray(values.requirementsText),
+		completion: {
+			...(values.completionCertificateImage.trim()
+				? {
+						certificateImage: values.completionCertificateImage.trim()
+					}
+				: {}),
+			benefits: textLinesToArray(values.completionBenefitsText)
+		},
+		highlights: values.highlights
+			.filter(item => hasAnyValue([item.label, item.value]))
+			.map(item => ({ id: item.id || createRowId('highlight'), label: item.label.trim(), value: item.value.trim() })),
+		schedule: values.schedule
+			.filter(item => hasAnyValue([item.label, item.time, item.duration]))
+			.map(item => ({
+				id: item.id || createRowId('schedule'),
+				label: item.label.trim(),
+				time: item.time.trim(),
+				...(item.duration.trim() ? { duration: item.duration.trim() } : {})
+			})),
+		projectGallery: values.projectGallery
+			.filter(item => hasAnyValue([item.image, item.alt]))
+			.map(item => ({ id: item.id || createRowId('gallery'), image: item.image.trim(), alt: item.alt.trim() })),
+		outcomes: values.outcomes
+			.filter(item => hasAnyValue([item.text]))
+			.map(item => ({ id: item.id || createRowId('outcome'), text: item.text.trim() })),
+		audience: values.audience
+			.filter(item => hasAnyValue([item.title, item.bulletsText]))
+			.map(item => ({
+				id: item.id || createRowId('audience'),
+				title: item.title.trim(),
+				...(item.tone ? { tone: item.tone } : {}),
+				bullets: textLinesToArray(item.bulletsText)
+			})),
+		projects: values.projects
+			.filter(item => hasAnyValue([item.title, item.author, item.previewImage, item.liveUrl, item.likes]))
+			.map(item => ({
+				id: item.id || createRowId('project'),
+				title: item.title.trim(),
+				author: item.author.trim(),
+				previewImage: item.previewImage.trim(),
+				likes: getNumber(item.likes),
+				liveUrl: item.liveUrl.trim()
+			})),
+		faqs: values.faqs
+			.filter(item => hasAnyValue([item.question, item.answer]))
+			.map(item => ({ id: item.id || createRowId('faq'), question: item.question.trim(), answer: item.answer.trim() })),
+		prerequisites: values.prerequisites
+			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
+			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
+		liveSessions: values.liveSessions
+			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
+			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
+		postSessionMaterials: values.postSessionMaterials
+			.filter(item => hasAnyValue([item.sectionName, item.subsectionsText]))
+			.map(item => ({ sectionName: item.sectionName.trim(), subsections: textToSectionItems(item.subsectionsText) })),
+		tools: values.tools
+			.filter(item => hasAnyValue([item.name, item.image]))
+			.map(item => ({ id: item.id || createRowId('tool'), name: item.name.trim(), image: item.image.trim() })),
+		instructors: values.instructors
+			.filter(item => hasAnyValue([item.name, item.role, item.photo, item.linkedInUrl, item.bio]))
+			.map(item => ({
+				id: item.id || createRowId('instructor'),
+				name: item.name.trim(),
+				role: item.role.trim(),
+				photo: item.photo.trim(),
+				linkedInUrl: item.linkedInUrl.trim(),
+				bio: item.bio.trim()
+			})),
+		reviews: values.reviews
+			.filter(item => hasAnyValue([item.name, item.affiliation, item.body, item.avatar, item.likes]))
+			.map(item => ({
+				id: item.id || createRowId('review'),
+				name: item.name.trim(),
+				affiliation: item.affiliation.trim(),
+				rating: getNumber(item.rating),
+				body: item.body.trim(),
+				...(item.avatar.trim() ? { avatar: item.avatar.trim() } : {}),
+				likes: getNumber(item.likes),
+				show: item.show
+			}))
+	};
+};
 
 const FormField = ({
 	label,
@@ -721,29 +922,91 @@ const HighlightsEditor = ({ control, register, errors }: CourseEditorSectionProp
 
 const ScheduleEditor = ({ control, register, errors }: CourseEditorSectionProps) => {
 	const { fields, append, remove } = useFieldArray({ control, name: 'schedule' });
+	const watchedSchedule = useWatch({ control, name: 'schedule' }) ?? [];
+	const totalScheduleMinutes = getScheduleTotalMinutes(watchedSchedule);
 
 	return (
 		<Stack gap={3}>
 			<EditorSectionHeader
 				title="Schedule"
 				action={
-					<Button
-						size="sm"
-						variant="outline"
-						borderRadius="full"
-						onClick={() => append({ id: createRowId('schedule'), label: '', time: '', duration: '' })}
-					>
-						Add schedule item
-					</Button>
+					<HStack gap={3} flexWrap="wrap">
+						<Text fontSize="xs" color="text.muted">
+							Total duration: {formatDurationFromMinutes(totalScheduleMinutes)}
+						</Text>
+						<Button
+							size="sm"
+							variant="outline"
+							borderRadius="full"
+							onClick={() => append({ id: createRowId('schedule'), label: '', time: '', duration: '' })}
+						>
+							Add session
+						</Button>
+					</HStack>
 				}
 			/>
-			{fields.length ? null : <EmptyEditorState label="schedule items" />}
+			{fields.length ? null : <EmptyEditorState label="sessions" />}
 			{fields.map((field, index) => (
-				<EditorCard key={field.id} title={`Schedule item ${index + 1}`} onRemove={() => remove(index)}>
+				<EditorCard key={field.id} title={`Session ${index + 1}`} onRemove={() => remove(index)}>
 					<SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
 						<FormField label="Label" name={`schedule.${index}.label`} register={register} errors={errors} />
 						<FormField label="Time" name={`schedule.${index}.time`} register={register} errors={errors} />
-						<FormField label="Duration" name={`schedule.${index}.duration`} register={register} errors={errors} />
+						<Controller
+							control={control}
+							name={`schedule.${index}.duration`}
+							render={({ field: durationField }) => {
+								const durationParts = parseDurationParts(String(durationField.value ?? ''));
+								const updateDuration = (hours: number, minutes: number) => {
+									durationField.onChange(formatDurationParts(hours, minutes));
+								};
+
+								return (
+									<Box>
+										<Text fontSize="xs" color="text.muted" mb={1}>
+											Duration
+										</Text>
+										<SimpleGrid columns={2} gap={2}>
+											<Box>
+												<Input
+													aria-label={`Session ${index + 1} duration hours`}
+													type="number"
+													min={0}
+													value={durationParts.hours}
+													onBlur={durationField.onBlur}
+													onChange={event =>
+														updateDuration(parseDurationInputValue(event.currentTarget.value), durationParts.minutes)
+													}
+												/>
+												<Text mt={1} fontSize="xs" color="text.muted">
+													Hours
+												</Text>
+											</Box>
+											<Box>
+												<Input
+													aria-label={`Session ${index + 1} duration minutes`}
+													type="number"
+													min={0}
+													max={59}
+													value={durationParts.minutes}
+													onBlur={durationField.onBlur}
+													onChange={event =>
+														updateDuration(durationParts.hours, parseDurationInputValue(event.currentTarget.value))
+													}
+												/>
+												<Text mt={1} fontSize="xs" color="text.muted">
+													Minutes
+												</Text>
+											</Box>
+										</SimpleGrid>
+										{getFieldError(errors, `schedule.${index}.duration`) ? (
+											<Text mt={1} fontSize="xs" color="red.500">
+												{getFieldError(errors, `schedule.${index}.duration`)}
+											</Text>
+										) : null}
+									</Box>
+								);
+							}}
+						/>
 					</SimpleGrid>
 				</EditorCard>
 			))}
@@ -1174,8 +1437,6 @@ const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 			<FormField label="Price" name="price" register={register} errors={errors} type="number" />
 			<FormField label="Original price" name="originalPrice" register={register} errors={errors} type="number" />
 			<FormField label="Rating" name="rating" register={register} errors={errors} type="number" />
-			<FormField label="Duration hours" name="durationHours" register={register} errors={errors} type="number" />
-			<FormField label="Duration minutes" name="durationMinutes" register={register} errors={errors} type="number" />
 			<FormField label="Enrollment count" name="enrollmentCount" register={register} errors={errors} type="number" />
 		</SimpleGrid>
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
@@ -1188,7 +1449,14 @@ const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	</Stack>
 );
 
-const ValueStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+const HighlightsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
+		<HighlightsEditor control={control} register={register} errors={errors} />
+		<ScheduleEditor control={control} register={register} errors={errors} />
+	</Stack>
+);
+
+const OutcomesStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={5}>
 		<TextareaField
 			label="Requirements"
@@ -1199,25 +1467,33 @@ const ValueStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 			placeholder="One requirement per line"
 		/>
 		<CompletionEditor control={control} register={register} errors={errors} />
-		<HighlightsEditor control={control} register={register} errors={errors} />
-		<ScheduleEditor control={control} register={register} errors={errors} />
 		<OutcomesEditor control={control} register={register} errors={errors} />
 		<AudienceEditor control={control} register={register} errors={errors} />
 		<ToolsEditor control={control} register={register} errors={errors} />
 	</Stack>
 );
 
-const ProofStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+const InstructorsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={5}>
 		<InstructorsEditor control={control} register={register} errors={errors} />
+	</Stack>
+);
+
+const GalleryStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
 		<GalleryEditor control={control} register={register} errors={errors} />
 		<ProjectsEditor control={control} register={register} errors={errors} />
+	</Stack>
+);
+
+const ReviewsFaqsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
 		<ReviewsEditor control={control} register={register} errors={errors} />
 		<FaqsEditor control={control} register={register} errors={errors} />
 	</Stack>
 );
 
-const CurriculumStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+const PrerequisitesStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={5}>
 		<SessionSectionsEditor
 			title="Prerequisites"
@@ -1226,6 +1502,11 @@ const CurriculumStep = ({ control, register, errors }: CourseEditorSectionProps)
 			register={register}
 			errors={errors}
 		/>
+	</Stack>
+);
+
+const LiveSessionsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
 		<SessionSectionsEditor
 			title="Live sessions"
 			name="liveSessions"
@@ -1233,6 +1514,11 @@ const CurriculumStep = ({ control, register, errors }: CourseEditorSectionProps)
 			register={register}
 			errors={errors}
 		/>
+	</Stack>
+);
+
+const PostSessionMaterialsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
 		<SessionSectionsEditor
 			title="Post-session materials"
 			name="postSessionMaterials"
@@ -1292,12 +1578,22 @@ const CourseEditorStepFields = ({
 			return <BasicsStep control={control} register={register} errors={errors} />;
 		case 'media':
 			return <MediaStep control={control} register={register} errors={errors} />;
-		case 'value':
-			return <ValueStep control={control} register={register} errors={errors} />;
-		case 'proof':
-			return <ProofStep control={control} register={register} errors={errors} />;
-		case 'curriculum':
-			return <CurriculumStep control={control} register={register} errors={errors} />;
+		case 'highlights':
+			return <HighlightsStep control={control} register={register} errors={errors} />;
+		case 'outcomes':
+			return <OutcomesStep control={control} register={register} errors={errors} />;
+		case 'instructors':
+			return <InstructorsStep control={control} register={register} errors={errors} />;
+		case 'gallery':
+			return <GalleryStep control={control} register={register} errors={errors} />;
+		case 'reviews':
+			return <ReviewsFaqsStep control={control} register={register} errors={errors} />;
+		case 'prerequisites':
+			return <PrerequisitesStep control={control} register={register} errors={errors} />;
+		case 'liveSessions':
+			return <LiveSessionsStep control={control} register={register} errors={errors} />;
+		case 'postSessionMaterials':
+			return <PostSessionMaterialsStep control={control} register={register} errors={errors} />;
 		case 'review':
 			return <ReviewStep summaryItems={summaryItems} course={course} />;
 		default:
@@ -1311,7 +1607,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 	const [course, setCourse] = useState<AdminCourse | null>(null);
 	const [isLoading, setIsLoading] = useState(Boolean(courseId));
 	const [isSaving, setIsSaving] = useState(false);
-	const [message, setMessage] = useState('');
+	const [feedback, setFeedback] = useState<CourseEditorFeedback | null>(null);
 	const isEditMode = Boolean(courseId);
 	const activeStep = courseEditorSteps[activeStepIndex];
 
@@ -1320,8 +1616,9 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 		register,
 		handleSubmit,
 		reset,
+		setValue,
 		watch,
-		formState: { errors }
+		formState: { errors, isDirty }
 	} = useForm<CourseEditorFormValues>({
 		resolver: zodResolver(courseEditorSchema),
 		defaultValues: defaultFormValues
@@ -1344,7 +1641,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 			})
 			.catch(() => {
 				if (isMounted) {
-					setMessage('Unable to load course.');
+					setFeedback({ tone: 'error', message: 'Unable to load course.' });
 				}
 			})
 			.finally(() => {
@@ -1358,10 +1655,48 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 		};
 	}, [courseId, reset]);
 
+	const watchedSchedule = watch('schedule');
+	const totalScheduleMinutes = useMemo(() => getScheduleTotalMinutes(watchedSchedule), [watchedSchedule]);
+	const errorPaths = useMemo(() => collectErrorPaths(errors), [errors]);
+	const errorCountsByStep = useMemo(() => countErrorsByStep(errorPaths), [errorPaths]);
+
+	useEffect(() => {
+		const calculatedDuration = normalizeDurationParts(0, totalScheduleMinutes);
+
+		setValue('durationHours', calculatedDuration.hours, { shouldDirty: false, shouldValidate: true });
+		setValue('durationMinutes', calculatedDuration.minutes, { shouldDirty: false, shouldValidate: true });
+	}, [setValue, totalScheduleMinutes]);
+
+	useEffect(() => {
+		if (!isDirty || isSaving) {
+			return undefined;
+		}
+
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			Reflect.set(event, 'returnValue', '');
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	}, [isDirty, isSaving]);
+
+	const confirmLeaveEditor = useCallback(() => {
+		if (!isDirty) {
+			return true;
+		}
+
+		// eslint-disable-next-line no-alert -- Native confirmation is appropriate for unsaved editor navigation.
+		return window.confirm('You have unsaved course changes. Leave without saving?');
+	}, [isDirty]);
+
 	const handleSave = useCallback(
 		async (values: CourseEditorFormValues) => {
 			setIsSaving(true);
-			setMessage('');
+			setFeedback(null);
 
 			try {
 				const payload = formValuesToPayload(values);
@@ -1369,19 +1704,45 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 
 				setCourse(result.course);
 				reset(courseToFormValues(result.course));
-				setMessage(courseId ? 'Course saved.' : 'Course draft created.');
+				setFeedback({ tone: 'success', message: courseId ? 'Course saved.' : 'Course draft created.' });
 
 				if (!courseId) {
 					router.replace(`/admin/courses/${result.course.id}/edit`);
 				}
 			} catch (error) {
-				setMessage(error instanceof Error ? error.message : 'Unable to save course.');
+				setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Unable to save course.' });
 			} finally {
 				setIsSaving(false);
 			}
 		},
 		[courseId, reset, router]
 	);
+
+	const handleInvalidSave = useCallback<SubmitErrorHandler<CourseEditorFormValues>>(formErrors => {
+		const currentErrorPaths = collectErrorPaths(formErrors);
+		const firstErrorPath = currentErrorPaths[0];
+		const targetStepId = firstErrorPath ? getStepForErrorPath(firstErrorPath) : 'basics';
+		const targetStepIndex = courseEditorSteps.findIndex(step => step.id === targetStepId);
+		const targetStep = courseEditorSteps[targetStepIndex];
+		const errorCount = currentErrorPaths.length;
+		const issueLabel = errorCount === 1 ? 'issue' : 'issues';
+		const targetStepMessage = targetStep ? `, starting in ${targetStep.label}` : '';
+
+		if (targetStepIndex >= 0) {
+			setActiveStepIndex(targetStepIndex);
+		}
+
+		setFeedback({
+			tone: 'error',
+			message: `Course was not saved. Fix ${errorCount} validation ${issueLabel}${targetStepMessage}.`
+		});
+	}, []);
+
+	const handleBackToCourses = useCallback(() => {
+		if (confirmLeaveEditor()) {
+			router.push('/admin/courses');
+		}
+	}, [confirmLeaveEditor, router]);
 
 	const watchedValues = watch();
 	const summaryItems = useMemo(
@@ -1391,9 +1752,10 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 			{ label: 'Categories', value: watchedValues.categories.length ? watchedValues.categories.join(', ') : 'Not set' },
 			{ label: 'Level', value: watchedValues.level },
 			{ label: 'Mode', value: watchedValues.mode },
+			{ label: 'Duration', value: formatDurationFromMinutes(totalScheduleMinutes) },
 			{ label: 'Price', value: watchedValues.price > 0 ? `INR ${watchedValues.price}` : 'Free' }
 		],
-		[watchedValues]
+		[totalScheduleMinutes, watchedValues]
 	);
 
 	if (isLoading) {
@@ -1405,7 +1767,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 	}
 
 	return (
-		<form onSubmit={handleSubmit(handleSave)}>
+		<form onSubmit={handleSubmit(handleSave, handleInvalidSave)}>
 			<Stack gap={4}>
 				<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={4}>
 					<HStack justify="space-between" gap={3} flexWrap="wrap">
@@ -1417,14 +1779,15 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								<Badge colorPalette={watchedValues.status === 'PUBLISHED' ? 'green' : 'gray'}>
 									{watchedValues.status}
 								</Badge>
+								{isDirty ? <Badge colorPalette="orange">Unsaved changes</Badge> : null}
 							</HStack>
 							<Text mt={1} fontSize="xs" color="text.muted">
 								Split into focused sections so long course details stay manageable.
 							</Text>
 						</Box>
 						<HStack gap={2}>
-							<Button asChild variant="outline" borderRadius="full">
-								<Link href="/admin/courses">Back</Link>
+							<Button type="button" variant="outline" borderRadius="full" onClick={handleBackToCourses}>
+								Back
 							</Button>
 							<Button type="submit" bg="primary" color="text.inverse" borderRadius="full" disabled={isSaving}>
 								{isSaving ? 'Saving...' : 'Save'}
@@ -1451,9 +1814,11 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 						<Stack gap={2}>
 							{courseEditorSteps.map((step, index) => {
 								const isActive = index === activeStepIndex;
+								const stepErrorCount = errorCountsByStep[step.id];
 
 								return (
 									<Button
+										type="button"
 										key={step.id}
 										justifyContent="flex-start"
 										variant={isActive ? 'solid' : 'ghost'}
@@ -1462,7 +1827,16 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 										borderRadius="full"
 										onClick={() => setActiveStepIndex(index)}
 									>
-										{index + 1}. {step.label}
+										<HStack w="full" justify="space-between" gap={2}>
+											<Text as="span" truncate>
+												{index + 1}. {step.label}
+											</Text>
+											{stepErrorCount ? (
+												<Badge colorPalette="red" borderRadius="full">
+													{stepErrorCount}
+												</Badge>
+											) : null}
+										</HStack>
 									</Button>
 								);
 							})}
@@ -1489,14 +1863,15 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								course={course}
 							/>
 
-							{message ? (
-								<Text color={message.includes('Unable') || message.includes('must be') ? 'red.500' : 'text.muted'}>
-									{message}
-								</Text>
+							{feedback ? (
+								<Box border="1px solid" borderColor={getFeedbackBorderColor(feedback.tone)} borderRadius="lg" p={3}>
+									<Text color={getFeedbackTextColor(feedback.tone)}>{feedback.message}</Text>
+								</Box>
 							) : null}
 
 							<HStack justify="space-between" gap={3} flexWrap="wrap">
 								<Button
+									type="button"
 									variant="outline"
 									borderRadius="full"
 									disabled={activeStepIndex === 0}
@@ -1506,6 +1881,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								</Button>
 								<HStack gap={2}>
 									<Button
+										type="button"
 										variant="outline"
 										borderRadius="full"
 										disabled={activeStepIndex === courseEditorSteps.length - 1}

@@ -61,7 +61,33 @@ const Header = () => {
 	}, []);
 
 	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
-	const authAction = (() => {
+	const loginButton = (location: 'header_nav' | 'mobile_header') => (
+		<Button
+			asChild
+			bg="primary"
+			color="text.inverse"
+			_hover={{ bg: 'primaryHover' }}
+			borderRadius="full"
+			px={{ base: 5, md: 7 }}
+			h={{ base: '36px', md: '40px' }}
+			boxShadow="soft"
+		>
+			<Link
+				href="/login"
+				onClick={() =>
+					trackCtaClicked({
+						label: 'Login',
+						location,
+						destination: '/login',
+						context: 'login'
+					})
+				}
+			>
+				Login
+			</Link>
+		</Button>
+	);
+	const desktopAuthAction = (() => {
 		if (isCheckingUser) {
 			return (
 				<Box
@@ -100,31 +126,34 @@ const Header = () => {
 			);
 		}
 
-		return (
-			<Button
-				asChild
-				bg="primary"
-				color="text.inverse"
-				_hover={{ bg: 'primaryHover' }}
-				borderRadius="full"
-				px={7}
-				boxShadow="soft"
-			>
-				<Link
-					href="/login"
-					onClick={() =>
-						trackCtaClicked({
-							label: 'Login',
-							location: 'header_nav',
-							destination: '/login',
-							context: 'login'
-						})
-					}
-				>
-					Login
+		return loginButton('header_nav');
+	})();
+	const mobileAuthAction = (() => {
+		if (isCheckingUser) {
+			return (
+				<Box
+					w="76px"
+					h="36px"
+					borderRadius="full"
+					bg="bg.card"
+					border="1px solid"
+					borderColor="border.default"
+					aria-hidden="true"
+				/>
+			);
+		}
+
+		if (currentUser) {
+			return (
+				<Link href="/profile" aria-label="Open profile">
+					<Box bg="primary" borderRadius="full" p="3px" boxShadow="soft" _hover={{ bg: 'primaryHover' }}>
+						<UserAvatar user={currentUser} label={firstName} size="34px" />
+					</Box>
 				</Link>
-			</Button>
-		);
+			);
+		}
+
+		return loginButton('mobile_header');
 	})();
 
 	return (
@@ -139,21 +168,16 @@ const Header = () => {
 			borderColor="border.muted"
 		>
 			<Container maxW="6xl" py={{ base: 3, md: 4 }}>
-				<Flex align="center" justify={{ base: 'center', md: 'space-between' }} position="relative">
+				<Flex align="center" justify="space-between" position="relative">
 					<Link href="/" aria-label="Shattak home">
 						<Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold" letterSpacing="tight" color="text.primary">
 							Shattak
 						</Text>
 					</Link>
-					<Box
-						display={{ base: 'inline-flex', md: 'none' }}
-						position="absolute"
-						right="0"
-						top="50%"
-						transform="translateY(-50%)"
-					>
+					<HStack display={{ base: 'flex', md: 'none' }} gap={3}>
+						{mobileAuthAction}
 						<ThemeToggle />
-					</Box>
+					</HStack>
 					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
 						{headerLinks.map(link => (
 							<Link
@@ -198,7 +222,7 @@ const Header = () => {
 								Become an Instructor
 							</Link>
 						</Button>
-						{authAction}
+						{desktopAuthAction}
 						<ThemeToggle />
 					</HStack>
 				</Flex>

@@ -27,19 +27,7 @@ export const navLinks: NavLink[] = [
 	{ id: 'instructor', label: 'Become an Instructor', href: '/#instructor' }
 ];
 
-export const courseCategories = [
-	'Futured',
-	'Software Development',
-	'Data & AI',
-	'DevOps & Cloud',
-	'Business & Management',
-	'Marketing',
-	'Finance',
-	'Creative',
-	'Academical',
-	'Sport & Gaming',
-	'Lifestyle'
-] as const;
+export { courseCategories } from '~/lib/constants/course-categories';
 
 export const features: Feature[] = [
 	{

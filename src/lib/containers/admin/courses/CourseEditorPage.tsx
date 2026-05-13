@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+	Controller,
 	useFieldArray,
 	useForm,
 	type Control,
@@ -25,6 +26,8 @@ import {
 	type AdminCourseMode,
 	type AdminCourseStatus
 } from '~/lib/api/admin-courses';
+import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
+import { courseCategories } from '~/lib/constants/course-categories';
 
 type CourseEditorPageProps = {
 	courseId?: string;
@@ -33,7 +36,7 @@ type CourseEditorPageProps = {
 type CourseEditorStepId = 'basics' | 'media' | 'value' | 'proof' | 'curriculum' | 'review';
 
 const courseEditorSteps: Array<{ id: CourseEditorStepId; label: string; description: string }> = [
-	{ id: 'basics', label: 'Basics', description: 'Public identity, category, and course positioning.' },
+	{ id: 'basics', label: 'Basics', description: 'Public identity, categories, and course positioning.' },
 	{ id: 'media', label: 'Pricing & Media', description: 'Commercial details, links, images, and visible metrics.' },
 	{
 		id: 'value',
@@ -86,8 +89,7 @@ const courseEditorSchema = z.object({
 	title: z.string().trim().min(1, 'Course title is required.').max(180),
 	subtitle: z.string().max(240),
 	summary: z.string().max(600),
-	category: z.string().max(120),
-	categoriesText: z.string(),
+	categories: z.array(z.string()).min(1, 'Select at least one category.'),
 	level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
 	price: z.number().min(0),
 	originalPrice: z.number().min(0),
@@ -215,8 +217,7 @@ const defaultFormValues: CourseEditorFormValues = {
 	title: '',
 	subtitle: '',
 	summary: '',
-	category: '',
-	categoriesText: '',
+	categories: [],
 	level: 'BEGINNER',
 	price: 0,
 	originalPrice: 0,
@@ -252,12 +253,6 @@ const defaultFormValues: CourseEditorFormValues = {
 
 const createRowId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const textListToArray = (value: string) =>
-	value
-		.split(/\r?\n|,/)
-		.map(item => item.trim())
-		.filter(Boolean);
-
 const textLinesToArray = (value: string) =>
 	value
 		.split(/\r?\n/)
@@ -287,13 +282,20 @@ const textToSectionItems = (value: string) =>
 		};
 	});
 
+const getCourseCategories = (course: AdminCourse) => {
+	if (course.categories.length) {
+		return course.categories;
+	}
+
+	return course.category ? [course.category] : [];
+};
+
 const courseToFormValues = (course: AdminCourse): CourseEditorFormValues => ({
 	slug: course.slug,
 	title: course.title,
 	subtitle: course.subtitle,
 	summary: course.summary,
-	category: course.category,
-	categoriesText: course.categories.join('\n'),
+	categories: getCourseCategories(course),
 	level: course.level,
 	price: course.price,
 	originalPrice: course.originalPrice,
@@ -402,8 +404,8 @@ const formValuesToPayload = (values: CourseEditorFormValues): AdminCourseInput =
 	title: values.title.trim(),
 	subtitle: values.subtitle.trim(),
 	summary: values.summary.trim(),
-	category: values.category.trim(),
-	categories: textListToArray(values.categoriesText),
+	category: values.categories[0] ?? '',
+	categories: values.categories,
 	level: values.level,
 	price: values.price,
 	originalPrice: values.originalPrice,
@@ -1108,23 +1110,28 @@ const SessionSectionsEditor = ({
 	);
 };
 
-const BasicsStep = ({ register, errors }: Pick<CourseEditorSectionProps, 'register' | 'errors'>) => (
+const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={4}>
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
 			<FormField label="Title" name="title" register={register} errors={errors} />
 			<FormField label="Slug" name="slug" register={register} errors={errors} placeholder="generated-from-title" />
 			<SelectField label="Status" name="status" register={register} options={courseStatusOptions} />
-			<FormField label="Primary category" name="category" register={register} errors={errors} />
 			<SelectField label="Level" name="level" register={register} options={courseLevelOptions} />
 			<SelectField label="Mode" name="mode" register={register} options={courseModeOptions} />
 		</SimpleGrid>
-		<TextareaField
-			label="Categories"
-			name="categoriesText"
-			register={register}
-			errors={errors}
-			minH="84px"
-			placeholder="One category per line, or comma separated"
+		<Controller
+			control={control}
+			name="categories"
+			render={({ field }) => (
+				<MultiSelectDropdown
+					label="Categories"
+					options={courseCategories}
+					selectedValues={field.value}
+					onChange={field.onChange}
+					placeholder="Select course categories"
+					error={getFieldError(errors, 'categories')}
+				/>
+			)}
 		/>
 		<TextareaField label="Subtitle" name="subtitle" register={register} errors={errors} minH="80px" />
 		<TextareaField label="Summary" name="summary" register={register} errors={errors} minH="110px" />
@@ -1253,7 +1260,7 @@ const CourseEditorStepFields = ({
 }) => {
 	switch (activeStepId) {
 		case 'basics':
-			return <BasicsStep register={register} errors={errors} />;
+			return <BasicsStep control={control} register={register} errors={errors} />;
 		case 'media':
 			return <MediaStep register={register} errors={errors} />;
 		case 'value':
@@ -1352,7 +1359,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 		() => [
 			{ label: 'Status', value: watchedValues.status },
 			{ label: 'Slug', value: watchedValues.slug || 'Generated on create' },
-			{ label: 'Category', value: watchedValues.category || 'Not set' },
+			{ label: 'Categories', value: watchedValues.categories.length ? watchedValues.categories.join(', ') : 'Not set' },
 			{ label: 'Level', value: watchedValues.level },
 			{ label: 'Mode', value: watchedValues.mode },
 			{ label: 'Price', value: watchedValues.price > 0 ? `INR ${watchedValues.price}` : 'Free' }

@@ -180,6 +180,7 @@ export type AdminCourseListParams = {
 	q?: string;
 	status?: AdminCourseStatus | '';
 	category?: string;
+	categories?: string[];
 	level?: AdminCourseLevel | '';
 	mode?: AdminCourseMode | '';
 	sortBy?: 'createdAt' | 'updatedAt' | 'title' | 'status' | 'publishedAt' | 'price' | 'enrollmentCount' | 'rating';
@@ -202,6 +203,14 @@ export const listAdminCourses = (params: AdminCourseListParams = {}) => {
 
 	Object.entries(params).forEach(([key, value]) => {
 		if (value !== undefined && value !== '') {
+			if (Array.isArray(value)) {
+				if (value.length) {
+					searchParams.set(key, value.join(','));
+				}
+
+				return;
+			}
+
 			searchParams.set(key, String(value));
 		}
 	});

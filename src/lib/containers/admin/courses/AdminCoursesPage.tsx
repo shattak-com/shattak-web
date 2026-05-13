@@ -13,6 +13,8 @@ import {
 	type AdminCoursePagination,
 	type AdminCourseStatus
 } from '~/lib/api/admin-courses';
+import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
+import { courseCategories } from '~/lib/constants/course-categories';
 
 const courseStatusOptions: Array<{ label: string; value: AdminCourseStatus | '' }> = [
 	{ label: 'All statuses', value: '' },
@@ -106,7 +108,7 @@ const AdminCoursesPage = () => {
 	const [pagination, setPagination] = useState(defaultPagination);
 	const [query, setQuery] = useState('');
 	const [status, setStatus] = useState<AdminCourseStatus | ''>('');
-	const [category, setCategory] = useState('');
+	const [categories, setCategories] = useState<string[]>([]);
 	const [level, setLevel] = useState<AdminCourseLevel | ''>('');
 	const [mode, setMode] = useState<AdminCourseMode | ''>('');
 	const [sortBy, setSortBy] = useState<NonNullable<AdminCourseListParams['sortBy']>>('updatedAt');
@@ -123,7 +125,7 @@ const AdminCoursesPage = () => {
 			const result = await listAdminCourses({
 				q: query,
 				status,
-				category,
+				categories,
 				level,
 				mode,
 				sortBy,
@@ -138,7 +140,7 @@ const AdminCoursesPage = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [category, level, mode, page, pagination.pageSize, query, sortBy, sortOrder, status]);
+	}, [categories, level, mode, page, pagination.pageSize, query, sortBy, sortOrder, status]);
 
 	useEffect(() => {
 		loadCourses().catch(() => undefined);
@@ -152,7 +154,7 @@ const AdminCoursesPage = () => {
 	const resetFilters = () => {
 		setQuery('');
 		setStatus('');
-		setCategory('');
+		setCategories([]);
 		setLevel('');
 		setMode('');
 		setSortBy('updatedAt');
@@ -190,17 +192,14 @@ const AdminCoursesPage = () => {
 								h="40px"
 							/>
 						</Box>
-						<Box minW={{ base: '100%', md: '180px' }}>
-							<Text fontSize="xs" color="text.muted" mb={1}>
-								Category
-							</Text>
-							<Input
-								value={category}
-								onChange={event => setCategory(event.target.value)}
-								placeholder="Category"
-								h="40px"
-							/>
-						</Box>
+						<MultiSelectDropdown
+							label="Categories"
+							options={courseCategories}
+							selectedValues={categories}
+							onChange={setCategories}
+							placeholder="All categories"
+							minW={{ base: '100%', md: '240px' }}
+						/>
 						<NativeSelect
 							label="Status"
 							value={status}
@@ -306,7 +305,17 @@ const AdminCoursesPage = () => {
 									</Table.Cell>
 									<Table.Cell>
 										<Stack gap={1} fontSize="xs">
-											<Text>{course.category || 'No category'}</Text>
+											{course.categories.length ? (
+												<HStack gap={1} flexWrap="wrap">
+													{course.categories.map(category => (
+														<Badge key={category} borderRadius="full">
+															{category}
+														</Badge>
+													))}
+												</HStack>
+											) : (
+												<Text>No categories</Text>
+											)}
 											<Text color="text.muted">
 												{course.level} / {course.mode}
 											</Text>

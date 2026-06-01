@@ -47,9 +47,12 @@ const sortOptions: Array<{ label: string; value: NonNullable<AdminCourseListPara
 	{ label: 'Rating', value: 'rating' }
 ];
 
+const adminCourseDefaultPageSize = 50;
+const defaultCourseStatusFilter: AdminCourseStatus = 'PUBLISHED';
+
 const defaultPagination: AdminCoursePagination = {
 	page: 1,
-	pageSize: 10,
+	pageSize: adminCourseDefaultPageSize,
 	total: 0,
 	totalPages: 1,
 	hasNextPage: false,
@@ -107,7 +110,7 @@ const AdminCoursesPage = () => {
 	const [courses, setCourses] = useState<AdminCourse[]>([]);
 	const [pagination, setPagination] = useState(defaultPagination);
 	const [query, setQuery] = useState('');
-	const [status, setStatus] = useState<AdminCourseStatus | ''>('');
+	const [status, setStatus] = useState<AdminCourseStatus | ''>(defaultCourseStatusFilter);
 	const [categories, setCategories] = useState<string[]>([]);
 	const [level, setLevel] = useState<AdminCourseLevel | ''>('');
 	const [mode, setMode] = useState<AdminCourseMode | ''>('');
@@ -131,7 +134,7 @@ const AdminCoursesPage = () => {
 				sortBy,
 				sortOrder,
 				page,
-				pageSize: pagination.pageSize
+				pageSize: adminCourseDefaultPageSize
 			});
 			setCourses(result.courses);
 			setPagination(result.pagination);
@@ -140,7 +143,7 @@ const AdminCoursesPage = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [categories, level, mode, page, pagination.pageSize, query, sortBy, sortOrder, status]);
+	}, [categories, level, mode, page, query, sortBy, sortOrder, status]);
 
 	useEffect(() => {
 		loadCourses().catch(() => undefined);
@@ -153,7 +156,7 @@ const AdminCoursesPage = () => {
 
 	const resetFilters = () => {
 		setQuery('');
-		setStatus('');
+		setStatus(defaultCourseStatusFilter);
 		setCategories([]);
 		setLevel('');
 		setMode('');

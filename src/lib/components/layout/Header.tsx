@@ -7,28 +7,47 @@ import { useEffect, useMemo, useState } from 'react';
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
+import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 import ThemeToggle from '~/lib/components/ThemeToggle';
 
-const headerLinks = [
-	{
-		id: 'about',
-		label: 'About',
-		href: '/about',
-		external: false
-	},
-	{
-		id: 'campus-ambassador',
-		label: 'Campus Ambassador Program',
-		href: 'https://forms.gle/HqTLJG6EcNzgNRcW9',
-		external: true
-	}
-];
+const instructorFormUrl = 'https://forms.gle/yQVwU7FJ9Q5rDHTq7';
 
 const getFirstName = (user: AuthenticatedUser) => {
 	const source = user.name.trim() || user.email.trim();
 	const firstName = source.split(/\s+/)[0] ?? 'User';
 
 	return firstName.split('@')[0] || 'User';
+};
+
+type AuthLoadingPlaceholderProps = {
+	variant: 'desktop' | 'mobile';
+};
+
+const AuthLoadingPlaceholder = ({ variant }: AuthLoadingPlaceholderProps) => {
+	const isDesktop = variant === 'desktop';
+
+	return (
+		<HStack
+			role="status"
+			aria-label="Checking sign-in status"
+			w="100%"
+			h={isDesktop ? '40px' : '36px'}
+			px={isDesktop ? 2 : 1.5}
+			border="1px solid"
+			borderColor="border.default"
+			borderRadius="full"
+			bg="bg.card"
+			boxShadow="soft"
+			gap={2}
+			justify={isDesktop ? 'space-between' : 'center'}
+			overflow="hidden"
+			flexShrink={0}
+			_dark={{ bg: 'gray.900' }}
+		>
+			<SkeletonBlock h={isDesktop ? '10px' : '9px'} w={isDesktop ? '74px' : '36px'} borderRadius="full" />
+			<SkeletonBlock boxSize={isDesktop ? '28px' : '24px'} borderRadius="full" flexShrink={0} />
+		</HStack>
+	);
 };
 
 const Header = () => {
@@ -61,6 +80,24 @@ const Header = () => {
 	}, []);
 
 	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
+	const instructorLink = (context: 'desktop' | 'mobile') => (
+		<Link
+			href={instructorFormUrl}
+			target="_blank"
+			rel="noopener noreferrer"
+			onClick={() =>
+				trackInstructorCtaClicked({
+					location: context === 'desktop' ? 'header_primary' : 'mobile_header',
+					destination: instructorFormUrl,
+					context
+				})
+			}
+		>
+			<Text fontSize="sm" fontWeight="medium" color="text.secondary" whiteSpace="nowrap">
+				Become an Instructor
+			</Text>
+		</Link>
+	);
 	const loginButton = (location: 'header_nav' | 'mobile_header') => (
 		<Button
 			asChild
@@ -89,17 +126,7 @@ const Header = () => {
 	);
 	const desktopAuthAction = (() => {
 		if (isCheckingUser) {
-			return (
-				<Box
-					w="104px"
-					h="40px"
-					borderRadius="full"
-					bg="bg.card"
-					border="1px solid"
-					borderColor="border.default"
-					aria-hidden="true"
-				/>
-			);
+			return <AuthLoadingPlaceholder variant="desktop" />;
 		}
 
 		if (currentUser) {
@@ -114,7 +141,8 @@ const Header = () => {
 						py={1.5}
 						gap={3}
 						boxShadow="soft"
-						maxW="180px"
+						w="100%"
+						minW={0}
 						_hover={{ bg: 'primaryHover' }}
 					>
 						<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
@@ -130,17 +158,7 @@ const Header = () => {
 	})();
 	const mobileAuthAction = (() => {
 		if (isCheckingUser) {
-			return (
-				<Box
-					w="76px"
-					h="36px"
-					borderRadius="full"
-					bg="bg.card"
-					border="1px solid"
-					borderColor="border.default"
-					aria-hidden="true"
-				/>
-			);
+			return <AuthLoadingPlaceholder variant="mobile" />;
 		}
 
 		if (currentUser) {
@@ -175,54 +193,17 @@ const Header = () => {
 						</Text>
 					</Link>
 					<HStack display={{ base: 'flex', md: 'none' }} gap={3}>
-						{mobileAuthAction}
+						<Box display={{ base: 'none', sm: 'block' }}>{instructorLink('mobile')}</Box>
+						<Flex w="88px" justify="flex-end" align="center" flexShrink={0}>
+							{mobileAuthAction}
+						</Flex>
 						<ThemeToggle />
 					</HStack>
 					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
-						{headerLinks.map(link => (
-							<Link
-								key={link.id}
-								href={link.href}
-								target={link.external ? '_blank' : undefined}
-								rel={link.external ? 'noopener noreferrer' : undefined}
-								onClick={() =>
-									trackCtaClicked({
-										label: link.label,
-										location: 'header_nav',
-										destination: link.href,
-										context: link.id
-									})
-								}
-							>
-								<Text fontSize="sm" fontWeight="medium" color="text.secondary">
-									{link.label}
-								</Text>
-							</Link>
-						))}
-						<Button
-							asChild
-							bg="primary"
-							color="text.inverse"
-							_hover={{ bg: 'primaryHover' }}
-							borderRadius="full"
-							px={6}
-						>
-							<Link
-								href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
-								target="_blank"
-								rel="noopener noreferrer"
-								onClick={() =>
-									trackInstructorCtaClicked({
-										location: 'header_primary',
-										destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7',
-										context: 'desktop'
-									})
-								}
-							>
-								Become an Instructor
-							</Link>
-						</Button>
-						{desktopAuthAction}
+						{instructorLink('desktop')}
+						<Flex w="100px" justify="flex-end" align="center" flexShrink={0}>
+							{desktopAuthAction}
+						</Flex>
 						<ThemeToggle />
 					</HStack>
 				</Flex>

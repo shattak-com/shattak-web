@@ -1,39 +1,41 @@
 'use client';
 
-import { Box, Container, HStack, Stack, Text } from '@chakra-ui/react';
+import { Box, Container, HStack, Image as ChakraImage, Stack, Text } from '@chakra-ui/react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getCurrentUser } from '~/lib/api/auth';
-import { getOnboardingStatus } from '~/lib/api/onboarding';
+import type { AuthResult } from '~/lib/api/auth';
+import { getOnboardingStatus, type OnboardingStatus } from '~/lib/api/onboarding';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
 import { AuthPageSkeleton, BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 import Header from '~/lib/components/layout/Header';
 import { getOnboardingRedirectPath } from '~/lib/utils/onboarding';
+import { writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 
-const COURSES = [
-	{ marker: 'M', subject: 'Mathematics', chapter: 'Ch. 4 - Calculus', pct: 72 },
-	{ marker: 'P', subject: 'Physics', chapter: 'Ch. 2 - Mechanics', pct: 45 }
-];
+const LOGIN_PREVIEW_IMAGE_URL =
+	'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=85';
 
 const LoginPage = () => {
 	const router = useRouter();
 	const [isCheckingSession, setIsCheckingSession] = useState(true);
 	const [loginProgressMessage, setLoginProgressMessage] = useState('');
 
-	const redirectToOnboarding = useCallback(async () => {
-		const onboardingStatus = await getOnboardingStatus();
-		router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
-		router.refresh();
-	}, [router]);
+	const redirectToOnboarding = useCallback(
+		(onboardingStatus: OnboardingStatus) => {
+			writeCachedOnboardingStatus(onboardingStatus);
+			router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
+		},
+		[router]
+	);
 
 	useEffect(() => {
 		let isMounted = true;
 
 		const checkSession = async () => {
 			try {
-				await getCurrentUser();
-				await redirectToOnboarding();
+				const onboardingStatus = await getOnboardingStatus();
+				redirectToOnboarding(onboardingStatus);
 			} catch {
 				if (isMounted) {
 					setIsCheckingSession(false);
@@ -52,13 +54,23 @@ const LoginPage = () => {
 		};
 	}, [redirectToOnboarding]);
 
-	const handleSuccess = useCallback(async () => {
-		setLoginProgressMessage('Preparing your learning profile...');
-		const onboardingStatus = await getOnboardingStatus();
-		setLoginProgressMessage('Taking you to the next step...');
-		router.push(getOnboardingRedirectPath(onboardingStatus.profile));
-		router.refresh();
-	}, [router]);
+	const handleSuccess = useCallback(
+		async (result: AuthResult) => {
+			setLoginProgressMessage('Preparing your learning profile...');
+
+			const onboardingStatus = result.onboardingProfile
+				? {
+						user: result.user,
+						profile: result.onboardingProfile
+					}
+				: await getOnboardingStatus();
+
+			setLoginProgressMessage('Taking you to the next step...');
+			writeCachedOnboardingStatus(onboardingStatus);
+			router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
+		},
+		[router]
+	);
 
 	return (
 		<>
@@ -66,24 +78,29 @@ const LoginPage = () => {
 			{loginProgressMessage ? (
 				<BlockingProgressOverlay title="Login successful" message={loginProgressMessage} />
 			) : null}
-			<Container maxW="6xl" py={{ base: 10, md: 14 }}>
+			<Container maxW="7xl" py={{ base: 8, md: 7, xl: 8 }}>
 				{isCheckingSession ? (
 					<AuthPageSkeleton />
 				) : (
 					<Box
 						display="grid"
-						gridTemplateColumns={{ base: '1fr', lg: '0.92fr 1.08fr' }}
-						gap={{ base: 4, lg: 4 }}
+						gridTemplateColumns={{ base: '1fr', lg: '1fr 1.12fr' }}
+						gap={{ base: 5, lg: 5 }}
 						alignItems="stretch"
+						maxW="1220px"
+						minH={{ lg: 'min(580px, calc(100vh - 140px))' }}
+						mx="auto"
 					>
 						<Box
 							border="1px solid"
 							borderColor="border.default"
 							borderRadius="2xl"
 							bg="bg.card"
-							p={{ base: 6, md: 10 }}
+							p={{ base: 6, md: 10, xl: 12 }}
 							display="flex"
 							flexDirection="column"
+							justifyContent="center"
+							minH={{ base: 'auto', md: '480px', xl: '580px' }}
 						>
 							<HStack
 								display="inline-flex"
@@ -105,20 +122,26 @@ const LoginPage = () => {
 
 							<Text
 								as="h1"
-								fontSize={{ base: '3xl', md: '4.5xl' }}
+								fontSize={{ base: '2xl', sm: '3xl', md: '4xl' }}
 								lineHeight="1.1"
 								letterSpacing="0"
 								fontWeight="bold"
+								whiteSpace={{ base: 'normal', sm: 'nowrap' }}
 							>
-								Welcome
-								<br />
-								to Shattak
+								Welcome to Shattak
 							</Text>
-							<Text mt={3} mb={7} color="text.muted" fontSize="sm" lineHeight="tall" fontWeight="light">
+							<Text
+								mt={4}
+								mb={9}
+								color="text.muted"
+								fontSize={{ base: 'sm', md: 'md' }}
+								lineHeight="tall"
+								fontWeight="light"
+							>
 								Sign in to access your courses, track your progress, and continue where you left off.
 							</Text>
 
-							<Box h="1px" bg="border.default" mb={7} />
+							<Box h="1px" bg="border.default" mb={9} />
 							<Box alignSelf="center" w="320px" maxW="100%">
 								<GoogleLoginButton
 									context="user"
@@ -128,144 +151,84 @@ const LoginPage = () => {
 								/>
 							</Box>
 
-							<Text mt={4} fontSize="xs" color="text.subtle" textAlign="center" lineHeight="tall">
+							<Text mt={5} fontSize="xs" color="text.subtle" textAlign="center" lineHeight="tall">
 								By signing in you agree to our{' '}
-								<Text as="a" color="primary">
-									Terms
-								</Text>{' '}
+								<Link href="/terms">
+									<Text as="span" color="primary" _hover={{ textDecoration: 'underline' }}>
+										Terms
+									</Text>
+								</Link>{' '}
 								and{' '}
-								<Text as="a" color="primary">
-									Privacy Policy
-								</Text>
+								<Link href="/privacy-policy">
+									<Text as="span" color="primary" _hover={{ textDecoration: 'underline' }}>
+										Privacy Policy
+									</Text>
+								</Link>
 								.
 							</Text>
 						</Box>
 
-						<Box border="1px solid" borderColor="border.default" borderRadius="2xl" bg="bg.subtle" overflow="hidden">
-							<Stack gap={4} p={{ base: 5, md: 7 }} h="full">
-								<Text
-									fontSize="xs"
-									fontWeight="medium"
-									letterSpacing="wider"
-									color="text.subtle"
-									textTransform="uppercase"
+						<Box
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="2xl"
+							bg="bg.subtle"
+							overflow="hidden"
+							minH={{ base: '320px', md: '460px', lg: '100%' }}
+							position="relative"
+						>
+							<ChakraImage
+								src={LOGIN_PREVIEW_IMAGE_URL}
+								alt="Students collaborating during a learning session"
+								w="100%"
+								h="100%"
+								minH={{ base: '320px', md: '460px', xl: '580px' }}
+								objectFit="cover"
+								objectPosition="center"
+							/>
+							<Box
+								position="absolute"
+								inset={0}
+								bg="linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.62) 100%)"
+								_dark={{
+									bg: 'linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.72) 100%)'
+								}}
+							/>
+							<Stack
+								position="absolute"
+								left={{ base: 5, md: 7 }}
+								right={{ base: 5, md: 7 }}
+								bottom={{ base: 5, md: 7 }}
+								gap={3}
+							>
+								<HStack
+									gap={2}
+									px={3}
+									py={1}
+									borderRadius="full"
+									bg="rgba(255, 255, 255, 0.16)"
+									border="1px solid"
+									borderColor="rgba(255, 255, 255, 0.28)"
+									backdropFilter="blur(12px)"
+									width="fit-content"
 								>
-									Your dashboard
-								</Text>
-
-								<Box bg="primary" borderRadius="xl" p={5} position="relative" overflow="hidden">
-									<Box
-										position="absolute"
-										w="180px"
-										h="180px"
-										borderRadius="full"
-										bg="whiteAlpha.100"
-										top="-60px"
-										right="-40px"
-									/>
-									<Box display="flex" alignItems="flex-end" justifyContent="space-between">
-										<Box>
-											<Text fontSize="4xl" fontWeight="bold" color="white" lineHeight="1">
-												84%
-											</Text>
-											<Text fontSize="xs" color="whiteAlpha.700" mt={1} letterSpacing="wide">
-												Overall performance
-											</Text>
-										</Box>
-										<Box bg="whiteAlpha.200" borderRadius="lg" px={3} py={1.5}>
-											<Text fontSize="xs" color="white" fontWeight="medium">
-												+6 this week
-											</Text>
-										</Box>
-									</Box>
-								</Box>
-
-								<HStack gap={3}>
-									{[
-										{ n: '12', l: 'Courses enrolled', pct: 75, color: 'primary' },
-										{ n: '6', l: 'Day streak', pct: 40, color: 'orange.400' }
-									].map(({ n, l, pct, color }) => (
-										<Box
-											key={l}
-											flex="1"
-											bg="bg.card"
-											border="1px solid"
-											borderColor="border.default"
-											borderRadius="xl"
-											p={4}
-										>
-											<Text fontSize="2xl" fontWeight="bold">
-												{n}
-											</Text>
-											<Text fontSize="xs" color="text.muted" mt={0.5}>
-												{l}
-											</Text>
-											<Box mt={3} h="3px" borderRadius="full" bg="border.default">
-												<Box h="full" borderRadius="full" bg={color} w={`${pct}%`} />
-											</Box>
-										</Box>
-									))}
-								</HStack>
-
-								<Text
-									fontSize="xs"
-									fontWeight="medium"
-									letterSpacing="wider"
-									color="text.subtle"
-									textTransform="uppercase"
-								>
-									Continue learning
-								</Text>
-								<Stack gap={2}>
-									{COURSES.map(({ marker, subject, chapter, pct }) => (
-										<HStack
-											key={subject}
-											bg="bg.card"
-											border="1px solid"
-											borderColor="border.default"
-											borderRadius="lg"
-											p={3}
-											gap={3}
-										>
-											<Box
-												w="32px"
-												h="32px"
-												borderRadius="md"
-												bg="bg.subtle"
-												display="flex"
-												alignItems="center"
-												justifyContent="center"
-												fontSize="sm"
-												fontWeight="bold"
-												flexShrink={0}
-											>
-												{marker}
-											</Box>
-											<Box flex="1">
-												<Text fontSize="xs" fontWeight="semibold">
-													{subject}
-												</Text>
-												<Text fontSize="xs" color="text.muted">
-													{chapter}
-												</Text>
-											</Box>
-											<Text fontSize="xs" fontWeight="medium" color="primary">
-												{pct}%
-											</Text>
-										</HStack>
-									))}
-								</Stack>
-
-								<HStack mt="auto" pt={2} justify="space-between">
-									<HStack gap={1.5}>
-										<Box boxSize="6px" borderRadius="full" bg="primary" />
-										<Box boxSize="6px" borderRadius="full" bg="border.default" />
-										<Box boxSize="6px" borderRadius="full" bg="border.default" />
-									</HStack>
-									<Text fontSize="xs" color="text.subtle">
-										Preview of your workspace
+									<Box boxSize="6px" borderRadius="full" bg="primary" />
+									<Text
+										fontSize="xs"
+										fontWeight="semibold"
+										color="white"
+										letterSpacing="wider"
+										textTransform="uppercase"
+									>
+										Learning starts here
 									</Text>
 								</HStack>
+								<Text color="white" fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" lineHeight="short">
+									Build skills with guided sessions and practical projects.
+								</Text>
+								<Text color="whiteAlpha.800" fontSize="sm" maxW="440px" lineHeight="tall">
+									Sign in to continue your learning profile and access upcoming Shattak courses.
+								</Text>
 							</Stack>
 						</Box>
 					</Box>

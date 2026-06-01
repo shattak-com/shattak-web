@@ -103,8 +103,7 @@ const AdminShell = ({ children }: AdminShellProps) => {
 		try {
 			await logoutAdmin();
 			window.google?.accounts.id.disableAutoSelect();
-			router.push('/admin/login');
-			router.refresh();
+			router.replace('/admin/login');
 		} catch {
 			setErrorMessage('Unable to log out. Please try again.');
 		} finally {

@@ -12,6 +12,7 @@ import UserAvatar from '~/lib/components/auth/UserAvatar';
 import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import LearningProfileSection from '~/lib/containers/profile/components/LearningProfileSection';
 import { getProtectedUserRouteRedirectPath } from '~/lib/utils/onboarding';
+import { clearCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 
 const getDisplayName = (user: AuthenticatedUser) => user.name.trim() || user.email;
 
@@ -64,9 +65,9 @@ const ProfilePage = () => {
 
 		try {
 			await logout();
+			clearCachedOnboardingStatus();
 			window.google?.accounts.id.disableAutoSelect();
-			router.push('/login');
-			router.refresh();
+			router.replace('/login');
 		} catch {
 			setErrorMessage('Unable to log out. Please try again.');
 		} finally {

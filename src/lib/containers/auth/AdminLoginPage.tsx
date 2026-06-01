@@ -21,7 +21,6 @@ const AdminLoginPage = () => {
 			try {
 				await getCurrentAdmin();
 				router.replace('/admin/courses/');
-				router.refresh();
 			} catch {
 				if (isMounted) {
 					setIsCheckingSession(false);
@@ -42,8 +41,7 @@ const AdminLoginPage = () => {
 
 	const handleSuccess = useCallback(() => {
 		setLoginProgressMessage('Opening the admin workspace...');
-		router.push('/admin/courses/');
-		router.refresh();
+		router.replace('/admin/courses/');
 	}, [router]);
 
 	return (

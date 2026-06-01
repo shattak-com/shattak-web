@@ -2,6 +2,7 @@
 
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -63,20 +64,20 @@ const courseEditorSteps: Array<{ id: CourseEditorStepId; label: string; descript
 		description: 'Requirements, learning outcomes, audience, tools, and completion benefits.'
 	},
 	{ id: 'instructors', label: 'Instructors', description: 'Mentor profile details shown on the course page.' },
-	{ id: 'gallery', label: 'Gallery', description: 'Project gallery and student project proof.' },
+	{ id: 'gallery', label: 'Project Gallery', description: 'Project overview, live link, gallery, and student proof.' },
 	{ id: 'reviews', label: 'Reviews & FAQs', description: 'Testimonials and common course questions.' },
 	{ id: 'prerequisites', label: 'Prerequisites', description: 'Pre-course requirements and prep materials.' },
 	{ id: 'liveSessions', label: 'Live Sessions', description: 'Live class sections and session items.' },
 	{
 		id: 'postSessionMaterials',
-		label: 'Post-Session Materials',
+		label: 'Post Session',
 		description: 'Materials learners receive after sessions.'
 	},
 	{ id: 'review', label: 'Review', description: 'Confirm status and save the course.' }
 ];
 
 const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
-	basics: ['slug', 'title', 'subtitle', 'summary', 'categories', 'level', 'mode', 'status', 'about'],
+	basics: ['slug', 'title', 'subtitle', 'summary', 'categories', 'level', 'mode', 'status'],
 	media: [
 		'price',
 		'originalPrice',
@@ -85,8 +86,7 @@ const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
 		'thumbnailImage',
 		'promoImage',
 		'promoImageBrand',
-		'paymentLink',
-		'liveUrl'
+		'paymentLink'
 	],
 	highlights: ['highlights', 'schedule'],
 	outcomes: [
@@ -98,7 +98,7 @@ const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
 		'tools'
 	],
 	instructors: ['instructors'],
-	gallery: ['projectGallery', 'projects'],
+	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],
 	prerequisites: ['prerequisites'],
 	liveSessions: ['liveSessions'],
@@ -1308,27 +1308,30 @@ const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => 
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
 			<FormField label="Title" name="title" register={register} errors={errors} />
 			<FormField label="Slug" name="slug" register={register} errors={errors} placeholder="generated-from-title" />
+		</SimpleGrid>
+		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
 			<SelectField label="Status" name="status" register={register} options={courseStatusOptions} />
 			<SelectField label="Level" name="level" register={register} options={courseLevelOptions} />
-			<SelectField label="Mode" name="mode" register={register} options={courseModeOptions} />
 		</SimpleGrid>
-		<Controller
-			control={control}
-			name="categories"
-			render={({ field }) => (
-				<MultiSelectDropdown
-					label="Categories"
-					options={courseCategories}
-					selectedValues={field.value}
-					onChange={field.onChange}
-					placeholder="Select course categories"
-					error={getFieldError(errors, 'categories')}
-				/>
-			)}
-		/>
+		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+			<SelectField label="Mode" name="mode" register={register} options={courseModeOptions} />
+			<Controller
+				control={control}
+				name="categories"
+				render={({ field }) => (
+					<MultiSelectDropdown
+						label="Categories"
+						options={courseCategories}
+						selectedValues={field.value}
+						onChange={field.onChange}
+						placeholder="Select course categories"
+						error={getFieldError(errors, 'categories')}
+					/>
+				)}
+			/>
+		</SimpleGrid>
 		<TextareaField label="Subtitle" name="subtitle" register={register} errors={errors} minH="80px" />
 		<TextareaField label="Summary" name="summary" register={register} errors={errors} minH="110px" />
-		<TextareaField label="About" name="about" register={register} errors={errors} minH="180px" />
 	</Stack>
 );
 
@@ -1345,7 +1348,6 @@ const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 			<ImageField label="Promo image" name="promoImage" control={control} errors={errors} />
 			<ImageField label="Promo brand image" name="promoImageBrand" control={control} errors={errors} />
 			<FormField label="Payment link" name="paymentLink" register={register} errors={errors} />
-			<FormField label="Live URL" name="liveUrl" register={register} errors={errors} />
 		</SimpleGrid>
 	</Stack>
 );
@@ -1382,6 +1384,8 @@ const InstructorsStep = ({ control, register, errors }: CourseEditorSectionProps
 
 const GalleryStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={5}>
+		<TextareaField label="About the Project" name="about" register={register} errors={errors} minH="180px" />
+		<FormField label="Live URL" name="liveUrl" register={register} errors={errors} />
 		<GalleryEditor control={control} register={register} errors={errors} />
 		<ProjectsEditor control={control} register={register} errors={errors} />
 	</Stack>
@@ -1416,7 +1420,7 @@ const PostSessionMaterialsStep = ({ courseId }: { courseId?: string }) => (
 	<CourseCurriculumEditor
 		courseId={courseId}
 		sectionKey="postSessionMaterials"
-		title="Post-session materials"
+		title="Post section"
 		description="Manage follow-up modules, references, recordings, PDFs, and presentations."
 	/>
 );
@@ -1639,6 +1643,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 	}, [confirmLeaveEditor, router]);
 
 	const watchedValues = watch();
+	const courseViewHref = course?.slug ? `/course/${course.slug}` : null;
 	const summaryItems = useMemo(
 		() => [
 			{ label: 'Status', value: watchedValues.status },
@@ -1680,6 +1685,17 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 							</Text>
 						</Box>
 						<HStack gap={2}>
+							{courseViewHref ? (
+								<Button asChild variant="outline" borderRadius="full">
+									<Link href={courseViewHref} target="_blank" rel="noopener noreferrer">
+										View
+									</Link>
+								</Button>
+							) : (
+								<Button type="button" variant="outline" borderRadius="full" disabled>
+									View
+								</Button>
+							)}
 							<Button type="button" variant="outline" borderRadius="full" onClick={handleBackToCourses}>
 								Back
 							</Button>

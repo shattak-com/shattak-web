@@ -6,8 +6,10 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { getOnboardingStatus, skipMobileNumber, submitMobileNumber } from '~/lib/api/onboarding';
+import type { OnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
 import { getPostMobileSkipPath, isEducationProfileComplete } from '~/lib/utils/onboarding';
+import { readCachedOnboardingStatus, writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 
 const SKIP_REVEAL_DELAY_SECONDS = 6;
 
@@ -177,9 +179,27 @@ const MobileNumberPage = () => {
 
 	const { isSkipVisible } = useDelayedSkipReveal(canSkipMobile, isLoading);
 
+	const applyOnboardingStatus = useCallback(
+		(status: OnboardingStatus) => {
+			if (status.profile.mobileNumberE164) {
+				router.replace(getNextPathAfterMobile(status.profile));
+				return true;
+			}
+
+			setCanSkipMobile(status.profile.canSkipMobile);
+			setIsLoading(false);
+			return false;
+		},
+		[router]
+	);
+
 	useEffect(() => {
 		let isMounted = true;
-		let hasRedirected = false;
+		const cachedStatus = readCachedOnboardingStatus();
+
+		if (cachedStatus) {
+			applyOnboardingStatus(cachedStatus);
+		}
 
 		getOnboardingStatus()
 			.then(status => {
@@ -187,28 +207,17 @@ const MobileNumberPage = () => {
 					return;
 				}
 
-				if (status.profile.mobileNumberE164) {
-					hasRedirected = true;
-					router.replace(getNextPathAfterMobile(status.profile));
-					return;
-				}
-
-				setCanSkipMobile(status.profile.canSkipMobile);
+				writeCachedOnboardingStatus(status);
+				applyOnboardingStatus(status);
 			})
 			.catch(() => {
-				hasRedirected = true;
 				router.replace('/login');
-			})
-			.finally(() => {
-				if (isMounted && !hasRedirected) {
-					setIsLoading(false);
-				}
 			});
 
 		return () => {
 			isMounted = false;
 		};
-	}, [router]);
+	}, [applyOnboardingStatus, router]);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -224,6 +233,7 @@ const MobileNumberPage = () => {
 
 		try {
 			const status = await submitMobileNumber(normalizedMobileNumber, 'IN');
+			writeCachedOnboardingStatus(status);
 			router.replace(getNextPathAfterMobile(status.profile));
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to save mobile number.');
@@ -237,6 +247,7 @@ const MobileNumberPage = () => {
 
 		try {
 			const status = await skipMobileNumber();
+			writeCachedOnboardingStatus(status);
 			router.replace(getPostMobileSkipPath(status.profile));
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to skip this step.');
@@ -322,7 +333,7 @@ const MobileNumberPage = () => {
 										disabled={isSubmitting}
 										w={{ base: 'full', sm: 'fit-content' }}
 									>
-										{isSubmitting ? 'Saving...' : 'Continue'}
+										{isSubmitting ? 'Saving...' : 'Verify'}
 									</Button>
 								</Stack>
 							</Box>

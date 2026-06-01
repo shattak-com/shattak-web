@@ -33,6 +33,35 @@ export class ApiRequestError extends Error {
 
 const getApiUrl = (path: string) => `${getApiBaseUrl()}${path}`;
 
+const shouldLogApiTimings = () =>
+	process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG_API_TIMINGS === 'true';
+
+const getTimestamp = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+const logApiTiming = (method: string, path: string, startedAt: number, status: number | 'failed') => {
+	if (!shouldLogApiTimings()) {
+		return;
+	}
+
+	const duration = Math.round(getTimestamp() - startedAt);
+	// eslint-disable-next-line no-console
+	console.debug(`[api] ${method} ${path} ${status} ${duration}ms`);
+};
+
+const fetchApi = async (path: string, init: RequestInit) => {
+	const method = init.method ?? 'GET';
+	const startedAt = getTimestamp();
+
+	try {
+		const response = await fetch(getApiUrl(path), init);
+		logApiTiming(method, path, startedAt, response.status);
+		return response;
+	} catch (error) {
+		logApiTiming(method, path, startedAt, 'failed');
+		throw error;
+	}
+};
+
 const readApiData = async <T>(response: Response): Promise<T> => {
 	let body: ApiResponse<T> | null = null;
 
@@ -55,7 +84,7 @@ const readApiData = async <T>(response: Response): Promise<T> => {
 };
 
 export const getJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'GET',
 		credentials: 'include',
@@ -69,7 +98,7 @@ export const getJson = async <T>(path: string, init?: RequestInit): Promise<T> =
 };
 
 export const postJson = async <T>(path: string, body?: unknown, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'POST',
 		credentials: 'include',
@@ -85,7 +114,7 @@ export const postJson = async <T>(path: string, body?: unknown, init?: RequestIn
 };
 
 export const postFormData = async <T>(path: string, body: FormData, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'POST',
 		credentials: 'include',
@@ -100,7 +129,7 @@ export const postFormData = async <T>(path: string, body: FormData, init?: Reque
 };
 
 export const patchJson = async <T>(path: string, body?: unknown, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'PATCH',
 		credentials: 'include',
@@ -116,7 +145,7 @@ export const patchJson = async <T>(path: string, body?: unknown, init?: RequestI
 };
 
 export const putJson = async <T>(path: string, body?: unknown, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'PUT',
 		credentials: 'include',
@@ -132,7 +161,7 @@ export const putJson = async <T>(path: string, body?: unknown, init?: RequestIni
 };
 
 export const deleteJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-	const response = await fetch(getApiUrl(path), {
+	const response = await fetchApi(path, {
 		...init,
 		method: 'DELETE',
 		credentials: 'include',

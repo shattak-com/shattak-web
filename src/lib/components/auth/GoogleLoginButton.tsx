@@ -5,7 +5,7 @@ import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
 import { loginAdminWithGoogleCredential, loginWithGoogleCredential } from '~/lib/api/auth';
-import type { AuthenticatedUser } from '~/lib/api/auth';
+import type { AuthResult } from '~/lib/api/auth';
 import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 import type { GoogleCredentialResponse } from '~/types/google-identity';
 
@@ -13,7 +13,7 @@ type GoogleLoginButtonProps = {
 	context: 'user' | 'admin';
 	onAuthError?: () => void;
 	onAuthStart?: () => void;
-	onSuccess?: (user: AuthenticatedUser) => void | Promise<void>;
+	onSuccess?: (result: AuthResult) => void | Promise<void>;
 };
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
@@ -55,7 +55,7 @@ const GoogleLoginButton = ({ context, onAuthError, onAuthStart, onSuccess }: Goo
 						context === 'admin'
 							? await loginAdminWithGoogleCredential(response.credential)
 							: await loginWithGoogleCredential(response.credential);
-					await onSuccess?.(result.user);
+					await onSuccess?.(result);
 				} catch {
 					setErrorMessage(
 						context === 'admin'

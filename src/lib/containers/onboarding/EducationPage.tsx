@@ -2,16 +2,18 @@
 
 import { Alert, Button, Stack } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { getOnboardingStatus, submitEducationProfile } from '~/lib/api/onboarding';
+import type { OnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
 import { collegeOptions, departmentOptions, interestOptions } from '~/lib/constants/onboarding';
 import InterestSelector from '~/lib/containers/onboarding/components/InterestSelector';
 import OnboardingFrame from '~/lib/containers/onboarding/components/OnboardingFrame';
 import SearchableSelect from '~/lib/containers/onboarding/components/SearchableSelect';
 import { hasMobileGateAccess, isEducationProfileComplete } from '~/lib/utils/onboarding';
+import { readCachedOnboardingStatus, writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 
 const maxInterestCount = 5;
 
@@ -27,9 +29,39 @@ const EducationPage = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
 
+	const applyOnboardingStatus = useCallback(
+		(status: OnboardingStatus) => {
+			if (!status.profile.mobileNumberE164 && status.profile.mobileSkipCount === 0) {
+				router.replace('/onboarding/mobile');
+				return true;
+			}
+
+			if (!hasMobileGateAccess(status.profile)) {
+				router.replace('/onboarding/mobile');
+				return true;
+			}
+
+			if (status.profile.mobileNumberE164 && isEducationProfileComplete(status.profile)) {
+				router.replace('/profile');
+				return true;
+			}
+
+			setCollege(status.profile.college ?? '');
+			setDepartment(status.profile.department ?? '');
+			setInterests(status.profile.interests);
+			setIsLoading(false);
+			return false;
+		},
+		[router]
+	);
+
 	useEffect(() => {
 		let isMounted = true;
-		let hasRedirected = false;
+		const cachedStatus = readCachedOnboardingStatus();
+
+		if (cachedStatus) {
+			applyOnboardingStatus(cachedStatus);
+		}
 
 		getOnboardingStatus()
 			.then(status => {
@@ -37,42 +69,17 @@ const EducationPage = () => {
 					return;
 				}
 
-				if (!status.profile.mobileNumberE164 && status.profile.mobileSkipCount === 0) {
-					hasRedirected = true;
-					router.replace('/onboarding/mobile');
-					return;
-				}
-
-				if (!hasMobileGateAccess(status.profile)) {
-					hasRedirected = true;
-					router.replace('/onboarding/mobile');
-					return;
-				}
-
-				if (status.profile.mobileNumberE164 && isEducationProfileComplete(status.profile)) {
-					hasRedirected = true;
-					router.replace('/profile');
-					return;
-				}
-
-				setCollege(status.profile.college ?? '');
-				setDepartment(status.profile.department ?? '');
-				setInterests(status.profile.interests);
+				writeCachedOnboardingStatus(status);
+				applyOnboardingStatus(status);
 			})
 			.catch(() => {
-				hasRedirected = true;
 				router.replace('/login');
-			})
-			.finally(() => {
-				if (isMounted && !hasRedirected) {
-					setIsLoading(false);
-				}
 			});
 
 		return () => {
 			isMounted = false;
 		};
-	}, [router]);
+	}, [applyOnboardingStatus, router]);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -101,7 +108,8 @@ const EducationPage = () => {
 		setIsSubmitting(true);
 
 		try {
-			await submitEducationProfile(college.trim(), department.trim(), interests);
+			const status = await submitEducationProfile(college.trim(), department.trim(), interests);
+			writeCachedOnboardingStatus(status);
 			router.replace('/profile');
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to save education details.');

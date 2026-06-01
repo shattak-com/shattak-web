@@ -9,7 +9,8 @@ export const courseCategories = [
 	'Creative',
 	'Academical',
 	'Sport & Gaming',
-	'Lifestyle'
+	'Lifestyle',
+	'Private'
 ] as const;
 
 export type CourseCategory = (typeof courseCategories)[number];

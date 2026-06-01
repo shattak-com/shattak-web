@@ -1,4 +1,5 @@
 import { deleteJson, getJson, postJson } from '~/lib/api/client';
+import type { OnboardingProfile } from '~/lib/api/onboarding';
 
 export type RoleKey = 'STUDENT' | 'MENTOR' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -14,6 +15,7 @@ export type AuthenticatedUser = {
 
 export type AuthResult = {
 	user: AuthenticatedUser;
+	onboardingProfile?: OnboardingProfile;
 };
 
 export type AdminInvitation = {

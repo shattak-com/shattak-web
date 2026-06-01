@@ -8,6 +8,7 @@ import { getCurrentUser, loginWithGoogleCredential } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 import { getOnboardingRedirectPath } from '~/lib/utils/onboarding';
+import { writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 import type { GoogleCredentialResponse } from '~/types/google-identity';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
@@ -58,13 +59,18 @@ const GoogleOneTapProvider = () => {
 
 					try {
 						setLoginProgressMessage('Signing in with Google...');
-						await loginWithGoogleCredential(response.credential);
+						const loginResult = await loginWithGoogleCredential(response.credential);
 						setLoginProgressMessage('Preparing your learning profile...');
-						const onboardingStatus = await getOnboardingStatus();
+						const onboardingStatus = loginResult.onboardingProfile
+							? {
+									user: loginResult.user,
+									profile: loginResult.onboardingProfile
+								}
+							: await getOnboardingStatus();
 						setLoginProgressMessage('Taking you to the next step...');
+						writeCachedOnboardingStatus(onboardingStatus);
 						window.google?.accounts.id.cancel();
-						router.push(getOnboardingRedirectPath(onboardingStatus.profile));
-						router.refresh();
+						router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
 					} catch {
 						setLoginProgressMessage('');
 						window.google?.accounts.id.disableAutoSelect();

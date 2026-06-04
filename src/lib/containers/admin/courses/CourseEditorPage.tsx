@@ -120,7 +120,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								<Text fontSize="lg" fontWeight="bold">
 									{editor.activeStep.label}
 								</Text>
-								<Text mt={1} fontSize="sm" color="text.muted">
+								<Text mt={1} fontSize="sm" fontWeight="bold" color="text.muted">
 									{editor.activeStep.description}
 								</Text>
 							</Box>

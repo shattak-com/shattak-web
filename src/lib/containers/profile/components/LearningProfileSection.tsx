@@ -7,6 +7,7 @@ import { submitEducationProfile, submitMobileNumber, type OnboardingProfile } fr
 import { collegeOptions, departmentOptions, interestOptions } from '~/lib/constants/onboarding';
 import InterestSelector from '~/lib/containers/onboarding/components/InterestSelector';
 import SearchableSelect from '~/lib/containers/onboarding/components/SearchableSelect';
+import { getPassoutYearValidationMessage } from '~/lib/utils/passout-year';
 
 const maxInterestCount = 5;
 
@@ -41,6 +42,12 @@ const LearningProfileSummary = ({ profile }: { profile: OnboardingProfile | null
 		</Box>
 		<Box>
 			<Text fontSize="sm" color="text.muted">
+				Passout year
+			</Text>
+			<Text mt={1}>{profile?.passoutYear ?? 'Not added yet'}</Text>
+		</Box>
+		<Box>
+			<Text fontSize="sm" color="text.muted">
 				Interests
 			</Text>
 			<Text mt={1}>{profile?.interests.length ? profile.interests.join(', ') : 'Not selected yet'}</Text>
@@ -53,6 +60,7 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 	const [mobileNumber, setMobileNumber] = useState('');
 	const [college, setCollege] = useState('');
 	const [department, setDepartment] = useState('');
+	const [passoutYear, setPassoutYear] = useState('');
 	const [interests, setInterests] = useState<string[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
@@ -61,6 +69,7 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 		setMobileNumber(profile?.mobileNumberE164 ?? '');
 		setCollege(profile?.college ?? '');
 		setDepartment(profile?.department ?? '');
+		setPassoutYear(profile?.passoutYear ?? '');
 		setInterests(profile?.interests ?? []);
 		setErrorMessage('');
 	}, [profile]);
@@ -87,6 +96,13 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 			return;
 		}
 
+		const passoutYearError = getPassoutYearValidationMessage(passoutYear);
+
+		if (passoutYearError) {
+			setErrorMessage(passoutYearError);
+			return;
+		}
+
 		if (interests.length < 1) {
 			setErrorMessage('Select at least one interest.');
 			return;
@@ -104,7 +120,12 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 				await submitMobileNumber(mobileNumber.trim(), 'IN');
 			}
 
-			const updatedStatus = await submitEducationProfile(college.trim(), department.trim(), interests);
+			const updatedStatus = await submitEducationProfile(
+				college.trim(),
+				department.trim(),
+				passoutYear.trim(),
+				interests
+			);
 			onProfileUpdated(updatedStatus.profile);
 			setIsEditing(false);
 			onRefreshRequested();
@@ -113,7 +134,7 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 		} finally {
 			setIsSaving(false);
 		}
-	}, [college, department, interests, mobileNumber, onProfileUpdated, onRefreshRequested]);
+	}, [college, department, interests, mobileNumber, onProfileUpdated, onRefreshRequested, passoutYear]);
 
 	return (
 		<Box border="1px solid" borderColor="border.default" borderRadius="card" p={{ base: 5, md: 6 }}>
@@ -156,6 +177,20 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 							placeholder="Search department"
 							onChange={setDepartment}
 						/>
+						<Box>
+							<Text fontSize="sm" mb={2} color="text.muted">
+								Passout year
+							</Text>
+							<Input
+								type="text"
+								value={passoutYear}
+								onChange={event => setPassoutYear(event.target.value)}
+								placeholder="2027"
+								autoComplete="off"
+								inputMode="numeric"
+								maxLength={4}
+							/>
+						</Box>
 						<InterestSelector
 							options={interestOptions}
 							selectedInterests={interests}

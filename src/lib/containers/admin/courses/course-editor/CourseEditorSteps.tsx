@@ -91,6 +91,11 @@ const OutcomesStep = ({ control, register, errors }: CourseEditorSectionProps) =
 		/>
 		<CompletionEditor control={control} register={register} errors={errors} />
 		<OutcomesEditor control={control} register={register} errors={errors} />
+	</Stack>
+);
+
+const AudienceToolsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<Stack gap={5}>
 		<AudienceEditor control={control} register={register} errors={errors} />
 		<ToolsEditor control={control} register={register} errors={errors} />
 	</Stack>
@@ -195,6 +200,8 @@ export const CourseEditorStepFields = ({
 			return <HighlightsStep control={control} register={register} errors={errors} />;
 		case 'outcomes':
 			return <OutcomesStep control={control} register={register} errors={errors} />;
+		case 'audienceTools':
+			return <AudienceToolsStep control={control} register={register} errors={errors} />;
 		case 'instructors':
 			return <InstructorsStep control={control} register={register} errors={errors} />;
 		case 'gallery':

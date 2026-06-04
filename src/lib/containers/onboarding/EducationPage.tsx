@@ -1,6 +1,6 @@
 'use client';
 
-import { Alert, Button, Stack } from '@chakra-ui/react';
+import { Alert, Box, Button, Input, Stack, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -14,6 +14,7 @@ import OnboardingFrame from '~/lib/containers/onboarding/components/OnboardingFr
 import SearchableSelect from '~/lib/containers/onboarding/components/SearchableSelect';
 import { hasMobileGateAccess, isEducationProfileComplete } from '~/lib/utils/onboarding';
 import { readCachedOnboardingStatus, writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
+import { getPassoutYearValidationMessage } from '~/lib/utils/passout-year';
 
 const maxInterestCount = 5;
 
@@ -24,6 +25,7 @@ const EducationPage = () => {
 	const router = useRouter();
 	const [college, setCollege] = useState('');
 	const [department, setDepartment] = useState('');
+	const [passoutYear, setPassoutYear] = useState('');
 	const [interests, setInterests] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +50,7 @@ const EducationPage = () => {
 
 			setCollege(status.profile.college ?? '');
 			setDepartment(status.profile.department ?? '');
+			setPassoutYear(status.profile.passoutYear ?? '');
 			setInterests(status.profile.interests);
 			setIsLoading(false);
 			return false;
@@ -95,6 +98,13 @@ const EducationPage = () => {
 			return;
 		}
 
+		const passoutYearError = getPassoutYearValidationMessage(passoutYear);
+
+		if (passoutYearError) {
+			setErrorMessage(passoutYearError);
+			return;
+		}
+
 		if (interests.length < 1) {
 			setErrorMessage('Select at least one interest.');
 			return;
@@ -108,7 +118,7 @@ const EducationPage = () => {
 		setIsSubmitting(true);
 
 		try {
-			const status = await submitEducationProfile(college.trim(), department.trim(), interests);
+			const status = await submitEducationProfile(college.trim(), department.trim(), passoutYear.trim(), interests);
 			writeCachedOnboardingStatus(status);
 			router.replace('/profile');
 		} catch (error) {
@@ -146,6 +156,20 @@ const EducationPage = () => {
 								placeholder="Search department"
 								onChange={setDepartment}
 							/>
+							<Box>
+								<Text fontSize="sm" mb={2} color="text.muted">
+									Passout year
+								</Text>
+								<Input
+									type="text"
+									value={passoutYear}
+									onChange={event => setPassoutYear(event.target.value)}
+									placeholder="2027"
+									autoComplete="off"
+									inputMode="numeric"
+									maxLength={4}
+								/>
+							</Box>
 							<InterestSelector
 								options={interestOptions}
 								selectedInterests={interests}

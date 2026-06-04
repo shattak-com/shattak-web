@@ -245,6 +245,9 @@ export const AdminUsersContent = () => {
 												<Text color="text.muted" lineClamp={1}>
 													{profile?.department ?? 'No department'}
 												</Text>
+												<Text color="text.muted" lineClamp={1}>
+													Passout: {profile?.passoutYear ?? 'Not added'}
+												</Text>
 												<Text color="text.muted" lineClamp={2}>
 													{interests}
 												</Text>

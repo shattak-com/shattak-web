@@ -1,7 +1,7 @@
 import type { OnboardingProfile } from '~/lib/api/onboarding';
 
 export const isEducationProfileComplete = (profile: OnboardingProfile) =>
-	Boolean(profile.college && profile.department && profile.interests.length > 0);
+	Boolean(profile.college && profile.department && profile.passoutYear && profile.interests.length > 0);
 
 export const hasMobileGateAccess = (profile: OnboardingProfile) =>
 	Boolean(profile.mobileNumberE164) || profile.mobileSkipCount <= profile.mobileSkipLimit;

@@ -45,24 +45,47 @@ const AdminLoginPage = () => {
 	}, [router]);
 
 	return (
-		<Container maxW="5xl" py={{ base: 10, md: 16 }}>
+		<Container
+			maxW="7xl"
+			minH="100dvh"
+			display="flex"
+			alignItems="center"
+			justifyContent="center"
+			py={{ base: 8, md: 10 }}
+		>
 			{loginProgressMessage ? (
 				<BlockingProgressOverlay title="Admin login successful" message={loginProgressMessage} />
 			) : null}
 			{isCheckingSession ? (
 				<AuthPageSkeleton />
 			) : (
-				<Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '0.9fr 1.1fr' }} gap={{ base: 5, lg: 6 }}>
-					<Box border="1px solid" borderColor="border.default" borderRadius="2xl" bg="bg.card" p={{ base: 6, md: 8 }}>
-						<Stack gap={7}>
+				<Box
+					w="full"
+					maxW="6xl"
+					display="grid"
+					gridTemplateColumns={{ base: '1fr', lg: '0.95fr 1.05fr' }}
+					gap={{ base: 5, lg: 7 }}
+					alignItems="stretch"
+				>
+					<Box
+						border="1px solid"
+						borderColor="border.default"
+						borderRadius="2xl"
+						bg="bg.card"
+						p={{ base: 7, md: 10, xl: 12 }}
+						minH={{ lg: '520px' }}
+						display="flex"
+						alignItems="center"
+					>
+						<Stack gap={8} w="full">
 							<Box>
 								<Badge borderRadius="full" px={3} py={1} colorPalette="red">
 									Restricted Access
 								</Badge>
-								<Text mt={5} as="h1" fontSize={{ base: '3xl', md: '4xl' }} fontWeight="bold" lineHeight="short">
+								<Text mt={6} as="h1" fontSize={{ base: '3xl', md: '5xl' }} fontWeight="bold" lineHeight="short">
 									Admin Login
 								</Text>
-								<Text mt={3} color="text.muted" lineHeight="relaxed">
+								<Text mt={4} maxW="420px" color="text.muted" fontSize={{ md: 'lg' }} lineHeight="relaxed">
 									Use an invited admin Google account. Normal student accounts cannot access the admin panel.
 								</Text>
 							</Box>
@@ -82,16 +105,23 @@ const AdminLoginPage = () => {
 							</HStack>
 						</Stack>
 					</Box>
-					<Box border="1px solid" borderColor="border.default" borderRadius="2xl" bg="bg.subtle" p={{ base: 5, md: 7 }}>
-						<Stack gap={5} h="full" justify="center">
+					<Box
+						border="1px solid"
+						borderColor="border.default"
+						borderRadius="2xl"
+						bg="bg.subtle"
+						p={{ base: 6, md: 9, xl: 10 }}
+						minH={{ lg: '520px' }}
+					>
+						<Stack gap={6} h="full" justify="center">
 							<Text fontSize="xs" fontWeight="bold" color="primary" textTransform="uppercase">
 								Control Center
 							</Text>
-							<Box bg="primary" borderRadius="xl" p={5} color="text.inverse">
-								<Text fontSize="3xl" fontWeight="bold">
+							<Box bg="primary" borderRadius="xl" p={{ base: 5, md: 7 }} color="text.inverse">
+								<Text fontSize={{ base: '3xl', md: '4xl' }} fontWeight="bold">
 									Admin
 								</Text>
-								<Text mt={2} fontSize="sm" opacity={0.85}>
+								<Text mt={3} fontSize={{ base: 'sm', md: 'md' }} opacity={0.85}>
 									Manage invitations, users, mentor reviews, and course operations from one protected workspace.
 								</Text>
 							</Box>
@@ -103,10 +133,10 @@ const AdminLoginPage = () => {
 										border="1px solid"
 										borderColor="border.default"
 										borderRadius="lg"
-										p={3}
+										p={4}
 									>
 										<Box boxSize="8px" borderRadius="full" bg="primary" />
-										<Text fontSize="sm">{item}</Text>
+										<Text fontSize={{ base: 'sm', md: 'md' }}>{item}</Text>
 									</HStack>
 								))}
 							</Stack>

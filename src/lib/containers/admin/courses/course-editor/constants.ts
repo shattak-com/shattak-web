@@ -14,7 +14,12 @@ export const courseEditorSteps: CourseEditorStep[] = [
 	{
 		id: 'outcomes',
 		label: 'Outcomes',
-		description: 'Requirements, learning outcomes, audience, tools, and completion benefits.'
+		description: 'Requirements, learning outcomes, and completion benefits.'
+	},
+	{
+		id: 'audienceTools',
+		label: 'Audience & Tools',
+		description: 'Audience cards and tools shown on the public course page.'
 	},
 	{ id: 'instructors', label: 'Instructors', description: 'Mentor profile details shown on the course page.' },
 	{ id: 'gallery', label: 'Project Gallery', description: 'Project overview, live link, gallery, and student proof.' },
@@ -42,14 +47,8 @@ export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]>
 		'paymentLink'
 	],
 	highlights: ['highlights', 'schedule'],
-	outcomes: [
-		'requirementsText',
-		'completionCertificateImage',
-		'completionBenefitsText',
-		'outcomes',
-		'audience',
-		'tools'
-	],
+	outcomes: ['requirementsText', 'completionCertificateImage', 'completionBenefitsText', 'outcomes'],
+	audienceTools: ['audience', 'tools'],
 	instructors: ['instructors'],
 	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],

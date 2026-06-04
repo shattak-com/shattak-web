@@ -173,7 +173,8 @@ export const OutcomesEditor = ({ control, register, errors }: CourseEditorSectio
 						name={`outcomes.${index}.text`}
 						register={register}
 						errors={errors}
-						minH="80px"
+						maxLength={120}
+						minH="48px"
 					/>
 				</EditorCard>
 			))}

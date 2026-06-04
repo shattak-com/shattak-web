@@ -127,10 +127,14 @@ export const CurriculumSubsectionPanel = ({
 											<Box
 												key={subsection.id ?? `subsection-${currentSubsectionIndex}`}
 												border="1px solid"
-												borderColor={currentSubsectionIndex === selectedSubsectionIndex ? 'primary' : 'border.default'}
+												borderColor={
+													currentSubsectionIndex === selectedSubsectionIndex ? 'primary' : 'border.brandSoft'
+												}
 												borderRadius="lg"
 												bg={currentSubsectionIndex === selectedSubsectionIndex ? 'bg.subtle' : 'transparent'}
 												p={3}
+												transition="border-color 0.16s ease, background-color 0.16s ease"
+												_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
 											>
 												<Stack gap={2}>
 													<Button

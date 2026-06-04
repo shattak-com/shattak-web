@@ -179,10 +179,13 @@ export const CurriculumModuleCard = ({
 										key={subsection.id ?? `subsection-summary-${subsectionIndex}`}
 										type="button"
 										variant="outline"
+										borderColor="border.brandSoft"
 										borderRadius="lg"
 										h="auto"
 										justifyContent="flex-start"
 										p={3}
+										_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
+										_focusVisible={{ borderColor: 'primary', boxShadow: 'primary' }}
 										onClick={() => onOpenSubsectionPanel(moduleIndex, subsectionIndex)}
 									>
 										<Stack gap={1} align="stretch" minW={0}>

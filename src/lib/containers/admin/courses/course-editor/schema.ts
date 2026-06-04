@@ -54,7 +54,7 @@ export const courseEditorSchema = z.object({
 	outcomes: z.array(
 		z.object({
 			id: z.string(),
-			text: z.string().max(300)
+			text: z.string().max(120)
 		})
 	),
 	audience: z.array(

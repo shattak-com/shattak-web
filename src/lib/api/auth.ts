@@ -39,6 +39,7 @@ export type AdminManagedUserProfile = {
 	mobileSkipLimit: number;
 	college: string | null;
 	department: string | null;
+	passoutYear: string | null;
 	interests: string[];
 	onboardingCompletedAt: string | null;
 	onboardingCompleted: boolean;

@@ -73,6 +73,7 @@ export const TextareaField = ({
 	register,
 	errors,
 	minH = '100px',
+	maxLength,
 	placeholder
 }: {
 	label: string;
@@ -80,6 +81,7 @@ export const TextareaField = ({
 	register: UseFormRegister<CourseEditorFormValues>;
 	errors: FieldErrors<CourseEditorFormValues>;
 	minH?: string;
+	maxLength?: number;
 	placeholder?: string;
 }) => {
 	const error = getFieldError(errors, name);
@@ -91,6 +93,7 @@ export const TextareaField = ({
 			</Text>
 			<textarea
 				{...register(name)}
+				maxLength={maxLength}
 				placeholder={placeholder}
 				style={{
 					minHeight: minH,

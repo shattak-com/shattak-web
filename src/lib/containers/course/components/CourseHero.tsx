@@ -24,6 +24,7 @@ const formatCount = (value: number) => {
 };
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
+const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
 const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 const enrollGlow = keyframes`
   0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(78, 120, 255, 0); }
@@ -95,7 +96,7 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 				</Box>
 				<Stack gap={1} flex="1">
 					<Text fontSize="sm" color="text.secondary">
-						{item.label} � {item.day} � {item.durationLabel}
+						{item.label} {'\u00B7'} {item.day} {'\u00B7'} {item.durationLabel}
 					</Text>
 					<Text fontSize="sm" fontWeight="bold" color="text.primary">
 						{item.timeRange}
@@ -260,10 +261,10 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										</Text>
 										<HStack gap={3} align="baseline" mt={2}>
 											<Text fontSize="2xl" fontWeight="bold">
-												?{formatCurrency(course.price)}
+												{formatRupee(course.price)}
 											</Text>
 											<Text fontSize="sm" color="text.muted" textDecoration="line-through">
-												?{formatCurrency(course.originalPrice)}
+												{formatRupee(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -276,13 +277,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										<HStack justify="space-between">
 											<Text>Course Fee</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												?{formatCurrency(course.price)}
+												{formatRupee(course.price)}
 											</Text>
 										</HStack>
 										<HStack justify="space-between">
 											<Text>Worth of</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												?{formatCurrency(course.originalPrice)}
+												{formatRupee(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -298,9 +299,9 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										<Text fontWeight="semibold" color="text.secondary">
 											Includes
 										</Text>
-										<Text>� Expert Designed Curriculum</Text>
-										<Text>� Doubt Clearing Session</Text>
-										<Text>� Forever Community Access</Text>
+										<Text>{'\u2022'} Expert Designed Curriculum</Text>
+										<Text>{'\u2022'} Doubt Clearing Session</Text>
+										<Text>{'\u2022'} Forever Community Access</Text>
 									</Stack>
 									<Button
 										asChild

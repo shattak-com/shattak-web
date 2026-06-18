@@ -13,6 +13,7 @@ type CourseEnrollBannerProps = {
 };
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
+const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
 const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 
 const formatDurationSummary = (hours: number, minutes: number) => {
@@ -105,9 +106,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 										Get Life Time Access
 									</Text>
 									<HStack gap={2} align="baseline">
-										<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
+										<Text fontWeight="bold">{formatRupee(course.price)}</Text>
 										<Text fontSize="sm" color="text.muted" textDecoration="line-through">
-											INR {formatCurrency(course.originalPrice)}
+											{formatRupee(course.originalPrice)}
 										</Text>
 										{discountPercent > 0 ? (
 											<Text fontSize="xs" color="text.accent" fontWeight="semibold">
@@ -151,9 +152,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 									Get Life Time Access
 								</Text>
 								<HStack gap={2} align="baseline">
-									<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
+									<Text fontWeight="bold">{formatRupee(course.price)}</Text>
 									<Text fontSize="xs" color="text.muted" textDecoration="line-through">
-										INR {formatCurrency(course.originalPrice)}
+										{formatRupee(course.originalPrice)}
 									</Text>
 									{discountPercent > 0 ? (
 										<Text fontSize="xs" color="text.accent" fontWeight="semibold">

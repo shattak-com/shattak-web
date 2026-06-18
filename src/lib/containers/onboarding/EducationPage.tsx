@@ -2,9 +2,10 @@
 
 import { Alert, Box, Button, Input, Stack, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import { trackOnboardingEvent } from '~/lib/analytics/mixpanel';
 import { getOnboardingStatus, submitEducationProfile } from '~/lib/api/onboarding';
 import type { OnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
@@ -23,6 +24,7 @@ const hasOption = (options: readonly string[], value: string) =>
 
 const EducationPage = () => {
 	const router = useRouter();
+	const hasTrackedStepViewRef = useRef(false);
 	const [college, setCollege] = useState('');
 	const [department, setDepartment] = useState('');
 	const [passoutYear, setPassoutYear] = useState('');
@@ -53,6 +55,23 @@ const EducationPage = () => {
 			setPassoutYear(status.profile.passoutYear ?? '');
 			setInterests(status.profile.interests);
 			setIsLoading(false);
+
+			if (!hasTrackedStepViewRef.current) {
+				hasTrackedStepViewRef.current = true;
+				trackOnboardingEvent({
+					location: 'onboarding_education',
+					eventName: 'Step Viewed',
+					nextStep: status.profile.nextStep,
+					hasMobileNumber: Boolean(status.profile.mobileNumberE164),
+					hasCollege: Boolean(status.profile.college),
+					hasDepartment: Boolean(status.profile.department),
+					hasPassoutYear: Boolean(status.profile.passoutYear),
+					interestsCount: status.profile.interests.length,
+					mobileSkipCount: status.profile.mobileSkipCount,
+					mobileSkipLimit: status.profile.mobileSkipLimit
+				});
+			}
+
 			return false;
 		},
 		[router]
@@ -90,11 +109,31 @@ const EducationPage = () => {
 
 		if (!hasOption(collegeOptions, college)) {
 			setErrorMessage('Select a college from the list.');
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'college',
+				hasCollege: false,
+				hasDepartment: Boolean(department),
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (!hasOption(departmentOptions, department)) {
 			setErrorMessage('Select a department from the list.');
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'department',
+				hasCollege: true,
+				hasDepartment: false,
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
@@ -102,16 +141,46 @@ const EducationPage = () => {
 
 		if (passoutYearError) {
 			setErrorMessage(passoutYearError);
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'passout_year',
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (interests.length < 1) {
 			setErrorMessage('Select at least one interest.');
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'interests',
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: true,
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (interests.length > maxInterestCount) {
 			setErrorMessage(`Select up to ${maxInterestCount} interests.`);
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'interests',
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: true,
+				interestsCount: interests.length
+			});
 			return;
 		}
 
@@ -120,9 +189,29 @@ const EducationPage = () => {
 		try {
 			const status = await submitEducationProfile(college.trim(), department.trim(), passoutYear.trim(), interests);
 			writeCachedOnboardingStatus(status);
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Profile Submitted',
+				redirectPath: '/profile',
+				nextStep: status.profile.nextStep,
+				hasMobileNumber: Boolean(status.profile.mobileNumberE164),
+				hasCollege: Boolean(status.profile.college),
+				hasDepartment: Boolean(status.profile.department),
+				hasPassoutYear: Boolean(status.profile.passoutYear),
+				interestsCount: status.profile.interests.length
+			});
 			router.replace('/profile');
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to save education details.');
+			trackOnboardingEvent({
+				location: 'onboarding_education',
+				eventName: 'Education Submit Failed',
+				errorType: 'api_error',
+				hasCollege: Boolean(college),
+				hasDepartment: Boolean(department),
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			setIsSubmitting(false);
 		}
 	};

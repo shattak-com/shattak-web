@@ -18,6 +18,9 @@ type FirstTouchAttribution = {
 type MixpanelProperties = Record<string, unknown>;
 
 const SECTION_NAME_BY_LOCATION: Record<string, string> = {
+	auth_admin_login: 'Admin Login',
+	auth_google_one_tap: 'Google One Tap',
+	auth_student_login: 'Student Login',
 	header_nav: 'Header',
 	header_primary: 'Header',
 	header_drawer: 'Header',
@@ -35,7 +38,11 @@ const SECTION_NAME_BY_LOCATION: Record<string, string> = {
 	whatsapp_banner: 'WhatsApp Banner',
 	course_hero: 'Hero',
 	course_sticky_banner: 'Sticky Enroll Banner',
-	course_sticky_banner_mobile: 'Sticky Enroll Banner'
+	course_sticky_banner_mobile: 'Sticky Enroll Banner',
+	onboarding_education: 'Education Onboarding',
+	onboarding_mobile: 'Mobile Onboarding',
+	profile_account: 'Profile',
+	profile_learning: 'Learning Profile'
 };
 
 const FIRST_TOUCH_ATTRIBUTION_KEY = 'shattak-first-touch-attribution';
@@ -289,6 +296,51 @@ export const identifyAnonymousMixpanelUser = () => {
 	syncAnonymousProfile();
 };
 
+const getAuthenticatedSignupStage = (payload: { authContext?: 'user' | 'admin'; onboardingNextStep?: string }) => {
+	if (payload.authContext === 'admin') {
+		return 'admin-authenticated';
+	}
+
+	return payload.onboardingNextStep === 'COMPLETE' ? 'onboarded' : 'onboarding';
+};
+
+export const identifyAuthenticatedMixpanelUser = (payload: {
+	userId: string;
+	email?: string;
+	name?: string;
+	roles?: readonly string[];
+	status?: string;
+	authContext?: 'user' | 'admin';
+	onboardingNextStep?: string;
+}) => {
+	if (!isMixpanelInitialized || !payload.userId) {
+		return;
+	}
+
+	mixpanel.identify(payload.userId);
+	mixpanel.people.set(
+		formatCustomProperties({
+			$email: payload.email,
+			$name: payload.name,
+			visitor_type: payload.authContext === 'admin' ? 'admin' : 'authenticated_user',
+			account_status: payload.status,
+			user_roles: payload.roles,
+			signup_stage: getAuthenticatedSignupStage(payload),
+			onboarding_next_step: payload.onboardingNextStep
+		})
+	);
+};
+
+export const resetMixpanelIdentity = () => {
+	if (!isMixpanelInitialized) {
+		return;
+	}
+
+	mixpanel.reset();
+	hasAnonymousProfileSynced = false;
+	syncAnonymousProfile();
+};
+
 export const trackMixpanelEvent = (eventName: string, properties?: Record<string, unknown>) => {
 	if (!eventName) {
 		return;
@@ -308,6 +360,97 @@ export const trackMixpanelEvent = (eventName: string, properties?: Record<string
 
 	mixpanel.track(eventName, payload);
 };
+
+export const trackAuthEvent = (payload: {
+	location: 'auth_student_login' | 'auth_google_one_tap' | 'auth_admin_login';
+	eventName: string;
+	method: 'google_button' | 'google_one_tap' | 'session_check';
+	authContext: 'user' | 'admin';
+	redirectPath?: string;
+	onboardingNextStep?: string;
+	hasOnboardingProfile?: boolean;
+	roles?: readonly string[];
+	errorType?: string;
+}) =>
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: payload.eventName
+		}),
+		{
+			auth_method: payload.method,
+			auth_context: payload.authContext,
+			redirect_path: payload.redirectPath,
+			onboarding_next_step: payload.onboardingNextStep,
+			has_onboarding_profile: payload.hasOnboardingProfile,
+			user_roles: payload.roles,
+			error_type: payload.errorType
+		}
+	);
+
+export const trackOnboardingEvent = (payload: {
+	location: 'onboarding_mobile' | 'onboarding_education';
+	eventName: string;
+	nextStep?: string;
+	redirectPath?: string;
+	canSkipMobile?: boolean;
+	mobileSkipCount?: number;
+	mobileSkipLimit?: number;
+	hasMobileNumber?: boolean;
+	hasCollege?: boolean;
+	hasDepartment?: boolean;
+	hasPassoutYear?: boolean;
+	interestsCount?: number;
+	errorType?: string;
+	validationField?: string;
+}) =>
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: payload.eventName
+		}),
+		{
+			next_step: payload.nextStep,
+			redirect_path: payload.redirectPath,
+			can_skip_mobile: payload.canSkipMobile,
+			mobile_skip_count: payload.mobileSkipCount,
+			mobile_skip_limit: payload.mobileSkipLimit,
+			has_mobile_number: payload.hasMobileNumber,
+			has_college: payload.hasCollege,
+			has_department: payload.hasDepartment,
+			has_passout_year: payload.hasPassoutYear,
+			interests_count: payload.interestsCount,
+			error_type: payload.errorType,
+			validation_field: payload.validationField
+		}
+	);
+
+export const trackProfileEvent = (payload: {
+	location: 'profile_account' | 'profile_learning';
+	eventName: string;
+	hasMobileNumber?: boolean;
+	hasCollege?: boolean;
+	hasDepartment?: boolean;
+	hasPassoutYear?: boolean;
+	interestsCount?: number;
+	errorType?: string;
+	validationField?: string;
+}) =>
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: payload.eventName
+		}),
+		{
+			has_mobile_number: payload.hasMobileNumber,
+			has_college: payload.hasCollege,
+			has_department: payload.hasDepartment,
+			has_passout_year: payload.hasPassoutYear,
+			interests_count: payload.interestsCount,
+			error_type: payload.errorType,
+			validation_field: payload.validationField
+		}
+	);
 
 export const trackClientError = (payload: {
 	source: 'window.error' | 'unhandledrejection' | 'react_error_boundary';

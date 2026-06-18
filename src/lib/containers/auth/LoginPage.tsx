@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { identifyAuthenticatedMixpanelUser, trackAuthEvent } from '~/lib/analytics/mixpanel';
 import type { AuthResult } from '~/lib/api/auth';
 import { getOnboardingStatus, type OnboardingStatus } from '~/lib/api/onboarding';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
@@ -23,8 +24,10 @@ const LoginPage = () => {
 
 	const redirectToOnboarding = useCallback(
 		(onboardingStatus: OnboardingStatus) => {
+			const redirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+
 			writeCachedOnboardingStatus(onboardingStatus);
-			router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
+			router.replace(redirectPath);
 		},
 		[router]
 	);
@@ -35,6 +38,24 @@ const LoginPage = () => {
 		const checkSession = async () => {
 			try {
 				const onboardingStatus = await getOnboardingStatus();
+				identifyAuthenticatedMixpanelUser({
+					userId: onboardingStatus.user.id,
+					email: onboardingStatus.user.email,
+					name: onboardingStatus.user.name,
+					roles: onboardingStatus.user.roles,
+					status: onboardingStatus.user.status,
+					authContext: 'user',
+					onboardingNextStep: onboardingStatus.profile.nextStep
+				});
+				trackAuthEvent({
+					location: 'auth_student_login',
+					eventName: 'Existing Session Detected',
+					method: 'session_check',
+					authContext: 'user',
+					redirectPath: getOnboardingRedirectPath(onboardingStatus.profile),
+					onboardingNextStep: onboardingStatus.profile.nextStep,
+					roles: onboardingStatus.user.roles
+				});
 				redirectToOnboarding(onboardingStatus);
 			} catch {
 				if (isMounted) {
@@ -65,9 +86,30 @@ const LoginPage = () => {
 					}
 				: await getOnboardingStatus();
 
+			const redirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+
+			identifyAuthenticatedMixpanelUser({
+				userId: onboardingStatus.user.id,
+				email: onboardingStatus.user.email,
+				name: onboardingStatus.user.name,
+				roles: onboardingStatus.user.roles,
+				status: onboardingStatus.user.status,
+				authContext: 'user',
+				onboardingNextStep: onboardingStatus.profile.nextStep
+			});
+			trackAuthEvent({
+				location: 'auth_student_login',
+				eventName: 'Google Login Succeeded',
+				method: 'google_button',
+				authContext: 'user',
+				redirectPath,
+				onboardingNextStep: onboardingStatus.profile.nextStep,
+				hasOnboardingProfile: Boolean(result.onboardingProfile),
+				roles: onboardingStatus.user.roles
+			});
 			setLoginProgressMessage('Taking you to the next step...');
 			writeCachedOnboardingStatus(onboardingStatus);
-			router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
+			router.replace(redirectPath);
 		},
 		[router]
 	);
@@ -145,8 +187,25 @@ const LoginPage = () => {
 							<Box alignSelf="center" w="320px" maxW="100%">
 								<GoogleLoginButton
 									context="user"
-									onAuthStart={() => setLoginProgressMessage('Signing in with Google...')}
-									onAuthError={() => setLoginProgressMessage('')}
+									onAuthStart={() => {
+										trackAuthEvent({
+											location: 'auth_student_login',
+											eventName: 'Google Login Started',
+											method: 'google_button',
+											authContext: 'user'
+										});
+										setLoginProgressMessage('Signing in with Google...');
+									}}
+									onAuthError={() => {
+										trackAuthEvent({
+											location: 'auth_student_login',
+											eventName: 'Google Login Failed',
+											method: 'google_button',
+											authContext: 'user',
+											errorType: 'google_auth_or_redirect_error'
+										});
+										setLoginProgressMessage('');
+									}}
 									onSuccess={handleSuccess}
 								/>
 							</Box>

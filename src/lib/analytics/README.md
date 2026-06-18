@@ -23,6 +23,7 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 - Session replay ensured across all pages and App Router transitions
 - Temporary anonymous identify/profile sync (until real auth is added)
 - Event wrappers for CTA/course/enroll interactions
+- Event wrappers for Google auth, onboarding, and learning-profile interactions
 - First-touch attribution capture (`utm_*`, initial referrer, initial landing path)
 - Super-properties registration for first-touch attribution only
 - Pending-event queue before initialization (bounded)
@@ -39,6 +40,11 @@ Examples:
 - `Course - Hero - Enroll Clicked`
 - `About - Final CTA - Join Now Clicked`
 - `Course - App - Client Error Captured`
+- `Login - Student Login - Google Login Succeeded`
+- `Home - Google One Tap - Google Login Succeeded`
+- `Onboarding - Mobile Onboarding - Mobile Number Skipped`
+- `Onboarding - Education Onboarding - Education Profile Submitted`
+- `Profile - Learning Profile - Learning Profile Update Succeeded`
 
 All tracked events automatically include current page context:
 
@@ -69,16 +75,18 @@ For QA or full capture across pages, set `NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT=10
   - `NEXT_PUBLIC_MIXPANEL_ENABLED`
   - `NEXT_PUBLIC_MIXPANEL_TRACK_LOCALHOST`
 
-## Temporary Identity (No Auth Yet)
+## Identity
 
 Current behavior identifies anonymous users with Mixpanel distinct IDs and sets a minimal profile once.
 
-When authentication is implemented, migrate to:
+After Google authentication, the app identifies the Mixpanel user with the internal user id and sets Mixpanel profile identity fields:
 
-1. `mixpanel.identify(realUserId)` after login.
-2. `mixpanel.people.set(...)` with user properties.
-3. `mixpanel.reset()` on logout.
-4. Remove temporary anonymous profile assumptions.
+- `$email`
+- `$name`
+
+Auth events should still avoid duplicating email or name in event properties. Event payloads should use product state such as role keys, account status, onboarding stage, redirect path, completion booleans, and counts. Do not send phone numbers, college names, department names, selected interest values, or other unnecessary personal data in analytics events.
+
+On logout, the app resets the Mixpanel identity and returns to anonymous tracking.
 
 ## Verification Checklist
 

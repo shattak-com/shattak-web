@@ -2,9 +2,10 @@
 
 import { Alert, Box, Button, Container, Heading, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
+import { trackOnboardingEvent } from '~/lib/analytics/mixpanel';
 import { getOnboardingStatus, skipMobileNumber, submitMobileNumber } from '~/lib/api/onboarding';
 import type { OnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
@@ -171,6 +172,7 @@ const MobileSkipAction = ({
 
 const MobileNumberPage = () => {
 	const router = useRouter();
+	const hasTrackedStepViewRef = useRef(false);
 	const [mobileNumber, setMobileNumber] = useState('');
 	const [canSkipMobile, setCanSkipMobile] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
@@ -182,12 +184,37 @@ const MobileNumberPage = () => {
 	const applyOnboardingStatus = useCallback(
 		(status: OnboardingStatus) => {
 			if (status.profile.mobileNumberE164) {
-				router.replace(getNextPathAfterMobile(status.profile));
+				const redirectPath = getNextPathAfterMobile(status.profile);
+
+				trackOnboardingEvent({
+					location: 'onboarding_mobile',
+					eventName: 'Step Skipped By Existing Data',
+					redirectPath,
+					nextStep: status.profile.nextStep,
+					hasMobileNumber: true,
+					mobileSkipCount: status.profile.mobileSkipCount,
+					mobileSkipLimit: status.profile.mobileSkipLimit
+				});
+				router.replace(redirectPath);
 				return true;
 			}
 
 			setCanSkipMobile(status.profile.canSkipMobile);
 			setIsLoading(false);
+
+			if (!hasTrackedStepViewRef.current) {
+				hasTrackedStepViewRef.current = true;
+				trackOnboardingEvent({
+					location: 'onboarding_mobile',
+					eventName: 'Step Viewed',
+					nextStep: status.profile.nextStep,
+					canSkipMobile: status.profile.canSkipMobile,
+					hasMobileNumber: false,
+					mobileSkipCount: status.profile.mobileSkipCount,
+					mobileSkipLimit: status.profile.mobileSkipLimit
+				});
+			}
+
 			return false;
 		},
 		[router]
@@ -226,6 +253,13 @@ const MobileNumberPage = () => {
 
 		if (!isValidIndianMobileNumber(normalizedMobileNumber)) {
 			setErrorMessage('Enter a valid 10-digit Indian mobile number.');
+			trackOnboardingEvent({
+				location: 'onboarding_mobile',
+				eventName: 'Mobile Submit Failed',
+				errorType: 'client_validation',
+				validationField: 'mobile_number',
+				canSkipMobile
+			});
 			return;
 		}
 
@@ -233,10 +267,28 @@ const MobileNumberPage = () => {
 
 		try {
 			const status = await submitMobileNumber(normalizedMobileNumber, 'IN');
+			const redirectPath = getNextPathAfterMobile(status.profile);
+
 			writeCachedOnboardingStatus(status);
-			router.replace(getNextPathAfterMobile(status.profile));
+			trackOnboardingEvent({
+				location: 'onboarding_mobile',
+				eventName: 'Mobile Number Submitted',
+				redirectPath,
+				nextStep: status.profile.nextStep,
+				hasMobileNumber: true,
+				mobileSkipCount: status.profile.mobileSkipCount,
+				mobileSkipLimit: status.profile.mobileSkipLimit
+			});
+			router.replace(redirectPath);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to save mobile number.');
+			trackOnboardingEvent({
+				location: 'onboarding_mobile',
+				eventName: 'Mobile Submit Failed',
+				errorType: 'api_error',
+				validationField: 'mobile_number',
+				canSkipMobile
+			});
 			setIsSubmitting(false);
 		}
 	};
@@ -247,10 +299,27 @@ const MobileNumberPage = () => {
 
 		try {
 			const status = await skipMobileNumber();
+			const redirectPath = getPostMobileSkipPath(status.profile);
+
 			writeCachedOnboardingStatus(status);
-			router.replace(getPostMobileSkipPath(status.profile));
+			trackOnboardingEvent({
+				location: 'onboarding_mobile',
+				eventName: 'Mobile Number Skipped',
+				redirectPath,
+				nextStep: status.profile.nextStep,
+				canSkipMobile: status.profile.canSkipMobile,
+				mobileSkipCount: status.profile.mobileSkipCount,
+				mobileSkipLimit: status.profile.mobileSkipLimit
+			});
+			router.replace(redirectPath);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to skip this step.');
+			trackOnboardingEvent({
+				location: 'onboarding_mobile',
+				eventName: 'Mobile Skip Failed',
+				errorType: 'api_error',
+				canSkipMobile: false
+			});
 			setCanSkipMobile(false);
 			setIsSubmitting(false);
 		}

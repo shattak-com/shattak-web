@@ -3,6 +3,7 @@
 import { Alert, Box, Button, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { trackProfileEvent } from '~/lib/analytics/mixpanel';
 import { submitEducationProfile, submitMobileNumber, type OnboardingProfile } from '~/lib/api/onboarding';
 import { collegeOptions, departmentOptions, interestOptions } from '~/lib/constants/onboarding';
 import InterestSelector from '~/lib/containers/onboarding/components/InterestSelector';
@@ -19,6 +20,14 @@ type LearningProfileSectionProps = {
 
 const hasOption = (options: readonly string[], value: string) =>
 	options.some(option => option.toLowerCase() === value.trim().toLowerCase());
+
+const getProfileTrackingProperties = (profile: OnboardingProfile | null) => ({
+	hasMobileNumber: Boolean(profile?.mobileNumberE164),
+	hasCollege: Boolean(profile?.college),
+	hasDepartment: Boolean(profile?.department),
+	hasPassoutYear: Boolean(profile?.passoutYear),
+	interestsCount: profile?.interests.length
+});
 
 const LearningProfileSummary = ({ profile }: { profile: OnboardingProfile | null }) => (
 	<Stack gap={4}>
@@ -88,11 +97,33 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 
 		if (!hasOption(collegeOptions, college)) {
 			setErrorMessage('Select a college from the list.');
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'client_validation',
+				validationField: 'college',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: false,
+				hasDepartment: Boolean(department),
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (!hasOption(departmentOptions, department)) {
 			setErrorMessage('Select a department from the list.');
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'client_validation',
+				validationField: 'department',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: true,
+				hasDepartment: false,
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
@@ -100,20 +131,62 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 
 		if (passoutYearError) {
 			setErrorMessage(passoutYearError);
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'client_validation',
+				validationField: 'passout_year',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (interests.length < 1) {
 			setErrorMessage('Select at least one interest.');
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'client_validation',
+				validationField: 'interests',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: true,
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		if (interests.length > maxInterestCount) {
 			setErrorMessage(`Select up to ${maxInterestCount} interests.`);
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'client_validation',
+				validationField: 'interests',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: true,
+				hasDepartment: true,
+				hasPassoutYear: true,
+				interestsCount: interests.length
+			});
 			return;
 		}
 
 		setIsSaving(true);
+		trackProfileEvent({
+			location: 'profile_learning',
+			eventName: 'Learning Profile Update Started',
+			hasMobileNumber: Boolean(mobileNumber.trim()),
+			hasCollege: Boolean(college),
+			hasDepartment: Boolean(department),
+			hasPassoutYear: Boolean(passoutYear),
+			interestsCount: interests.length
+		});
 
 		try {
 			if (mobileNumber.trim()) {
@@ -129,8 +202,27 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 			onProfileUpdated(updatedStatus.profile);
 			setIsEditing(false);
 			onRefreshRequested();
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Succeeded',
+				hasMobileNumber: Boolean(updatedStatus.profile.mobileNumberE164),
+				hasCollege: Boolean(updatedStatus.profile.college),
+				hasDepartment: Boolean(updatedStatus.profile.department),
+				hasPassoutYear: Boolean(updatedStatus.profile.passoutYear),
+				interestsCount: updatedStatus.profile.interests.length
+			});
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Unable to update profile.');
+			trackProfileEvent({
+				location: 'profile_learning',
+				eventName: 'Learning Profile Update Failed',
+				errorType: 'api_error',
+				hasMobileNumber: Boolean(mobileNumber.trim()),
+				hasCollege: Boolean(college),
+				hasDepartment: Boolean(department),
+				hasPassoutYear: Boolean(passoutYear),
+				interestsCount: interests.length
+			});
 		} finally {
 			setIsSaving(false);
 		}
@@ -142,7 +234,19 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 				<HStack justify="space-between" align="center" gap={4}>
 					<Heading size="md">Learning profile</Heading>
 					{isEditing ? null : (
-						<Button size="sm" variant="outline" borderRadius="full" onClick={() => setIsEditing(true)}>
+						<Button
+							size="sm"
+							variant="outline"
+							borderRadius="full"
+							onClick={() => {
+								trackProfileEvent({
+									location: 'profile_learning',
+									eventName: 'Learning Profile Edit Started',
+									...getProfileTrackingProperties(profile)
+								});
+								setIsEditing(true);
+							}}
+						>
 							Edit
 						</Button>
 					)}

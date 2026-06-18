@@ -3,9 +3,10 @@
 import { Badge, Box, Button, Container, Heading, HStack, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { identifyAuthenticatedMixpanelUser, resetMixpanelIdentity, trackProfileEvent } from '~/lib/analytics/mixpanel';
 import { logout, type AuthenticatedUser } from '~/lib/api/auth';
 import { getOnboardingStatus, type OnboardingProfile } from '~/lib/api/onboarding';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
@@ -18,6 +19,7 @@ const getDisplayName = (user: AuthenticatedUser) => user.name.trim() || user.ema
 
 const ProfilePage = () => {
 	const router = useRouter();
+	const hasTrackedProfileViewRef = useRef(false);
 	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
 	const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +42,27 @@ const ProfilePage = () => {
 
 					setCurrentUser(result.user);
 					setOnboardingProfile(result.profile);
+					identifyAuthenticatedMixpanelUser({
+						userId: result.user.id,
+						email: result.user.email,
+						name: result.user.name,
+						roles: result.user.roles,
+						status: result.user.status,
+						authContext: 'user',
+						onboardingNextStep: result.profile.nextStep
+					});
+					if (!hasTrackedProfileViewRef.current) {
+						hasTrackedProfileViewRef.current = true;
+						trackProfileEvent({
+							location: 'profile_account',
+							eventName: 'Profile Viewed',
+							hasMobileNumber: Boolean(result.profile.mobileNumberE164),
+							hasCollege: Boolean(result.profile.college),
+							hasDepartment: Boolean(result.profile.department),
+							hasPassoutYear: Boolean(result.profile.passoutYear),
+							interestsCount: result.profile.interests.length
+						});
+					}
 				}
 			})
 			.catch(() => {
@@ -62,18 +85,37 @@ const ProfilePage = () => {
 	const handleLogout = useCallback(async () => {
 		setIsLoggingOut(true);
 		setErrorMessage('');
+		trackProfileEvent({
+			location: 'profile_account',
+			eventName: 'Logout Started',
+			hasMobileNumber: Boolean(onboardingProfile?.mobileNumberE164),
+			hasCollege: Boolean(onboardingProfile?.college),
+			hasDepartment: Boolean(onboardingProfile?.department),
+			hasPassoutYear: Boolean(onboardingProfile?.passoutYear),
+			interestsCount: onboardingProfile?.interests.length
+		});
 
 		try {
 			await logout();
 			clearCachedOnboardingStatus();
 			window.google?.accounts.id.disableAutoSelect();
+			trackProfileEvent({
+				location: 'profile_account',
+				eventName: 'Logout Succeeded'
+			});
+			resetMixpanelIdentity();
 			router.replace('/login');
 		} catch {
 			setErrorMessage('Unable to log out. Please try again.');
+			trackProfileEvent({
+				location: 'profile_account',
+				eventName: 'Logout Failed',
+				errorType: 'api_error'
+			});
 		} finally {
 			setIsLoggingOut(false);
 		}
-	}, [router]);
+	}, [onboardingProfile, router]);
 
 	if (isLoading) {
 		return <ProfilePageSkeleton />;

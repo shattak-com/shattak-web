@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
+import { identifyAuthenticatedMixpanelUser, trackAuthEvent } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, loginWithGoogleCredential } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
@@ -58,6 +59,12 @@ const GoogleOneTapProvider = () => {
 					}
 
 					try {
+						trackAuthEvent({
+							location: 'auth_google_one_tap',
+							eventName: 'Google Login Started',
+							method: 'google_one_tap',
+							authContext: 'user'
+						});
 						setLoginProgressMessage('Signing in with Google...');
 						const loginResult = await loginWithGoogleCredential(response.credential);
 						setLoginProgressMessage('Preparing your learning profile...');
@@ -67,11 +74,39 @@ const GoogleOneTapProvider = () => {
 									profile: loginResult.onboardingProfile
 								}
 							: await getOnboardingStatus();
+						const redirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+
+						identifyAuthenticatedMixpanelUser({
+							userId: onboardingStatus.user.id,
+							email: onboardingStatus.user.email,
+							name: onboardingStatus.user.name,
+							roles: onboardingStatus.user.roles,
+							status: onboardingStatus.user.status,
+							authContext: 'user',
+							onboardingNextStep: onboardingStatus.profile.nextStep
+						});
+						trackAuthEvent({
+							location: 'auth_google_one_tap',
+							eventName: 'Google Login Succeeded',
+							method: 'google_one_tap',
+							authContext: 'user',
+							redirectPath,
+							onboardingNextStep: onboardingStatus.profile.nextStep,
+							hasOnboardingProfile: Boolean(loginResult.onboardingProfile),
+							roles: onboardingStatus.user.roles
+						});
 						setLoginProgressMessage('Taking you to the next step...');
 						writeCachedOnboardingStatus(onboardingStatus);
 						window.google?.accounts.id.cancel();
-						router.replace(getOnboardingRedirectPath(onboardingStatus.profile));
+						router.replace(redirectPath);
 					} catch {
+						trackAuthEvent({
+							location: 'auth_google_one_tap',
+							eventName: 'Google Login Failed',
+							method: 'google_one_tap',
+							authContext: 'user',
+							errorType: 'google_auth_or_redirect_error'
+						});
 						setLoginProgressMessage('');
 						window.google?.accounts.id.disableAutoSelect();
 					}

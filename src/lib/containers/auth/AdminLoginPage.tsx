@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getCurrentAdmin } from '~/lib/api/auth';
+import { identifyAuthenticatedMixpanelUser, trackAuthEvent } from '~/lib/analytics/mixpanel';
+import { getCurrentAdmin, type AuthResult } from '~/lib/api/auth';
 import GoogleLoginButton from '~/lib/components/auth/GoogleLoginButton';
 import { AuthPageSkeleton, BlockingProgressOverlay } from '~/lib/components/feedback/LoadingStates';
 
@@ -19,7 +20,23 @@ const AdminLoginPage = () => {
 
 		const checkAdminSession = async () => {
 			try {
-				await getCurrentAdmin();
+				const result = await getCurrentAdmin();
+				identifyAuthenticatedMixpanelUser({
+					userId: result.user.id,
+					email: result.user.email,
+					name: result.user.name,
+					roles: result.user.roles,
+					status: result.user.status,
+					authContext: 'admin'
+				});
+				trackAuthEvent({
+					location: 'auth_admin_login',
+					eventName: 'Existing Session Detected',
+					method: 'session_check',
+					authContext: 'admin',
+					redirectPath: '/admin/courses/',
+					roles: result.user.roles
+				});
 				router.replace('/admin/courses/');
 			} catch {
 				if (isMounted) {
@@ -39,10 +56,29 @@ const AdminLoginPage = () => {
 		};
 	}, [router]);
 
-	const handleSuccess = useCallback(() => {
-		setLoginProgressMessage('Opening the admin workspace...');
-		router.replace('/admin/courses/');
-	}, [router]);
+	const handleSuccess = useCallback(
+		(result: AuthResult) => {
+			identifyAuthenticatedMixpanelUser({
+				userId: result.user.id,
+				email: result.user.email,
+				name: result.user.name,
+				roles: result.user.roles,
+				status: result.user.status,
+				authContext: 'admin'
+			});
+			trackAuthEvent({
+				location: 'auth_admin_login',
+				eventName: 'Google Login Succeeded',
+				method: 'google_button',
+				authContext: 'admin',
+				redirectPath: '/admin/courses/',
+				roles: result.user.roles
+			});
+			setLoginProgressMessage('Opening the admin workspace...');
+			router.replace('/admin/courses/');
+		},
+		[router]
+	);
 
 	return (
 		<Container
@@ -91,8 +127,25 @@ const AdminLoginPage = () => {
 							</Box>
 							<GoogleLoginButton
 								context="admin"
-								onAuthStart={() => setLoginProgressMessage('Verifying your admin access...')}
-								onAuthError={() => setLoginProgressMessage('')}
+								onAuthStart={() => {
+									trackAuthEvent({
+										location: 'auth_admin_login',
+										eventName: 'Google Login Started',
+										method: 'google_button',
+										authContext: 'admin'
+									});
+									setLoginProgressMessage('Verifying your admin access...');
+								}}
+								onAuthError={() => {
+									trackAuthEvent({
+										location: 'auth_admin_login',
+										eventName: 'Google Login Failed',
+										method: 'google_button',
+										authContext: 'admin',
+										errorType: 'unauthorized_or_google_auth_error'
+									});
+									setLoginProgressMessage('');
+								}}
 								onSuccess={handleSuccess}
 							/>
 							<HStack gap={3} flexWrap="wrap">

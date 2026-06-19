@@ -14,9 +14,7 @@ import {
 	courseToFormValues,
 	formatDurationFromMinutes,
 	formValuesToPayload,
-	getScheduleTotalMinutes,
-	getStepForErrorPath,
-	normalizeDurationParts
+	getStepForErrorPath
 } from './utils';
 
 export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
@@ -36,7 +34,6 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 
 	const {
 		reset,
-		setValue,
 		watch,
 		formState: { errors, isDirty }
 	} = form;
@@ -72,17 +69,8 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 		};
 	}, [courseId, reset]);
 
-	const watchedSchedule = watch('schedule');
-	const totalScheduleMinutes = useMemo(() => getScheduleTotalMinutes(watchedSchedule), [watchedSchedule]);
 	const errorPaths = useMemo(() => collectErrorPaths(errors), [errors]);
 	const errorCountsByStep = useMemo(() => countErrorsByStep(errorPaths), [errorPaths]);
-
-	useEffect(() => {
-		const calculatedDuration = normalizeDurationParts(0, totalScheduleMinutes);
-
-		setValue('durationHours', calculatedDuration.hours, { shouldDirty: false, shouldValidate: true });
-		setValue('durationMinutes', calculatedDuration.minutes, { shouldDirty: false, shouldValidate: true });
-	}, [setValue, totalScheduleMinutes]);
 
 	useEffect(() => {
 		if (!isDirty || isSaving) {
@@ -170,10 +158,13 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 			{ label: 'Categories', value: watchedValues.categories.length ? watchedValues.categories.join(', ') : 'Not set' },
 			{ label: 'Level', value: watchedValues.level },
 			{ label: 'Mode', value: watchedValues.mode },
-			{ label: 'Duration', value: formatDurationFromMinutes(totalScheduleMinutes) },
+			{
+				label: 'Duration',
+				value: formatDurationFromMinutes(watchedValues.durationHours * 60 + watchedValues.durationMinutes)
+			},
 			{ label: 'Price', value: watchedValues.price > 0 ? `INR ${watchedValues.price}` : 'Free' }
 		],
-		[totalScheduleMinutes, watchedValues]
+		[watchedValues]
 	);
 
 	return {

@@ -8,6 +8,7 @@ import { FiCalendar, FiStar, FiUsers } from 'react-icons/fi';
 
 import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import type { CourseDetails } from '~/lib/containers/course/types';
+import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type CourseHeroProps = {
@@ -30,17 +31,6 @@ const enrollGlow = keyframes`
   0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(78, 120, 255, 0); }
   50% { box-shadow: 0 0 14px rgba(255, 255, 255, 0.28), 0 0 28px rgba(78, 120, 255, 0.38); }
 `;
-const formatDuration = (hours: number, minutes: number) => {
-	const parts: string[] = [];
-	if (hours > 0) {
-		parts.push(`${hours} hr`);
-	}
-	if (minutes > 0) {
-		parts.push(`${minutes} min`);
-	}
-	return parts.join(' ') || '0 min';
-};
-
 const CourseHero = ({ course }: CourseHeroProps) => {
 	const paymentLink = course.paymentLink.trim();
 	const enrollHref = paymentLink || `/booking/${course.id}`;
@@ -52,12 +42,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 
 	const hasMoreThanThree = course.schedule.length > 3;
 	const scheduleItems = hasMoreThanThree ? course.schedule.slice(0, 4) : course.schedule.slice(0, 3);
-	const scheduleDisplayItems = buildScheduleDisplayItems(scheduleItems, course.durationHours, course.durationMinutes);
+	const scheduleDisplayItems = buildScheduleDisplayItems(scheduleItems, 0, 0);
+	const courseContentDurationMinutes = getCourseContentDurationMinutes(course);
 	const highlights = [
 		{
 			id: 'highlight-duration',
 			label: 'Duration',
-			value: formatDuration(course.durationHours, course.durationMinutes)
+			value: formatCourseDuration(courseContentDurationMinutes)
 		},
 		{
 			id: 'highlight-learners',

@@ -50,8 +50,7 @@ const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => 
 				)}
 			/>
 		</SimpleGrid>
-		<TextareaField label="Subtitle" name="subtitle" register={register} errors={errors} minH="80px" />
-		<TextareaField label="Summary" name="summary" register={register} errors={errors} minH="110px" />
+		<TextareaField label="Subtitle" name="summary" register={register} errors={errors} minH="110px" />
 	</Stack>
 );
 

@@ -171,8 +171,8 @@ const getCourseCategories = (course: AdminCourse) => {
 export const courseToFormValues = (course: AdminCourse): CourseEditorFormValues => ({
 	slug: course.slug,
 	title: course.title,
-	subtitle: course.subtitle,
-	summary: course.summary,
+	subtitle: '',
+	summary: course.summary || course.subtitle,
 	categories: getCourseCategories(course),
 	level: course.level,
 	price: course.price,
@@ -197,9 +197,9 @@ export const courseToFormValues = (course: AdminCourse): CourseEditorFormValues 
 		label: item.label,
 		value: item.value
 	})),
-	schedule: course.schedule.map(item => ({
+	schedule: course.schedule.map((item, index) => ({
 		id: item.id || createRowId('schedule'),
-		label: item.label,
+		label: `Session ${index + 1}`,
 		time: item.time,
 		duration: item.duration ?? ''
 	})),
@@ -266,21 +266,16 @@ const hasAnyValue = (values: Array<string | number | boolean | undefined>) =>
 	});
 
 export const formValuesToPayload = (values: CourseEditorFormValues): AdminCourseInput => {
-	const totalScheduleMinutes = getScheduleTotalMinutes(values.schedule);
-	const calculatedDuration = normalizeDurationParts(0, totalScheduleMinutes);
-
 	return {
 		slug: values.slug?.trim() || undefined,
 		title: values.title.trim(),
-		subtitle: values.subtitle.trim(),
+		subtitle: '',
 		summary: values.summary.trim(),
 		category: values.categories[0] ?? '',
 		categories: values.categories,
 		level: values.level,
 		price: values.price,
 		originalPrice: values.originalPrice,
-		durationHours: calculatedDuration.hours,
-		durationMinutes: calculatedDuration.minutes,
 		mode: values.mode,
 		enrollmentCount: values.enrollmentCount,
 		rating: values.rating,
@@ -304,10 +299,10 @@ export const formValuesToPayload = (values: CourseEditorFormValues): AdminCourse
 			.filter(item => hasAnyValue([item.label, item.value]))
 			.map(item => ({ id: item.id || createRowId('highlight'), label: item.label.trim(), value: item.value.trim() })),
 		schedule: values.schedule
-			.filter(item => hasAnyValue([item.label, item.time, item.duration]))
-			.map(item => ({
+			.filter(item => hasAnyValue([item.time, item.duration]))
+			.map((item, index) => ({
 				id: item.id || createRowId('schedule'),
-				label: item.label.trim(),
+				label: `Session ${index + 1}`,
 				time: item.time.trim(),
 				...(item.duration.trim() ? { duration: item.duration.trim() } : {})
 			})),

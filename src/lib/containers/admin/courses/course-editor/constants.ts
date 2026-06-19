@@ -35,7 +35,7 @@ export const courseEditorSteps: CourseEditorStep[] = [
 ];
 
 export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
-	basics: ['slug', 'title', 'subtitle', 'summary', 'categories', 'level', 'mode', 'status'],
+	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status'],
 	media: [
 		'price',
 		'originalPrice',

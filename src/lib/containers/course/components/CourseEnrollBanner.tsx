@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import type { CourseDetails } from '~/lib/containers/course/types';
+import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type CourseEnrollBannerProps = {
@@ -15,17 +16,6 @@ type CourseEnrollBannerProps = {
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
 const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
 const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
-
-const formatDurationSummary = (hours: number, minutes: number) => {
-	const parts: string[] = [];
-	if (hours > 0) {
-		parts.push(`${hours}Hr`);
-	}
-	if (minutes > 0) {
-		parts.push(`${minutes}Min`);
-	}
-	return parts.join(' ') || 'TBD';
-};
 
 const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 	const [isVisible, setIsVisible] = useState(false);
@@ -49,7 +39,7 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 			: 0;
 
 	const startingSession = useMemo(() => {
-		const items = buildScheduleDisplayItems(course.schedule.slice(0, 1), course.durationHours, course.durationMinutes);
+		const items = buildScheduleDisplayItems(course.schedule.slice(0, 1), 0, 0);
 		if (!items.length) {
 			return null;
 		}
@@ -57,6 +47,8 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 		const startTime = item.timeRange.split(' to ')[0] ?? item.timeRange;
 		return `${item.badge.day} ${item.badge.month} - ${startTime}`;
 	}, [course]);
+
+	const courseContentDuration = formatCourseDuration(getCourseContentDurationMinutes(course));
 
 	return (
 		<Box
@@ -93,11 +85,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 								<Box w="1px" h="40px" bg="border.default" />
 								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
-										Live Session
+										Duration
 									</Text>
-									<Text fontWeight="semibold">
-										{formatDurationSummary(course.durationHours, course.durationMinutes)}
-									</Text>
+									<Text fontWeight="semibold">{courseContentDuration}</Text>
 								</Stack>
 							</HStack>
 							<HStack gap={4} justify="flex-end" flex="1">

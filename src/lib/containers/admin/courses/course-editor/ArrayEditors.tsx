@@ -22,6 +22,90 @@ import {
 	parseDurationParts
 } from './utils';
 
+const scheduleMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const scheduleMonthIndexByName = scheduleMonthNames.reduce<Record<string, number>>((acc, month, index) => {
+	acc[month.toLowerCase()] = index;
+	return acc;
+}, {});
+
+const padNumber = (value: number) => value.toString().padStart(2, '0');
+
+const parseScheduleDateInput = (value: string) => {
+	const dateMatch = value.match(/(\d{1,2})\s+([A-Za-z]{3,})/);
+	if (!dateMatch) {
+		return '';
+	}
+
+	const day = Number(dateMatch[1]);
+	const monthIndex = scheduleMonthIndexByName[dateMatch[2].slice(0, 3).toLowerCase()];
+	if (!day || monthIndex === undefined) {
+		return '';
+	}
+
+	return `${new Date().getFullYear()}-${padNumber(monthIndex + 1)}-${padNumber(day)}`;
+};
+
+const parseScheduleTimeInput = (value: string) => {
+	const timeMatch = value.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+	if (!timeMatch) {
+		return '';
+	}
+
+	const rawHours = Number(timeMatch[1]);
+	const minutes = timeMatch[2] ? Number(timeMatch[2]) : 0;
+	const meridiem = timeMatch[3].toUpperCase();
+	let hours = rawHours;
+
+	if (meridiem === 'PM' && rawHours !== 12) {
+		hours = rawHours + 12;
+	}
+
+	if (meridiem === 'AM' && rawHours === 12) {
+		hours = 0;
+	}
+
+	return `${padNumber(hours)}:${padNumber(minutes)}`;
+};
+
+const formatScheduleDateDisplay = (dateInput: string) => {
+	if (!dateInput) {
+		return '';
+	}
+
+	const [, month, day] = dateInput.split('-').map(Number);
+	if (!month || !day) {
+		return '';
+	}
+
+	return `${day} ${scheduleMonthNames[month - 1]}`;
+};
+
+const formatScheduleTimeDisplay = (timeInput: string) => {
+	if (!timeInput) {
+		return '';
+	}
+
+	const [hoursValue, minutesValue] = timeInput.split(':').map(Number);
+	if (!Number.isFinite(hoursValue) || !Number.isFinite(minutesValue)) {
+		return '';
+	}
+
+	const meridiem = hoursValue >= 12 ? 'PM' : 'AM';
+	const displayHours = hoursValue % 12 || 12;
+	return `${displayHours}:${padNumber(minutesValue)} ${meridiem}`;
+};
+
+const formatScheduleDateTime = (dateInput: string, timeInput: string) => {
+	const dateDisplay = formatScheduleDateDisplay(dateInput);
+	const timeDisplay = formatScheduleTimeDisplay(timeInput);
+
+	if (dateDisplay && timeDisplay) {
+		return `${dateDisplay} - ${timeDisplay}`;
+	}
+
+	return dateDisplay || timeDisplay;
+};
+
 export const HighlightsEditor = ({ control, register, errors }: CourseEditorSectionProps) => {
 	const { fields, append, remove } = useFieldArray({ control, name: 'highlights' });
 
@@ -53,7 +137,7 @@ export const HighlightsEditor = ({ control, register, errors }: CourseEditorSect
 	);
 };
 
-export const ScheduleEditor = ({ control, register, errors }: CourseEditorSectionProps) => {
+export const ScheduleEditor = ({ control, errors }: CourseEditorSectionProps) => {
 	const { fields, append, remove } = useFieldArray({ control, name: 'schedule' });
 	const watchedSchedule = useWatch({ control, name: 'schedule' }) ?? [];
 	const totalScheduleMinutes = getScheduleTotalMinutes(watchedSchedule);
@@ -71,7 +155,9 @@ export const ScheduleEditor = ({ control, register, errors }: CourseEditorSectio
 							size="sm"
 							variant="outline"
 							borderRadius="full"
-							onClick={() => append({ id: createRowId('schedule'), label: '', time: '', duration: '' })}
+							onClick={() =>
+								append({ id: createRowId('schedule'), label: `Session ${fields.length + 1}`, time: '', duration: '' })
+							}
 						>
 							Add session
 						</Button>
@@ -81,9 +167,51 @@ export const ScheduleEditor = ({ control, register, errors }: CourseEditorSectio
 			{fields.length ? null : <EmptyEditorState label="sessions" />}
 			{fields.map((field, index) => (
 				<EditorCard key={field.id} title={`Session ${index + 1}`} onRemove={() => remove(index)}>
-					<SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
-						<FormField label="Label" name={`schedule.${index}.label`} register={register} errors={errors} />
-						<FormField label="Time" name={`schedule.${index}.time`} register={register} errors={errors} />
+					<SimpleGrid columns={{ base: 1, lg: 2 }} gap={3}>
+						<Controller
+							control={control}
+							name={`schedule.${index}.time`}
+							render={({ field: timeField }) => {
+								const timeValue = String(timeField.value ?? '');
+								const dateInput = parseScheduleDateInput(timeValue);
+								const startTimeInput = parseScheduleTimeInput(timeValue);
+								const updateScheduleTime = (nextDateInput: string, nextTimeInput: string) => {
+									timeField.onChange(formatScheduleDateTime(nextDateInput, nextTimeInput));
+								};
+
+								return (
+									<Box>
+										<Text fontSize="xs" color="text.muted" mb={1}>
+											Session date and start time
+										</Text>
+										<SimpleGrid columns={{ base: 1, md: 2 }} gap={2}>
+											<Input
+												aria-label={`Session ${index + 1} date`}
+												type="date"
+												value={dateInput}
+												onBlur={timeField.onBlur}
+												onChange={event => updateScheduleTime(event.currentTarget.value, startTimeInput)}
+											/>
+											<Input
+												aria-label={`Session ${index + 1} start time`}
+												type="time"
+												value={startTimeInput}
+												onBlur={timeField.onBlur}
+												onChange={event => updateScheduleTime(dateInput, event.currentTarget.value)}
+											/>
+										</SimpleGrid>
+										<Text mt={1} fontSize="xs" color="text.muted">
+											Saved as: {timeValue || 'No date/time selected'}
+										</Text>
+										{getFieldError(errors, `schedule.${index}.time`) ? (
+											<Text mt={1} fontSize="xs" color="red.500">
+												{getFieldError(errors, `schedule.${index}.time`)}
+											</Text>
+										) : null}
+									</Box>
+								);
+							}}
+						/>
 						<Controller
 							control={control}
 							name={`schedule.${index}.duration`}

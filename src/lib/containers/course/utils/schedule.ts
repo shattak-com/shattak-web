@@ -144,6 +144,9 @@ export const buildScheduleDisplayItems = (
 
 	const today = new Date();
 	const initialTime = items.map(item => parseTimeOfDay(item.time)).find(Boolean) ?? defaultStartTime;
+	// Admin schedule values are stored as display strings such as "15 May - 8:00 PM".
+	// Public pages parse both parts, but if any date is missing or in the past, all visible
+	// sessions are rolled forward to the next Saturday/Sunday sequence while preserving times.
 	const shouldAutoSchedule = items.some(item => {
 		const parsedDate = parseDate(item.time);
 		return !parsedDate || isPastDate(parsedDate, today);

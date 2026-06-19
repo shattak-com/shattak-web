@@ -16,8 +16,7 @@ type CoursePageProps = {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 const formatDescription = (course: CourseDetails) =>
-	[course.summary, course.subtitle, course.about].map(value => value?.trim()).find(Boolean) ??
-	`Explore ${course.title} on Shattak.`;
+	[course.summary, course.about].map(value => value?.trim()).find(Boolean) ?? `Explore ${course.title} on Shattak.`;
 
 const formatIsoDuration = (hours: number, minutes: number) => {
 	const totalMinutes = hours * 60 + minutes;

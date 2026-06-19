@@ -191,7 +191,7 @@ const AdminCoursesPage = () => {
 							<Input
 								value={query}
 								onChange={event => setQuery(event.target.value)}
-								placeholder="Search by title, slug, or summary"
+								placeholder="Search by title, slug, or subtitle"
 								h="40px"
 							/>
 						</Box>

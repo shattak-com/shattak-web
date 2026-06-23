@@ -1,23 +1,45 @@
-# Shattak Style Guide
+# Shattak Brand Guidelines
 
-This document is the visual reference for the current Shattak website.  
+This document is the visual reference for the current Shattak website.
 Use it when creating new pages, design explorations, ad creatives, or social posts so the brand stays visually consistent.
+
+For implementation, prefer the Chakra theme tokens in `src/lib/theme/tokens.ts` instead of hardcoding raw values. For a visual reference, open `/showcase` in the web app.
+
+## 0. Brand Direction
+
+Shattak should feel practical, modern, warm, and mentor-led. The interface is coral-first, softly rounded, spacious, and designed for learning workflows rather than generic SaaS dashboards.
+
+Use:
+
+- Coral as the primary brand signal
+- Blue as a supporting accent
+- White, warm, and soft neutral surfaces for breathing room
+- Rounded panels, pill buttons, subtle borders, and soft elevation
+- Clear hierarchy with compact but readable UI copy
+
+Avoid:
+
+- Purple-led or neon palettes
+- Heavy dark blocks outside dark mode, footer, or admin contexts
+- Sharp, harsh outlines
+- Dense/cramped marketing layouts
+- Decorative clutter that competes with course content
 
 ## 1. Brand Colors
 
 ### Primary Brand Color
 
-- **Coral**: `#FF6B57`
+- **Coral / `brand.500` / `primary`**: `#FF6B57`
   Use for primary CTAs, active pills, important highlights, and strong emphasis.
 
 ### Supporting Brand Color
 
-- **Soft Coral**: `#FF8A7A`
+- **Soft Coral / `brand.300`, `brand.400`**: `#FF8A7A`
   Use in gradients, softer highlights, and supporting accents.
 
 ### Accent Color
 
-- **Blue**: `#4E78FF`
+- **Blue / `accent.500`**: `#4E78FF`
   Use as a secondary accent only. It supports the coral system and should not become the dominant brand color.
 
 ### Neutral Text Colors
@@ -28,12 +50,13 @@ Use it when creating new pages, design explorations, ad creatives, or social pos
 
 ### Surface Colors
 
-- **Main canvas**: white
-- **Soft neutral surface**: `#F9FAFB`
-- **Warm surface**: `#FFF6F3`
-- **Light blue surface**: `#F3F7FF`
-- **Light green support surface**: `#F5FFF3`
-- **Soft lavender surface**: `#F2F4FF`
+- **Main canvas / `bg.canvas`**: white in light mode, dark gray in dark mode
+- **Soft neutral surface / `surface.50`**: `#F9FAFB`
+- **Warm surface / `surface.100`**: `#FFF6F3`
+- **Warm pale surface / `surface.200`**: `#FFF9F7`
+- **Light blue surface / `surface.300`**: `#F3F7FF`
+- **Light green support surface / `surface.400`**: `#F5FFF3`
+- **Soft lavender surface / `surface.500`**: `#F2F4FF`
 
 ### Utility Colors
 
@@ -78,6 +101,12 @@ Use for:
 - Feature callout sections
 - Instructor and promotional surfaces
 
+### Dark CTA Surface Gradient
+
+- `linear-gradient(135deg, rgba(17, 24, 39, 0.92) 0%, rgba(15, 23, 42, 0.86) 100%)`
+
+Use this through the `ctaSurfaceDark` gradient token for dark mode promotional or enrollment surfaces.
+
 ### Orb / Glow Direction
 
 The design uses soft radial glows:
@@ -118,6 +147,12 @@ The design system also uses a display stack:
 - **Google Sans fallback + body font**
 
 This is mainly used in the main hero-style headings for a more polished marketing feel.
+
+Implementation tokens:
+
+- `fontFamily="heading"`
+- `fontFamily="body"`
+- `fontFamily="display"`
 
 ## 4. Type Scale In Practice
 
@@ -297,6 +332,17 @@ These are the named radius values in the current design system.
 Borders are soft and supportive.  
 Avoid harsh dark outlines or heavy strokes.
 
+### Semantic Border Tokens
+
+- `border.default`
+- `border.muted`
+- `border.brand`
+- `border.brandSoft`
+- `border.accent`
+- `border.accentSoft`
+
+Use these instead of raw gray/coral/blue values so light and dark mode remain aligned.
+
 ## 10. Shadows
 
 These are the main shadow styles in the current design system.
@@ -337,9 +383,10 @@ Keep them airy and modern.
 
 ### Primary Button Style
 
-- Coral or coral gradient background
-- White text
-- Full pill radius
+- `bg="primary"`
+- `color="text.inverse"`
+- `borderRadius="full"`
+- hover: `bg="primaryHover"`
 - Soft shadow
 - Slight lift on hover
 
@@ -362,9 +409,10 @@ Most primary CTA buttons use:
 
 ### Core Card Style
 
-- White or soft background
-- `card` radius
-- 1px subtle border
+- `bg="bg.card"`
+- `borderRadius="card"`
+- `border="1px solid"`
+- `borderColor="border.default"`
 - card or soft shadow
 
 ### Promotional Surface Style
@@ -399,7 +447,42 @@ Avoid:
 - heavy zoom transitions
 - visually noisy motion
 
-## 14. Social Creative Styling
+## 14. Dark Mode
+
+Dark mode is a first-class theme. The site uses semantic tokens with `_light` and `_dark` values, initialized from `localStorage` or system preference.
+
+Rules:
+
+- Prefer semantic tokens over raw colors
+- Keep coral CTAs visible and warm in dark mode
+- Avoid large pure-black blocks unless the surrounding design intentionally uses them
+- Use `border.default` and `border.muted` instead of raw gray borders
+- Check text contrast on `bg.card`, `bg.surface`, and `bg.subtle`
+
+## 15. Product Area Notes
+
+### Public Website
+
+The public site should feel polished, warm, and trust-building. Use more space, clear headings, imagery, and conversion-focused CTAs.
+
+### Course Detail Pages
+
+Course pages should prioritize inspection and decision-making:
+
+- strong title and summary
+- clear schedule and pricing
+- visible curriculum structure
+- crisp badges and cards
+
+### Onboarding
+
+Onboarding should feel light and guided. Use friendly visual panels, compact forms, clear validation, and minimal friction.
+
+### Admin
+
+Admin screens should be calmer and denser than marketing pages. Keep the same token system, but prioritize scanning, editing, pagination, and data safety.
+
+## 16. Social Creative Styling
 
 If a social post should feel like the website, use this direction:
 
@@ -412,7 +495,7 @@ If a social post should feel like the website, use this direction:
 - Soft glow or gradient accents
 - Clean spacing and uncluttered compositions
 
-## 15. Quick Reference
+## 17. Quick Reference
 
 ### Use This Look
 
@@ -432,6 +515,16 @@ If a social post should feel like the website, use this direction:
 - overly dark and heavy compositions
 - cramped text layouts
 
-## 16. Design Rule Of Thumb
+## 18. Implementation Checklist
+
+- Use semantic tokens first
+- Use `Bricolage Grotesque` for headings and `Plus Jakarta Sans` for UI/body
+- Keep CTAs coral-led
+- Use rounded cards and pill actions
+- Support dark mode with token-aware styles
+- Keep spacing generous on public pages and structured on admin pages
+- Add visual previews for brand-critical or media-heavy UI where possible
+
+## 19. Design Rule Of Thumb
 
 If a new design looks clean, rounded, coral-led, softly elevated, and spacious, it is likely aligned with the current Shattak system.

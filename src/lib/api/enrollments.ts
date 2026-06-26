@@ -10,6 +10,7 @@ export type EnrolledCourse = {
 	summary: string;
 	thumbnailImage: string;
 	promoImage: string;
+	whatsappGroupUrl: string;
 	price: number;
 	level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 	mode: 'LIVE' | 'RECORDED' | 'HYBRID';
@@ -22,6 +23,7 @@ export type CourseEnrollment = {
 	progressPercent: number;
 	enrolledAt: string;
 	lastAccessedAt: string | null;
+	accessUnlockedAt: string | null;
 	completedAt: string | null;
 	course: EnrolledCourse;
 };
@@ -42,5 +44,8 @@ export const getCourseEnrollmentStatus = (slug: string) =>
 
 export const enrollInFreeCourse = (slug: string) =>
 	postJson<CourseEnrollmentResult>(`/enrollments/courses/${encodeURIComponent(slug)}`);
+
+export const unlockCourseAccess = (slug: string, accessCode: string) =>
+	postJson<{ enrollment: CourseEnrollment }>(`/enrollments/courses/${encodeURIComponent(slug)}/unlock`, { accessCode });
 
 export const listMyCourseEnrollments = () => getJson<{ enrollments: CourseEnrollment[] }>('/enrollments/my-courses');

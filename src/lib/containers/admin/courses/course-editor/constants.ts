@@ -35,7 +35,7 @@ export const courseEditorSteps: CourseEditorStep[] = [
 ];
 
 export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
-	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status'],
+	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status', 'whatsappGroupUrl', 'accessCode'],
 	media: [
 		'price',
 		'originalPrice',
@@ -101,6 +101,8 @@ export const defaultFormValues: CourseEditorFormValues = {
 	promoImage: '',
 	promoImageBrand: '',
 	paymentLink: '',
+	whatsappGroupUrl: '',
+	accessCode: '',
 	status: 'DRAFT',
 	about: '',
 	liveUrl: '',

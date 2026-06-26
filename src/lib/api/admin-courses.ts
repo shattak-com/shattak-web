@@ -111,6 +111,8 @@ export type AdminCourse = {
 	promoImage: string;
 	promoImageBrand: string;
 	paymentLink: string;
+	whatsappGroupUrl: string;
+	accessCode: string;
 	status: AdminCourseStatus;
 	publishedAt: string | null;
 	highlights: AdminCourseHighlight[];
@@ -155,6 +157,8 @@ export type AdminCourseInput = Partial<
 		| 'promoImage'
 		| 'promoImageBrand'
 		| 'paymentLink'
+		| 'whatsappGroupUrl'
+		| 'accessCode'
 		| 'status'
 		| 'highlights'
 		| 'schedule'

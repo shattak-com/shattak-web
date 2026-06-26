@@ -1,7 +1,8 @@
 import { Box, SimpleGrid, Stack, Text } from '@chakra-ui/react';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 
 import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
+import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import { courseCategories } from '~/lib/constants/course-categories';
 import CourseCurriculumEditor from '~/lib/containers/admin/courses/CourseCurriculumEditor';
 
@@ -23,36 +24,76 @@ import { FormField, ImageField, SelectField, TextareaField } from './FormControl
 import type { CourseEditorSectionProps, CourseEditorStepFieldsProps } from './types';
 import { getFieldError } from './utils';
 
-const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={4}>
-		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-			<FormField label="Title" name="title" register={register} errors={errors} />
-			<FormField label="Slug" name="slug" register={register} errors={errors} placeholder="generated-from-title" />
-		</SimpleGrid>
-		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-			<SelectField label="Status" name="status" register={register} options={courseStatusOptions} />
-			<SelectField label="Level" name="level" register={register} options={courseLevelOptions} />
-		</SimpleGrid>
-		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-			<SelectField label="Mode" name="mode" register={register} options={courseModeOptions} />
-			<Controller
-				control={control}
-				name="categories"
-				render={({ field }) => (
-					<MultiSelectDropdown
-						label="Categories"
-						options={courseCategories}
-						selectedValues={field.value}
-						onChange={field.onChange}
-						placeholder="Select course categories"
-						error={getFieldError(errors, 'categories')}
+const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => {
+	const whatsappGroupUrl = useWatch({ control, name: 'whatsappGroupUrl' });
+
+	return (
+		<Stack gap={5}>
+			<Stack gap={4}>
+				<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+					<FormField label="Title" name="title" register={register} errors={errors} />
+					<FormField label="Slug" name="slug" register={register} errors={errors} placeholder="generated-from-title" />
+				</SimpleGrid>
+				<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+					<SelectField label="Status" name="status" register={register} options={courseStatusOptions} />
+					<SelectField label="Level" name="level" register={register} options={courseLevelOptions} />
+				</SimpleGrid>
+				<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+					<SelectField label="Mode" name="mode" register={register} options={courseModeOptions} />
+					<Controller
+						control={control}
+						name="categories"
+						render={({ field }) => (
+							<MultiSelectDropdown
+								label="Categories"
+								options={courseCategories}
+								selectedValues={field.value}
+								onChange={field.onChange}
+								placeholder="Select course categories"
+								error={getFieldError(errors, 'categories')}
+							/>
+						)}
 					/>
-				)}
-			/>
-		</SimpleGrid>
-		<TextareaField label="Subtitle" name="summary" register={register} errors={errors} minH="110px" />
-	</Stack>
-);
+				</SimpleGrid>
+				<TextareaField label="Subtitle" name="summary" register={register} errors={errors} minH="110px" />
+			</Stack>
+
+			<Box borderTop="1px solid" borderColor="border.default" pt={5}>
+				<Stack gap={4}>
+					<Box>
+						<Text fontSize="md" fontWeight="bold">
+							WhatsApp group access
+						</Text>
+						<Text mt={1} fontSize="sm" color="text.muted" fontWeight="semibold">
+							Add the group invitation link and course access code learners use after enrolling.
+						</Text>
+					</Box>
+					<SimpleGrid columns={{ base: 1, lg: 3 }} gap={4} alignItems="start">
+						<Box gridColumn={{ base: 'auto', lg: 'span 2' }}>
+							<Stack gap={4}>
+								<FormField
+									label="WhatsApp Group Invitation Link"
+									name="whatsappGroupUrl"
+									register={register}
+									errors={errors}
+									placeholder="https://chat.whatsapp.com/..."
+								/>
+								<FormField
+									label="Access Code"
+									name="accessCode"
+									register={register}
+									errors={errors}
+									placeholder="Example: CATDOG"
+								/>
+							</Stack>
+						</Box>
+						<QrCodePreview value={whatsappGroupUrl ?? ''} label="WhatsApp QR preview" />
+					</SimpleGrid>
+				</Stack>
+			</Box>
+		</Stack>
+	);
+};
 
 const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={4}>

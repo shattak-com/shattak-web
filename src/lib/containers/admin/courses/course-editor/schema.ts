@@ -29,6 +29,8 @@ export const courseEditorSchema = z.object({
 	promoImage: z.string().max(1200),
 	promoImageBrand: z.string().max(1200),
 	paymentLink: z.string().max(1200),
+	whatsappGroupUrl: z.string().max(1200),
+	accessCode: z.string().max(120),
 	status: z.enum(['DRAFT', 'PUBLISHED']),
 	about: z.string().max(20000),
 	liveUrl: z.string().max(1200),

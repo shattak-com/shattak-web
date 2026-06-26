@@ -46,39 +46,81 @@ const formatDate = (value: string) =>
 		year: 'numeric'
 	}).format(new Date(value));
 
+const courseNextSteps = [
+	'Join the WhatsApp community.',
+	'Access your course materials.',
+	'Complete all study materials.',
+	'Unlock and watch the live session.',
+	'Complete your first assignment.',
+	'Give us feedback.',
+	'Get your certificate.'
+];
+
 const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	<Box
 		border="1px solid"
 		borderColor="border.default"
 		borderRadius="card"
 		bg="bg.card"
-		minH={{ base: '280px', md: '420px' }}
-		p={{ base: 6, md: 10 }}
+		minH={{ base: '420px', md: 'calc(100vh - 168px)' }}
+		p={{ base: 5, md: 8 }}
+		display="grid"
+		placeItems="center"
 	>
-		<Stack gap={4} maxW="xl">
+		<Stack gap={{ base: 6, md: 8 }} align="center" maxW="760px" w="full">
 			<Box
-				boxSize="52px"
-				borderRadius="full"
+				borderRadius="card"
 				bg="bg.subtle"
-				color="primary"
-				display="grid"
-				placeItems="center"
-				fontSize="xl"
+				border="1px solid"
+				borderColor="border.default"
+				p={{ base: 5, md: 7 }}
+				w="full"
 			>
-				<FiLock />
+				<HStack gap={{ base: 4, md: 6 }} align="center">
+					<Box
+						boxSize={{ base: '70px', md: '96px' }}
+						border="4px solid"
+						borderColor="primary"
+						borderRadius="2xl"
+						color="primary"
+						display="grid"
+						flexShrink={0}
+						fontSize={{ base: '3xl', md: '5xl' }}
+						placeItems="center"
+					>
+						<FiLock />
+					</Box>
+					<Box>
+						<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+							{label}
+						</Text>
+						<Heading mt={2} size={{ base: 'lg', md: 'xl' }}>
+							This Section Is Locked
+						</Heading>
+						<Text mt={2} color="text.muted" fontSize={{ base: 'md', md: 'lg' }}>
+							To unlock, please follow the steps below.
+						</Text>
+					</Box>
+				</HStack>
 			</Box>
-			<Box>
-				<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-					Coming next
-				</Text>
-				<Heading mt={2} size="lg">
-					{label}
+
+			<Stack gap={5} w="full" maxW="560px">
+				<Heading size="lg" textAlign="center">
+					Your next steps
 				</Heading>
-				<Text mt={3} color="text.muted" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
-					This section is prepared for the next phase of course delivery. The content and interactions will be connected
-					after the overview access flow is finalized.
-				</Text>
-			</Box>
+				<Stack gap={3}>
+					{courseNextSteps.map((step, index) => (
+						<HStack key={step} align="start" gap={3}>
+							<Box color="primary" pt={0.5}>
+								<FiCheckCircle />
+							</Box>
+							<Text color="text.muted" fontSize="sm" lineHeight="tall">
+								{index + 1}. {step}
+							</Text>
+						</HStack>
+					))}
+				</Stack>
+			</Stack>
 		</Stack>
 	</Box>
 );
@@ -95,15 +137,7 @@ const CourseNextStepsPanel = () => (
 				</Heading>
 			</Box>
 			<Stack gap={4}>
-				{[
-					'Join the WhatsApp community.',
-					'Access your course materials.',
-					'Complete all study materials.',
-					'Unlock and watch the live session.',
-					'Complete your first assignment.',
-					'Give us feedback.',
-					'Get your certificate.'
-				].map((step, index) => (
+				{courseNextSteps.map((step, index) => (
 					<HStack key={step} align="start" gap={3}>
 						<Box color="primary" pt={0.5}>
 							<FiCheckCircle />

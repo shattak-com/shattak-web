@@ -1,12 +1,23 @@
 'use client';
 
-import { Badge, Box, Button, Container, Heading, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, Container, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { FiAward, FiBookOpen, FiClipboard, FiGift, FiLock, FiMessageCircle, FiPlayCircle } from 'react-icons/fi';
+import {
+	FiAward,
+	FiBookOpen,
+	FiCheckCircle,
+	FiClipboard,
+	FiExternalLink,
+	FiGift,
+	FiLock,
+	FiMessageCircle,
+	FiPlayCircle
+} from 'react-icons/fi';
 
 import { trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
+import { getCurrentUser } from '~/lib/api/auth';
 import { ApiRequestError } from '~/lib/api/client';
 import { getCourseEnrollmentStatus, type CourseEnrollment, unlockCourseAccess } from '~/lib/api/enrollments';
 import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
@@ -36,16 +47,73 @@ const formatDate = (value: string) =>
 	}).format(new Date(value));
 
 const CoursePlaceholderTab = ({ label }: { label: string }) => (
-	<Box border="1px dashed" borderColor="border.default" borderRadius="card" bg="bg.subtle" p={{ base: 5, md: 6 }}>
-		<Stack gap={3}>
-			<HStack gap={2}>
+	<Box
+		border="1px solid"
+		borderColor="border.default"
+		borderRadius="card"
+		bg="bg.card"
+		minH={{ base: '280px', md: '420px' }}
+		p={{ base: 6, md: 10 }}
+	>
+		<Stack gap={4} maxW="xl">
+			<Box
+				boxSize="52px"
+				borderRadius="full"
+				bg="bg.subtle"
+				color="primary"
+				display="grid"
+				placeItems="center"
+				fontSize="xl"
+			>
 				<FiLock />
-				<Heading size="md">{label}</Heading>
-			</HStack>
-			<Text color="text.muted">
-				This section is prepared for the next phase of course delivery. The content and interactions will be connected
-				after the overview access flow is finalized.
-			</Text>
+			</Box>
+			<Box>
+				<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+					Coming next
+				</Text>
+				<Heading mt={2} size="lg">
+					{label}
+				</Heading>
+				<Text mt={3} color="text.muted" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
+					This section is prepared for the next phase of course delivery. The content and interactions will be connected
+					after the overview access flow is finalized.
+				</Text>
+			</Box>
+		</Stack>
+	</Box>
+);
+
+const CourseNextStepsPanel = () => (
+	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, xl: 6 }}>
+		<Stack gap={5}>
+			<Box>
+				<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+					Your next steps
+				</Text>
+				<Heading mt={2} size="md">
+					Keep moving through the course
+				</Heading>
+			</Box>
+			<Stack gap={4}>
+				{[
+					'Join the WhatsApp community.',
+					'Access your course materials.',
+					'Complete all study materials.',
+					'Unlock and watch the live session.',
+					'Complete your first assignment.',
+					'Give us feedback.',
+					'Get your certificate.'
+				].map((step, index) => (
+					<HStack key={step} align="start" gap={3}>
+						<Box color="primary" pt={0.5}>
+							<FiCheckCircle />
+						</Box>
+						<Text color="text.muted" fontSize="sm" lineHeight="tall">
+							{index + 1}. {step}
+						</Text>
+					</HStack>
+				))}
+			</Stack>
 		</Stack>
 	</Box>
 );
@@ -53,10 +121,11 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 type CourseOverviewTabProps = {
 	enrollment: CourseEnrollment;
 	courseId: string;
+	learnerName: string;
 	onUnlocked: (enrollment: CourseEnrollment) => void;
 };
 
-const CourseOverviewTab = ({ enrollment, courseId, onUnlocked }: CourseOverviewTabProps) => {
+const CourseOverviewTab = ({ enrollment, courseId, learnerName, onUnlocked }: CourseOverviewTabProps) => {
 	const [accessCode, setAccessCode] = useState('');
 	const [message, setMessage] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,80 +187,158 @@ const CourseOverviewTab = ({ enrollment, courseId, onUnlocked }: CourseOverviewT
 	};
 
 	return (
-		<SimpleGrid columns={{ base: 1, lg: 2 }} gap={5} alignItems="start">
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
-				<Stack gap={5}>
-					<Box>
-						<Badge colorPalette={isUnlocked ? 'green' : 'orange'}>{isUnlocked ? 'Access confirmed' : 'Locked'}</Badge>
-						<Heading mt={3} size="lg">
-							{isUnlocked ? 'Welcome to the course workspace' : 'Join the course WhatsApp group'}
-						</Heading>
-						<Text mt={2} color="text.muted">
-							{isUnlocked
-								? 'Your WhatsApp group access has been confirmed. The remaining course sections will be connected in the next phase.'
-								: 'Start by joining the course community. The access code is shared inside the WhatsApp group so we can confirm that you joined the correct cohort.'}
+		<Stack gap={4}>
+			<Box borderRadius="card" bg="primary" color="text.inverse" px={{ base: 4, md: 5 }} py={3}>
+				<HStack gap={3}>
+					<FiCheckCircle />
+					<Text fontSize="sm" fontWeight="semibold">
+						Enrollment confirmed. You have lifetime access, including all future updates.
+					</Text>
+				</HStack>
+			</Box>
+
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+				<Stack gap={4}>
+					<Heading size={{ base: 'xl', md: '2xl' }} lineHeight="short">
+						Welcome to the Course{learnerName ? `, ${learnerName}` : ''}.
+					</Heading>
+					<Text color="text.primary" fontSize={{ base: 'lg', md: 'xl' }} fontWeight="medium">
+						You&apos;ve taken the first step - now let&apos;s make it count.
+					</Text>
+					<Stack gap={2} color="text.muted" fontSize="md" lineHeight="tall" maxW="3xl">
+						<Text>
+							We wish you all the best on your journey. Use this workspace as your course hub while you move through the
+							learning path.
+						</Text>
+						<Text>
+							Start by joining the WhatsApp community. Your mentors and peers are already there to share updates, answer
+							questions, and help you stay on track.
+						</Text>
+					</Stack>
+					<Box borderRadius="lg" bg="text.primary" color="text.inverse" px={4} py={3} w="fit-content">
+						<Text fontSize="sm" fontWeight="bold">
+							Join community + confirm code + prepare your course workspace
 						</Text>
 					</Box>
-
-					<Stack gap={3} color="text.muted" fontSize="sm">
-						<Text>1. Scan the QR code or open the WhatsApp invitation link.</Text>
-						<Text>2. Join the official course group.</Text>
-						<Text>3. Find the course access code shared in the group.</Text>
-						<Text>4. Enter the code here and click &quot;I have joined&quot;.</Text>
-					</Stack>
-
-					{hasInviteLink ? (
-						<Button asChild borderRadius="full" w="fit-content" variant="outline">
-							<Link href={course.whatsappGroupUrl} target="_blank" rel="noopener noreferrer">
-								Open WhatsApp Group
-							</Link>
-						</Button>
-					) : (
-						<Text color="red.500" fontSize="sm">
-							The WhatsApp group link is not configured for this course yet.
-						</Text>
-					)}
 				</Stack>
 			</Box>
 
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
-				<Stack gap={5}>
-					<QrCodePreview value={course.whatsappGroupUrl} label="WhatsApp group QR" size={190} />
+			<Box
+				border="1px solid"
+				borderColor="border.default"
+				borderRadius="card"
+				bg="bg.card"
+				overflow="hidden"
+				boxShadow="soft"
+			>
+				<Box display="grid" gridTemplateColumns={{ base: '1fr', xl: 'minmax(0, 1fr) 320px' }}>
+					<Stack gap={4} p={{ base: 5, md: 6 }}>
+						<HStack align="start" gap={4}>
+							<Box
+								boxSize="56px"
+								borderRadius="xl"
+								bg="primary"
+								color="text.inverse"
+								display="grid"
+								flexShrink={0}
+								fontSize="2xl"
+								placeItems="center"
+							>
+								<FiMessageCircle />
+							</Box>
+							<Box>
+								<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+									Community access
+								</Text>
+								<Heading mt={1} size="md">
+									{isUnlocked ? 'Your WhatsApp access is confirmed' : 'Join the community before you begin'}
+								</Heading>
+								<Text mt={2} color="text.muted" fontSize="sm" lineHeight="tall">
+									{isUnlocked
+										? 'Your access has been confirmed. The remaining course sections will be connected in the next phase.'
+										: 'Scan the QR code or open the link, join the official group, and enter the access code shared there.'}
+								</Text>
+							</Box>
+						</HStack>
 
-					<Stack gap={2}>
-						<Text fontSize="sm" fontWeight="semibold">
-							Access code
-						</Text>
-						<Input
-							value={accessCode}
-							onChange={event => setAccessCode(event.currentTarget.value)}
-							placeholder="Enter code from WhatsApp group"
-							disabled={isUnlocked}
-						/>
+						<HStack gap={3} flexWrap="wrap">
+							{hasInviteLink ? (
+								<Button asChild borderRadius="full" bg="primary" color="text.inverse" _hover={{ bg: 'primaryHover' }}>
+									<Link href={course.whatsappGroupUrl} target="_blank" rel="noopener noreferrer">
+										Join WhatsApp Group <FiExternalLink />
+									</Link>
+								</Button>
+							) : (
+								<Text color="red.500" fontSize="sm">
+									The WhatsApp group link is not configured for this course yet.
+								</Text>
+							)}
+						</HStack>
+
+						<Stack gap={2} color="text.muted" fontSize="sm" lineHeight="tall">
+							<Text>1. Join the official WhatsApp community.</Text>
+							<Text>2. Get the confirmation code from the group description or pinned message.</Text>
+							<Text>3. Enter the code here and click &quot;I have joined&quot;.</Text>
+						</Stack>
+
+						<Box
+							display="grid"
+							gridTemplateColumns={{ base: '1fr', md: 'minmax(260px, 420px) 180px' }}
+							gap={3}
+							alignItems="end"
+							maxW="680px"
+						>
+							<Stack gap={2}>
+								<Text fontSize="sm" fontWeight="bold" color="text.primary">
+									Access code
+								</Text>
+								<Input
+									value={accessCode}
+									onChange={event => setAccessCode(event.currentTarget.value)}
+									placeholder="Enter code from WhatsApp group"
+									disabled={isUnlocked}
+									bg="bg.card"
+									h="46px"
+								/>
+							</Stack>
+
+							<Button
+								borderRadius="full"
+								bg="primary"
+								color="text.inverse"
+								h="46px"
+								_hover={{ bg: 'primaryHover' }}
+								loading={isSubmitting}
+								disabled={isUnlocked || !accessCode.trim()}
+								onClick={() => {
+									handleUnlock().catch(() => undefined);
+								}}
+							>
+								{isUnlocked ? 'Access confirmed' : 'I have joined'}
+							</Button>
+						</Box>
+
+						{message ? (
+							<Text fontSize="sm" color={isUnlocked ? 'green.500' : 'red.500'}>
+								{message}
+							</Text>
+						) : null}
 					</Stack>
 
-					<Button
-						borderRadius="full"
-						bg="primary"
-						color="text.inverse"
-						_hover={{ bg: 'primaryHover' }}
-						loading={isSubmitting}
-						disabled={isUnlocked || !accessCode.trim()}
-						onClick={() => {
-							handleUnlock().catch(() => undefined);
-						}}
+					<Stack
+						gap={3}
+						align="center"
+						justify="center"
+						bg="bg.subtle"
+						borderLeft={{ xl: '1px solid' }}
+						borderColor="border.default"
+						p={{ base: 5, md: 6 }}
 					>
-						{isUnlocked ? 'Access confirmed' : 'I have joined'}
-					</Button>
-
-					{message ? (
-						<Text fontSize="sm" color={isUnlocked ? 'green.500' : 'red.500'}>
-							{message}
-						</Text>
-					) : null}
-				</Stack>
+						<QrCodePreview value={course.whatsappGroupUrl} label="WhatsApp group QR" size={220} />
+					</Stack>
+				</Box>
 			</Box>
-		</SimpleGrid>
+		</Stack>
 	);
 };
 
@@ -200,11 +347,20 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const currentPath = `/my-courses/${courseId}`;
 	const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
 	const [activeTab, setActiveTab] = useState<CourseTabId>('overview');
+	const [learnerName, setLearnerName] = useState('');
 	const [isLoading, setIsLoading] = useState(true);
 	const [errorMessage, setErrorMessage] = useState('');
 
 	useEffect(() => {
 		let isMounted = true;
+
+		getCurrentUser()
+			.then(result => {
+				if (isMounted) {
+					setLearnerName(result.user.name.split(' ')[0] ?? '');
+				}
+			})
+			.catch(() => undefined);
 
 		getCourseEnrollmentStatus(courseId)
 			.then(result => {
@@ -277,68 +433,135 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	}
 
 	return (
-		<Container maxW="7xl" py={{ base: 6, md: 8 }}>
-			<Stack gap={5}>
-				<Box border="1px solid" borderColor="border.default" borderRadius="surface" bg="bg.card" p={{ base: 5, md: 6 }}>
-					<Stack gap={3}>
+		<Box bg="bg.subtle" minH="calc(100vh - 72px)" w="full">
+			<Stack gap={0}>
+				<Box borderBottom="1px solid" borderColor="border.default" bg="bg.card" px={{ base: 4, md: 6 }} py={3}>
+					<HStack justify="space-between" gap={4} flexWrap="wrap">
+						<HStack gap={3} minW={0}>
+							<Box
+								boxSize="40px"
+								borderRadius="lg"
+								bg="primary"
+								color="text.inverse"
+								display="grid"
+								flexShrink={0}
+								fontWeight="bold"
+								placeItems="center"
+							>
+								S
+							</Box>
+							<Box minW={0}>
+								<Heading size="sm" lineClamp={1}>
+									{enrollment.course.title}
+								</Heading>
+								<Text color="text.muted" fontSize="xs">
+									Enrolled on {formatDate(enrollment.enrolledAt)}
+								</Text>
+							</Box>
+						</HStack>
 						<HStack gap={2} flexWrap="wrap">
-							<Badge>{enrollment.status}</Badge>
-							<Badge>{enrollment.progressPercent}% progress</Badge>
-							<Badge colorPalette={enrollment.accessUnlockedAt ? 'green' : 'orange'}>
+							<Badge borderRadius="full" px={3} py={1}>
+								{enrollment.status}
+							</Badge>
+							<Badge borderRadius="full" px={3} py={1}>
+								{enrollment.progressPercent}% progress
+							</Badge>
+							<Badge colorPalette={enrollment.accessUnlockedAt ? 'green' : 'orange'} borderRadius="full" px={3} py={1}>
 								{enrollment.accessUnlockedAt ? 'Overview unlocked' : 'Overview locked'}
 							</Badge>
+							<Button asChild borderRadius="full" size="sm" variant="outline">
+								<Link href={`/course/${courseId}`}>Back to course</Link>
+							</Button>
 						</HStack>
-						<Box>
-							<Text fontSize="xs" fontWeight="bold" color="primary" textTransform="uppercase">
-								My Course
-							</Text>
-							<Heading mt={2} size="xl" lineHeight="short">
-								{enrollment.course.title}
-							</Heading>
-							<Text mt={3} color="text.muted" maxW="3xl">
-								{enrollment.course.summary || 'Your enrolled course workspace is ready.'}
-							</Text>
-							<Text mt={2} fontSize="sm" color="text.muted">
-								Enrolled on {formatDate(enrollment.enrolledAt)}
-							</Text>
-						</Box>
-					</Stack>
+					</HStack>
 				</Box>
 
-				<Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '260px 1fr' }} gap={5} alignItems="start">
-					<Stack border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={3} gap={2}>
-						{courseTabs.map(tab => {
-							const Icon = tab.icon;
-							const isActive = activeTab === tab.id;
+				<Box px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
+					<Box
+						display="grid"
+						gridTemplateColumns={{
+							base: '1fr',
+							lg: '280px minmax(0, 1fr)',
+							xl: '280px minmax(520px, 1fr) 300px',
+							'2xl': '300px minmax(680px, 1fr) 340px'
+						}}
+						gap={{ base: 4, xl: 5 }}
+						alignItems="start"
+					>
+						<Stack
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="card"
+							bg="bg.card"
+							p={{ base: 3, md: 4 }}
+							gap={2}
+							boxShadow="soft"
+							position={{ lg: 'sticky' }}
+							top={{ lg: '88px' }}
+							minH={{ lg: 'calc(100vh - 128px)' }}
+						>
+							<Box px={3} pt={2} pb={3}>
+								<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+									Course dashboard
+								</Text>
+								<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
+									{enrollment.course.summary || 'Your course workspace'}
+								</Text>
+							</Box>
+							{courseTabs.map(tab => {
+								const Icon = tab.icon;
+								const isActive = activeTab === tab.id;
+								const showLock = tab.id !== 'overview' || !enrollment.accessUnlockedAt;
 
-							return (
-								<Button
-									key={tab.id}
-									justifyContent="flex-start"
-									gap={3}
-									borderRadius="lg"
-									variant={isActive ? 'solid' : 'ghost'}
-									bg={isActive ? 'primary' : undefined}
-									color={isActive ? 'text.inverse' : undefined}
-									onClick={() => setActiveTab(tab.id)}
-								>
-									<Icon />
-									{tab.label}
-								</Button>
-							);
-						})}
-					</Stack>
+								return (
+									<Button
+										key={tab.id}
+										justifyContent="space-between"
+										borderRadius="xl"
+										variant={isActive ? 'solid' : 'ghost'}
+										bg={isActive ? 'primary' : undefined}
+										color={isActive ? 'text.inverse' : 'text.primary'}
+										minH="52px"
+										px={4}
+										onClick={() => setActiveTab(tab.id)}
+									>
+										<HStack gap={3}>
+											<Icon />
+											<Text as="span" fontWeight="semibold">
+												{tab.label}
+											</Text>
+										</HStack>
+										{showLock && !isActive ? <FiLock /> : null}
+									</Button>
+								);
+							})}
+						</Stack>
 
-					<Box>
-						{activeTab === 'overview' ? (
-							<CourseOverviewTab enrollment={enrollment} courseId={courseId} onUnlocked={setEnrollment} />
-						) : (
-							<CoursePlaceholderTab label={activeTabLabel} />
-						)}
+						<Box minW={0}>
+							{activeTab === 'overview' ? (
+								<CourseOverviewTab
+									enrollment={enrollment}
+									courseId={courseId}
+									learnerName={learnerName}
+									onUnlocked={setEnrollment}
+								/>
+							) : (
+								<CoursePlaceholderTab label={activeTabLabel} />
+							)}
+						</Box>
+
+						<Box
+							display={{
+								base: activeTab === 'overview' ? 'block' : 'none',
+								xl: activeTab === 'overview' ? 'block' : 'none'
+							}}
+						>
+							<CourseNextStepsPanel />
+						</Box>
 					</Box>
 				</Box>
 			</Stack>
-		</Container>
+		</Box>
 	);
 };
 

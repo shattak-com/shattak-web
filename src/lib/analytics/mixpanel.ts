@@ -39,10 +39,13 @@ const SECTION_NAME_BY_LOCATION: Record<string, string> = {
 	course_hero: 'Hero',
 	course_sticky_banner: 'Sticky Enroll Banner',
 	course_sticky_banner_mobile: 'Sticky Enroll Banner',
+	course_learning: 'Course Learning',
 	onboarding_education: 'Education Onboarding',
 	onboarding_mobile: 'Mobile Onboarding',
 	profile_account: 'Profile',
-	profile_learning: 'Learning Profile'
+	profile_learning: 'Learning Profile',
+	profile_enrolled_courses: 'Enrolled Courses',
+	admin_enrollments: 'Admin Enrollments'
 };
 
 const FIRST_TOUCH_ATTRIBUTION_KEY = 'shattak-first-touch-attribution';
@@ -532,6 +535,62 @@ export const trackEnrollClicked = (payload: {
 			cta_destination: payload.destination,
 			course_id: payload.courseId,
 			course_title: payload.courseTitle
+		}
+	);
+
+export const trackEnrollmentEvent = (payload: {
+	location:
+		| 'course_hero'
+		| 'course_sticky_banner'
+		| 'course_sticky_banner_mobile'
+		| 'profile_enrolled_courses'
+		| 'course_learning';
+	eventName: string;
+	courseId?: string;
+	courseTitle?: string;
+	userId?: string;
+	isFreeCourse?: boolean;
+	enrollmentStatus?: string;
+	sourcePage?: string;
+	destination?: string;
+	errorType?: string;
+}) =>
+	trackMixpanelEvent(
+		buildEventName({
+			location: payload.location,
+			eventName: payload.eventName
+		}),
+		{
+			course_id: payload.courseId,
+			course_title: payload.courseTitle,
+			user_id: payload.userId,
+			is_free_course: payload.isFreeCourse,
+			enrollment_status: payload.enrollmentStatus,
+			source_page: payload.sourcePage,
+			destination: payload.destination,
+			error_type: payload.errorType,
+			timestamp: new Date().toISOString()
+		}
+	);
+
+export const trackAdminEnrollmentEvent = (payload: {
+	eventName: string;
+	courseId?: string;
+	courseTitle?: string;
+	enrollmentCount?: number;
+	sourcePage?: string;
+}) =>
+	trackMixpanelEvent(
+		buildEventName({
+			location: 'admin_enrollments',
+			eventName: payload.eventName
+		}),
+		{
+			course_id: payload.courseId,
+			course_title: payload.courseTitle,
+			enrollment_count: payload.enrollmentCount,
+			source_page: payload.sourcePage,
+			timestamp: new Date().toISOString()
 		}
 	);
 

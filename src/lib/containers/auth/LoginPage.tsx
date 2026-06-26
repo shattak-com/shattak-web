@@ -17,6 +17,22 @@ import { writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 const LOGIN_PREVIEW_IMAGE_URL =
 	'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=85';
 
+const getSafeRedirectPath = (value: string | null) => {
+	if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/admin')) {
+		return null;
+	}
+
+	return value;
+};
+
+const getRequestedRedirectPath = () => {
+	if (typeof window === 'undefined') {
+		return null;
+	}
+
+	return getSafeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
+};
+
 const LoginPage = () => {
 	const router = useRouter();
 	const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -24,7 +40,12 @@ const LoginPage = () => {
 
 	const redirectToOnboarding = useCallback(
 		(onboardingStatus: OnboardingStatus) => {
-			const redirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+			const onboardingRedirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+			const requestedRedirectPath = getRequestedRedirectPath();
+			const redirectPath =
+				onboardingStatus.profile.nextStep === 'COMPLETE' && requestedRedirectPath
+					? requestedRedirectPath
+					: onboardingRedirectPath;
 
 			writeCachedOnboardingStatus(onboardingStatus);
 			router.replace(redirectPath);
@@ -87,6 +108,11 @@ const LoginPage = () => {
 				: await getOnboardingStatus();
 
 			const redirectPath = getOnboardingRedirectPath(onboardingStatus.profile);
+			const requestedRedirectPath = getRequestedRedirectPath();
+			const finalRedirectPath =
+				onboardingStatus.profile.nextStep === 'COMPLETE' && requestedRedirectPath
+					? requestedRedirectPath
+					: redirectPath;
 
 			identifyAuthenticatedMixpanelUser({
 				userId: onboardingStatus.user.id,
@@ -102,14 +128,14 @@ const LoginPage = () => {
 				eventName: 'Google Login Succeeded',
 				method: 'google_button',
 				authContext: 'user',
-				redirectPath,
+				redirectPath: finalRedirectPath,
 				onboardingNextStep: onboardingStatus.profile.nextStep,
 				hasOnboardingProfile: Boolean(result.onboardingProfile),
 				roles: onboardingStatus.user.roles
 			});
 			setLoginProgressMessage('Taking you to the next step...');
 			writeCachedOnboardingStatus(onboardingStatus);
-			router.replace(redirectPath);
+			router.replace(finalRedirectPath);
 		},
 		[router]
 	);

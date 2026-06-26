@@ -21,6 +21,11 @@ const adminNavItems = [
 		href: '/admin/courses'
 	},
 	{
+		id: 'enrollments',
+		label: 'Enrollments',
+		href: '/admin/enrollments'
+	},
+	{
 		id: 'invitations',
 		label: 'Invites',
 		href: '/admin/invitations'
@@ -49,6 +54,10 @@ const getActiveSection = (pathname: string) => {
 		return 'courses';
 	}
 
+	if (pathname.startsWith('/admin/enrollments')) {
+		return 'enrollments';
+	}
+
 	if (pathname.startsWith('/admin/invitations')) {
 		return 'invitations';
 	}
@@ -67,6 +76,7 @@ const AdminShell = ({ children }: AdminShellProps) => {
 	const activeSection = getActiveSection(pathname);
 	const activeTitle = {
 		courses: 'Course Management',
+		enrollments: 'Enrollment Management',
 		invitations: 'Admin Invitations',
 		users: 'User Management'
 	}[activeSection];

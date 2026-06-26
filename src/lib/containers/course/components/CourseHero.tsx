@@ -1,12 +1,11 @@
 'use client';
 
-import { Box, Button, Container, Grid, Heading, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Container, Grid, Heading, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { FiCalendar, FiStar, FiUsers } from 'react-icons/fi';
 
-import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
+import CourseEnrollAction from '~/lib/containers/course/components/CourseEnrollAction';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
@@ -26,15 +25,11 @@ const formatCount = (value: number) => {
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
 const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
-const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 const enrollGlow = keyframes`
   0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(78, 120, 255, 0); }
   50% { box-shadow: 0 0 14px rgba(255, 255, 255, 0.28), 0 0 28px rgba(78, 120, 255, 0.38); }
 `;
 const CourseHero = ({ course }: CourseHeroProps) => {
-	const paymentLink = course.paymentLink.trim();
-	const enrollHref = paymentLink || `/booking/${course.id}`;
-	const openExternal = isExternalLink(enrollHref);
 	const discountPercent =
 		course.originalPrice > course.price
 			? Math.floor(((course.originalPrice - course.price) / course.originalPrice) * 100)
@@ -294,34 +289,14 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										<Text>{'\u2022'} Doubt Clearing Session</Text>
 										<Text>{'\u2022'} Forever Community Access</Text>
 									</Stack>
-									<Button
-										asChild
-										size="sm"
-										borderRadius="full"
-										bg="text.primary"
-										color="text.inverse"
-										_hover={{ bg: 'text.primary', opacity: 0.9 }}
+									<Box
 										w="full"
 										mt="auto"
 										animation={`${enrollGlow} 2.8s ease-in-out infinite`}
 										_dark={{ animation: `${enrollGlow} 2.8s ease-in-out infinite` }}
 									>
-										<Link
-											href={enrollHref}
-											target={openExternal ? '_blank' : undefined}
-											rel={openExternal ? 'noopener noreferrer' : undefined}
-											onClick={() =>
-												trackEnrollClicked({
-													location: 'course_hero',
-													destination: enrollHref,
-													courseId: course.id,
-													courseTitle: course.title
-												})
-											}
-										>
-											Enroll Now
-										</Link>
-									</Button>
+										<CourseEnrollAction course={course} location="course_hero" size="sm" />
+									</Box>
 								</Stack>
 							</Box>
 						</Grid>

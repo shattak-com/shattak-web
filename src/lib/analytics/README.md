@@ -23,6 +23,7 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 - Session replay ensured across all pages and App Router transitions
 - Temporary anonymous identify/profile sync (until real auth is added)
 - Event wrappers for CTA/course/enroll interactions
+- Event wrappers for free-course enrollment and enrolled-course access
 - Event wrappers for Google auth, onboarding, and learning-profile interactions
 - First-touch attribution capture (`utm_*`, initial referrer, initial landing path)
 - Super-properties registration for first-touch attribution only
@@ -45,6 +46,13 @@ Examples:
 - `Onboarding - Mobile Onboarding - Mobile Number Skipped`
 - `Onboarding - Education Onboarding - Education Profile Submitted`
 - `Profile - Learning Profile - Learning Profile Update Succeeded`
+- `Course - Hero - Free Course Enroll Button Clicked`
+- `Course - Hero - Logged Out User Attempted Enrollment`
+- `Course - Hero - Free Course Enrollment Successful`
+- `Course - Hero - Go To Course Clicked`
+- `Profile - Enrolled Courses - Enrolled Courses Section Viewed`
+- `Admin - Admin Enrollments - Course Enrollment Counts Viewed`
+- `Admin - Admin Enrollments - Course Enrollment Details Viewed`
 
 All tracked events automatically include current page context:
 
@@ -87,6 +95,19 @@ After Google authentication, the app identifies the Mixpanel user with the inter
 Auth events should still avoid duplicating email or name in event properties. Event payloads should use product state such as role keys, account status, onboarding stage, redirect path, completion booleans, and counts. Do not send phone numbers, college names, department names, selected interest values, or other unnecessary personal data in analytics events.
 
 On logout, the app resets the Mixpanel identity and returns to anonymous tracking.
+
+## Enrollment Tracking
+
+Free-course enrollment events use the existing Mixpanel helpers and include course state where available:
+
+- `#course_id`
+- `#course_title`
+- `#is_free_course`
+- `#enrollment_status`
+- `#source_page`
+- `#destination`
+
+Admin enrollment events are limited to aggregate/count viewing and selected course inspection. Do not track internal course upload/edit operations, invitation management, or other admin-only workflow actions unless they directly affect a student-facing experience.
 
 ## Verification Checklist
 

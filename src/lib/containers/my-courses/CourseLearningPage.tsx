@@ -12,14 +12,17 @@ import {
 	FiExternalLink,
 	FiGift,
 	FiLock,
+	FiMenu,
 	FiMessageCircle,
-	FiPlayCircle
+	FiPlayCircle,
+	FiX
 } from 'react-icons/fi';
 
 import { trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
-import { getCurrentUser } from '~/lib/api/auth';
+import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
 import { ApiRequestError } from '~/lib/api/client';
 import { getCourseEnrollmentStatus, type CourseEnrollment, unlockCourseAccess } from '~/lib/api/enrollments';
+import UserAvatar from '~/lib/components/auth/UserAvatar';
 import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 
@@ -151,6 +154,110 @@ const CourseNextStepsPanel = () => (
 		</Stack>
 	</Box>
 );
+
+type CourseWorkspaceSidebarProps = {
+	activeTab: CourseTabId;
+	currentUser: AuthenticatedUser | null;
+	enrollment: CourseEnrollment;
+	onClose?: () => void;
+	onTabChange: (tabId: CourseTabId) => void;
+};
+
+const CourseWorkspaceSidebar = ({
+	activeTab,
+	currentUser,
+	enrollment,
+	onClose,
+	onTabChange
+}: CourseWorkspaceSidebarProps) => {
+	const displayName = currentUser?.name || currentUser?.email || 'User';
+
+	return (
+		<Stack h="full" gap={0} bg="bg.card">
+			<HStack h="72px" px={6} justify="space-between" borderBottom="1px solid" borderColor="border.default">
+				<Text fontSize="3xl" fontWeight="bold" color="text.primary">
+					Shattak
+				</Text>
+				{onClose ? (
+					<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
+						<FiX />
+					</Button>
+				) : null}
+			</HStack>
+
+			<Stack flex="1" gap={3} px={4} py={5}>
+				<Box px={2} pb={2}>
+					<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+						Course dashboard
+					</Text>
+					<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
+						{enrollment.course.title}
+					</Text>
+				</Box>
+
+				{courseTabs.map(tab => {
+					const Icon = tab.icon;
+					const isActive = activeTab === tab.id;
+					const showLock = tab.id !== 'overview' || !enrollment.accessUnlockedAt;
+
+					return (
+						<Button
+							key={tab.id}
+							justifyContent="space-between"
+							borderRadius="lg"
+							variant={isActive ? 'solid' : 'ghost'}
+							bg={isActive ? 'primary' : undefined}
+							color={isActive ? 'text.inverse' : 'text.primary'}
+							minH="48px"
+							px={4}
+							onClick={() => {
+								onTabChange(tab.id);
+								onClose?.();
+							}}
+						>
+							<HStack gap={3}>
+								<Icon />
+								<Text as="span" fontWeight="semibold">
+									{tab.label}
+								</Text>
+							</HStack>
+							{showLock ? <FiLock /> : null}
+						</Button>
+					);
+				})}
+			</Stack>
+
+			<Box borderTop="1px solid" borderColor="border.default" p={4}>
+				<HStack border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.subtle" p={3} gap={3}>
+					{currentUser ? (
+						<UserAvatar user={currentUser} label={displayName} size="42px" />
+					) : (
+						<Box
+							boxSize="42px"
+							borderRadius="full"
+							bg="primary"
+							color="text.inverse"
+							display="grid"
+							flexShrink={0}
+							fontWeight="bold"
+							placeItems="center"
+						>
+							U
+						</Box>
+					)}
+					<Box minW={0}>
+						<Text fontWeight="semibold" lineClamp={1}>
+							{displayName}
+						</Text>
+						<Text color="text.muted" fontSize="xs">
+							Learner
+						</Text>
+					</Box>
+				</HStack>
+			</Box>
+		</Stack>
+	);
+};
 
 type CourseOverviewTabProps = {
 	enrollment: CourseEnrollment;
@@ -381,7 +488,9 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const currentPath = `/my-courses/${courseId}`;
 	const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
 	const [activeTab, setActiveTab] = useState<CourseTabId>('overview');
+	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
 	const [learnerName, setLearnerName] = useState('');
+	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [errorMessage, setErrorMessage] = useState('');
 
@@ -391,6 +500,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		getCurrentUser()
 			.then(result => {
 				if (isMounted) {
+					setCurrentUser(result.user);
 					setLearnerName(result.user.name.split(' ')[0] ?? '');
 				}
 			})
@@ -467,11 +577,64 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	}
 
 	return (
-		<Box bg="bg.subtle" minH="calc(100vh - 72px)" w="full">
-			<Stack gap={0}>
-				<Box borderBottom="1px solid" borderColor="border.default" bg="bg.card" px={{ base: 4, md: 6 }} py={3}>
+		<Box bg="bg.subtle" minH="100vh" w="full">
+			<Box
+				as="aside"
+				display={{ base: 'none', lg: 'block' }}
+				position="fixed"
+				insetY={0}
+				left={0}
+				w={{ lg: '280px', '2xl': '300px' }}
+				borderRight="1px solid"
+				borderColor="border.default"
+				zIndex={20}
+			>
+				<CourseWorkspaceSidebar
+					activeTab={activeTab}
+					currentUser={currentUser}
+					enrollment={enrollment}
+					onTabChange={setActiveTab}
+				/>
+			</Box>
+
+			{isMobileNavOpen ? (
+				<Box display={{ base: 'block', lg: 'none' }} position="fixed" inset={0} zIndex={1500}>
+					<Box position="absolute" inset={0} bg="blackAlpha.600" onClick={() => setIsMobileNavOpen(false)} />
+					<Box position="relative" h="100vh" w="min(320px, 88vw)" boxShadow="2xl">
+						<CourseWorkspaceSidebar
+							activeTab={activeTab}
+							currentUser={currentUser}
+							enrollment={enrollment}
+							onClose={() => setIsMobileNavOpen(false)}
+							onTabChange={setActiveTab}
+						/>
+					</Box>
+				</Box>
+			) : null}
+
+			<Box ml={{ lg: '280px', '2xl': '300px' }} minH="100vh">
+				<Box
+					position="sticky"
+					top={0}
+					zIndex={10}
+					borderBottom="1px solid"
+					borderColor="border.default"
+					bg="bg.card"
+					px={{ base: 4, md: 6 }}
+					py={3}
+				>
 					<HStack justify="space-between" gap={4} flexWrap="wrap">
 						<HStack gap={3} minW={0}>
+							<Button
+								display={{ base: 'inline-flex', lg: 'none' }}
+								variant="outline"
+								size="sm"
+								borderRadius="full"
+								onClick={() => setIsMobileNavOpen(true)}
+								aria-label="Open course navigation"
+							>
+								<FiMenu />
+							</Button>
 							<Box
 								boxSize="40px"
 								borderRadius="lg"
@@ -515,62 +678,12 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 						display="grid"
 						gridTemplateColumns={{
 							base: '1fr',
-							lg: '280px minmax(0, 1fr)',
-							xl: '280px minmax(520px, 1fr) 300px',
-							'2xl': '300px minmax(680px, 1fr) 340px'
+							xl: 'minmax(520px, 1fr) 300px',
+							'2xl': 'minmax(680px, 1fr) 340px'
 						}}
 						gap={{ base: 4, xl: 5 }}
 						alignItems="start"
 					>
-						<Stack
-							border="1px solid"
-							borderColor="border.default"
-							borderRadius="card"
-							bg="bg.card"
-							p={{ base: 3, md: 4 }}
-							gap={2}
-							boxShadow="soft"
-							position={{ lg: 'sticky' }}
-							top={{ lg: '88px' }}
-							minH={{ lg: 'calc(100vh - 128px)' }}
-						>
-							<Box px={3} pt={2} pb={3}>
-								<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-									Course dashboard
-								</Text>
-								<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
-									{enrollment.course.summary || 'Your course workspace'}
-								</Text>
-							</Box>
-							{courseTabs.map(tab => {
-								const Icon = tab.icon;
-								const isActive = activeTab === tab.id;
-								const showLock = tab.id !== 'overview' || !enrollment.accessUnlockedAt;
-
-								return (
-									<Button
-										key={tab.id}
-										justifyContent="space-between"
-										borderRadius="xl"
-										variant={isActive ? 'solid' : 'ghost'}
-										bg={isActive ? 'primary' : undefined}
-										color={isActive ? 'text.inverse' : 'text.primary'}
-										minH="52px"
-										px={4}
-										onClick={() => setActiveTab(tab.id)}
-									>
-										<HStack gap={3}>
-											<Icon />
-											<Text as="span" fontWeight="semibold">
-												{tab.label}
-											</Text>
-										</HStack>
-										{showLock && !isActive ? <FiLock /> : null}
-									</Button>
-								);
-							})}
-						</Stack>
-
 						<Box minW={0}>
 							{activeTab === 'overview' ? (
 								<CourseOverviewTab
@@ -589,12 +702,14 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 								base: activeTab === 'overview' ? 'block' : 'none',
 								xl: activeTab === 'overview' ? 'block' : 'none'
 							}}
+							position={{ xl: 'sticky' }}
+							top={{ xl: '96px' }}
 						>
 							<CourseNextStepsPanel />
 						</Box>
 					</Box>
 				</Box>
-			</Stack>
+			</Box>
 		</Box>
 	);
 };

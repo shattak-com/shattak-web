@@ -24,6 +24,7 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 - Temporary anonymous identify/profile sync (until real auth is added)
 - Event wrappers for CTA/course/enroll interactions
 - Event wrappers for free-course enrollment and enrolled-course access
+- Event wrappers for unlocked course dashboard, streak, progress, community, and certificate milestones
 - Event wrappers for Google auth, onboarding, and learning-profile interactions
 - First-touch attribution capture (`utm_*`, initial referrer, initial landing path)
 - Super-properties registration for first-touch attribution only
@@ -53,6 +54,13 @@ Examples:
 - `Profile - Enrolled Courses - Enrolled Courses Section Viewed`
 - `Admin - Admin Enrollments - Course Enrollment Counts Viewed`
 - `Admin - Admin Enrollments - Course Enrollment Details Viewed`
+- `course_whatsapp_join_verified`
+- `course_overview_unlocked`
+- `course_opened`
+- `course_streak_updated`
+- `course_progress_clicked`
+- `course_whatsapp_opened`
+- `course_certificate_earned`
 
 All tracked events automatically include current page context:
 
@@ -108,6 +116,31 @@ Free-course enrollment events use the existing Mixpanel helpers and include cour
 - `#destination`
 
 Admin enrollment events are limited to aggregate/count viewing and selected course inspection. Do not track internal course upload/edit operations, invitation management, or other admin-only workflow actions unless they directly affect a student-facing experience.
+
+## Course Dashboard Tracking
+
+Unlocked course workspace events use exact snake_case event names so product funnel reports can query these milestones directly:
+
+- `course_whatsapp_join_verified`
+- `course_overview_unlocked`
+- `course_opened`
+- `course_streak_updated`
+- `course_progress_clicked`
+- `course_whatsapp_opened`
+- `course_certificate_earned`
+
+These events should include the available course/user state without sending extra PII:
+
+- `#course_id`
+- `#course_title`
+- `#user_id`
+- `#streak_day`
+- `#previous_streak`
+- `#current_streak`
+- `#completion_percentage`
+- `#enrollment_status`
+- `#destination`
+- `#source_page`
 
 ## Verification Checklist
 

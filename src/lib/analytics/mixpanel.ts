@@ -594,6 +594,42 @@ export const trackAdminEnrollmentEvent = (payload: {
 		}
 	);
 
+type CourseDashboardEventName =
+	| 'course_whatsapp_join_verified'
+	| 'course_overview_unlocked'
+	| 'course_opened'
+	| 'course_streak_updated'
+	| 'course_progress_clicked'
+	| 'course_whatsapp_opened'
+	| 'course_certificate_earned';
+
+export const trackCourseDashboardEvent = (payload: {
+	eventName: CourseDashboardEventName;
+	courseId?: string;
+	courseTitle?: string;
+	userId?: string;
+	streakDay?: number;
+	previousStreak?: number;
+	currentStreak?: number;
+	completionPercentage?: number;
+	enrollmentStatus?: string;
+	destination?: 'lesson' | 'assignment' | 'certificate';
+	sourcePage?: string;
+}) =>
+	trackMixpanelEvent(payload.eventName, {
+		course_id: payload.courseId,
+		course_title: payload.courseTitle,
+		user_id: payload.userId,
+		streak_day: payload.streakDay,
+		previous_streak: payload.previousStreak,
+		current_streak: payload.currentStreak,
+		completion_percentage: payload.completionPercentage,
+		enrollment_status: payload.enrollmentStatus,
+		destination: payload.destination,
+		source_page: payload.sourcePage,
+		timestamp: new Date().toISOString()
+	});
+
 export const trackCourseFilterChanged = (payload: {
 	location: string;
 	selectedCategory: string;

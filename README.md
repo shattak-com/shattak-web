@@ -16,13 +16,13 @@ Shattak.Web is web application built using **Next.js**, **TypeScript**, and **Ch
 
 ## Table of Contents
 
-- [Pre-requisites](#pre-requisites)
+- [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Netlify Deploy (CLI)](#netlify-deploy-cli)
 - [Available Scripts](#available-scripts)
 - [Technologies Used](#technologies-used)
 
-## Pre-requisites
+## Prerequisites
 
 Ensure the following tools are installed before proceeding:
 
@@ -80,6 +80,7 @@ This project uses the Netlify Next.js plugin, so deploys must run through the CL
    ```
 
 Notes:
+
 - Keep only the root `netlify.toml`. Remove `.netlify/netlify.toml` if it exists.
 - The deploy scripts load `.env`/`.env.local` and pass the variables to the Netlify CLI.
 

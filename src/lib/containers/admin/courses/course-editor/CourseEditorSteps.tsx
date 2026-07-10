@@ -163,12 +163,12 @@ const ReviewsFaqsStep = ({ control, register, errors }: CourseEditorSectionProps
 	</Stack>
 );
 
-const PrerequisitesStep = ({ courseId }: { courseId?: string }) => (
+const LessonsStep = ({ courseId }: { courseId?: string }) => (
 	<CourseCurriculumEditor
 		courseId={courseId}
-		sectionKey="prerequisites"
-		title="Prerequisites"
-		description="Build ordered pre-course modules, preview rows, and enrolled-only prep content."
+		sectionKey="lessons"
+		title="Lessons"
+		description="Build ordered course lessons, preview rows, and enrolled-only learning content."
 	/>
 );
 
@@ -248,8 +248,8 @@ export const CourseEditorStepFields = ({
 			return <GalleryStep control={control} register={register} errors={errors} />;
 		case 'reviews':
 			return <ReviewsFaqsStep control={control} register={register} errors={errors} />;
-		case 'prerequisites':
-			return <PrerequisitesStep courseId={courseId} />;
+		case 'lessons':
+			return <LessonsStep courseId={courseId} />;
 		case 'liveSessions':
 			return <LiveSessionsStep courseId={courseId} />;
 		case 'postSessionMaterials':

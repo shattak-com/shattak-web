@@ -143,7 +143,7 @@ export const countErrorsByStep = (errorPaths: string[]) =>
 			instructors: 0,
 			gallery: 0,
 			reviews: 0,
-			prerequisites: 0,
+			lessons: 0,
 			liveSessions: 0,
 			postSessionMaterials: 0,
 			review: 0

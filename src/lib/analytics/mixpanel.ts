@@ -601,6 +601,10 @@ type CourseDashboardEventName =
 	| 'course_streak_updated'
 	| 'course_progress_clicked'
 	| 'course_whatsapp_opened'
+	| 'course_lesson_opened'
+	| 'course_lesson_next_clicked'
+	| 'course_lesson_completed'
+	| 'course_doubt_clicked'
 	| 'course_certificate_earned';
 
 export const trackCourseDashboardEvent = (payload: {
@@ -613,7 +617,11 @@ export const trackCourseDashboardEvent = (payload: {
 	currentStreak?: number;
 	completionPercentage?: number;
 	enrollmentStatus?: string;
-	destination?: 'lesson' | 'assignment' | 'certificate';
+	destination?: 'lesson' | 'assignment' | 'certificate' | 'community';
+	lessonId?: string;
+	lessonTitle?: string;
+	moduleId?: string;
+	moduleTitle?: string;
 	sourcePage?: string;
 }) =>
 	trackMixpanelEvent(payload.eventName, {
@@ -626,6 +634,10 @@ export const trackCourseDashboardEvent = (payload: {
 		completion_percentage: payload.completionPercentage,
 		enrollment_status: payload.enrollmentStatus,
 		destination: payload.destination,
+		lesson_id: payload.lessonId,
+		lesson_title: payload.lessonTitle,
+		module_id: payload.moduleId,
+		module_title: payload.moduleTitle,
 		source_page: payload.sourcePage,
 		timestamp: new Date().toISOString()
 	});

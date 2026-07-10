@@ -34,7 +34,7 @@ export const getCurriculumDurationMinutes = (sections: CourseSessionSection[]) =
 
 export const getCourseContentDurationMinutes = (course: CourseDetails) => {
 	const curriculumDuration =
-		getCurriculumDurationMinutes(course.prerequisites) +
+		getCurriculumDurationMinutes(course.lessons) +
 		getCurriculumDurationMinutes(course.liveSessions) +
 		getCurriculumDurationMinutes(course.postSessionMaterials);
 

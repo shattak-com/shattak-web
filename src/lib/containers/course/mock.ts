@@ -136,7 +136,7 @@ export const courseDetailsMock: CourseDetails = {
 			answer: 'Yes, you can ask questions in the community group and during live office hours.'
 		}
 	],
-	prerequisites: [
+	lessons: [
 		{
 			sectionName: 'Setting up the Development Environment',
 			subsections: [

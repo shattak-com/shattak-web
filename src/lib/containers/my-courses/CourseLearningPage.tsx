@@ -3,13 +3,17 @@
 import { Badge, Box, Button, Container, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	FiAward,
 	FiBookOpen,
+	FiCheck,
 	FiCheckCircle,
+	FiChevronDown,
+	FiChevronRight,
 	FiClipboard,
 	FiExternalLink,
+	FiFileText,
 	FiGift,
 	FiLock,
 	FiMenu,
@@ -19,15 +23,24 @@ import {
 	FiUsers,
 	FiX
 } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
 
 import { trackCourseDashboardEvent, trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
 import { ApiRequestError } from '~/lib/api/client';
 import {
+	completeCourseLesson,
 	getCourseEnrollmentStatus,
 	getCourseLearningDashboard,
+	getCourseLessons,
 	type CourseEnrollment,
 	type CourseLearningDashboard,
+	type CourseLessonContentBlock,
+	type CourseLessonModule,
+	type CourseLessonsResult,
+	type CourseLessonsState,
 	unlockCourseAccess
 } from '~/lib/api/enrollments';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
@@ -45,9 +58,9 @@ const courseTabs: Array<{ id: CourseTabId; label: string; icon: typeof FiBookOpe
 	{ id: 'lessons', label: 'Lessons', icon: FiPlayCircle },
 	{ id: 'recordings', label: 'Session Recordings', icon: FiPlayCircle },
 	{ id: 'bonus', label: 'Bonus Content', icon: FiGift },
-	{ id: 'assignment', label: 'Assignment', icon: FiClipboard },
+	{ id: 'assignment', label: 'Assignments', icon: FiClipboard },
 	{ id: 'certificate', label: 'Certificate', icon: FiAward },
-	{ id: 'peerNetwork', label: 'Peer Network', icon: FiMessageCircle }
+	{ id: 'peerNetwork', label: 'Peer Community', icon: FiMessageCircle }
 ];
 
 const formatDate = (value: string) =>
@@ -66,6 +79,85 @@ const courseNextSteps = [
 	'Give us feedback.',
 	'Get your certificate.'
 ];
+
+const isAdminLearner = (user: AuthenticatedUser | null) =>
+	user?.roles.some(role => role === 'ADMIN' || role === 'SUPER_ADMIN') ?? false;
+
+const getYouTubeVideoId = (value: string) => {
+	if (!value.trim()) {
+		return null;
+	}
+
+	try {
+		const url = new URL(value.trim());
+		const hostname = url.hostname.replace(/^www\./, '');
+
+		if (hostname === 'youtu.be') {
+			return url.pathname.split('/').filter(Boolean)[0] ?? null;
+		}
+
+		if (!['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'].includes(hostname)) {
+			return null;
+		}
+
+		if (url.pathname === '/watch') {
+			return url.searchParams.get('v');
+		}
+
+		const [firstSegment, secondSegment] = url.pathname.split('/').filter(Boolean);
+
+		if (['embed', 'shorts', 'live'].includes(firstSegment ?? '')) {
+			return secondSegment ?? null;
+		}
+
+		return null;
+	} catch {
+		return null;
+	}
+};
+
+const getSafeExternalUrl = (value: string) => {
+	try {
+		const url = new URL(value);
+
+		return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : '';
+	} catch {
+		return '';
+	}
+};
+
+const getActiveLessonContext = (lessons: CourseLessonsState | null) => {
+	if (!lessons) {
+		return null;
+	}
+
+	return (
+		lessons.modules
+			.flatMap(courseModule => courseModule.subsections.map(subsection => ({ courseModule, subsection })))
+			.find(item => item.subsection.id === lessons.activeSubsectionId) ?? null
+	);
+};
+
+const flattenLessonRows = (modules: CourseLessonModule[]) =>
+	modules.flatMap(courseModule => courseModule.subsections.map(subsection => ({ courseModule, subsection })));
+
+const getNextLessonRow = (lessons: CourseLessonsState, subsectionId: string) => {
+	const rows = flattenLessonRows(lessons.modules);
+	const currentIndex = rows.findIndex(row => row.subsection.id === subsectionId);
+
+	return currentIndex >= 0 ? (rows[currentIndex + 1] ?? null) : null;
+};
+
+const getPreviousUnlockedLessonRow = (lessons: CourseLessonsState, subsectionId: string) => {
+	const rows = flattenLessonRows(lessons.modules);
+	const currentIndex = rows.findIndex(row => row.subsection.id === subsectionId);
+
+	if (currentIndex <= 0) {
+		return null;
+	}
+
+	return [...rows.slice(0, currentIndex)].reverse().find(row => !row.subsection.isLocked) ?? null;
+};
 
 const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	<Box
@@ -136,6 +228,672 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	</Box>
 );
 
+const MarkdownContent = ({ value }: { value: string }) => {
+	if (!value.trim()) {
+		return (
+			<Text color="text.muted" fontSize="sm">
+				No text content added yet.
+			</Text>
+		);
+	}
+
+	return (
+		<Box
+			color="text.secondary"
+			lineHeight="tall"
+			overflowWrap="anywhere"
+			css={{
+				'& > * + *': {
+					marginTop: '1rem'
+				}
+			}}
+		>
+			<ReactMarkdown
+				remarkPlugins={[remarkGfm]}
+				rehypePlugins={[rehypeSanitize]}
+				components={{
+					h1: ({ children }) => (
+						<Heading as="h1" size="xl" color="text.primary" mt={2}>
+							{children}
+						</Heading>
+					),
+					h2: ({ children }) => (
+						<Heading as="h2" size="lg" color="text.primary" mt={2}>
+							{children}
+						</Heading>
+					),
+					h3: ({ children }) => (
+						<Heading as="h3" size="md" color="text.primary">
+							{children}
+						</Heading>
+					),
+					h4: ({ children }) => (
+						<Heading as="h4" size="sm" color="text.primary">
+							{children}
+						</Heading>
+					),
+					p: ({ children }) => (
+						<Text color="text.secondary" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
+							{children}
+						</Text>
+					),
+					a: ({ href, children }) => {
+						const safeHref = getSafeExternalUrl(href ?? '');
+
+						return safeHref ? (
+							<a
+								href={safeHref}
+								target="_blank"
+								rel="noopener noreferrer"
+								style={{ color: 'var(--chakra-colors-primary)', fontWeight: 600 }}
+							>
+								{children}
+							</a>
+						) : (
+							<Box as="span">{children}</Box>
+						);
+					},
+					img: ({ src, alt }) => {
+						const safeSrc = getSafeExternalUrl(typeof src === 'string' ? src : '');
+
+						return safeSrc ? (
+							<img
+								src={safeSrc}
+								alt={alt ?? ''}
+								style={{
+									border: '1px solid var(--chakra-colors-border-default)',
+									borderRadius: 'var(--chakra-radii-lg)',
+									margin: '1rem 0',
+									maxWidth: '100%'
+								}}
+							/>
+						) : null;
+					},
+					blockquote: ({ children }) => (
+						<Box borderLeft="4px solid" borderColor="primary" bg="bg.subtle" borderRadius="md" px={4} py={3}>
+							{children}
+						</Box>
+					),
+					ul: ({ children }) => (
+						<Box as="ul" ps={6}>
+							{children}
+						</Box>
+					),
+					ol: ({ children }) => (
+						<Box as="ol" ps={6}>
+							{children}
+						</Box>
+					),
+					li: ({ children }) => (
+						<Box as="li" mb={1.5}>
+							{children}
+						</Box>
+					),
+					code: ({ children }) => (
+						<Box as="code" bg="bg.subtle" borderRadius="sm" px={1.5} py={0.5}>
+							{children}
+						</Box>
+					),
+					pre: ({ children }) => (
+						<Box
+							as="pre"
+							bg="bg.subtle"
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="lg"
+							color="text.primary"
+							fontSize="sm"
+							overflowX="auto"
+							p={4}
+						>
+							{children}
+						</Box>
+					),
+					hr: () => <Box borderTop="1px solid" borderColor="border.default" />,
+					table: ({ children }) => (
+						<Box overflowX="auto" border="1px solid" borderColor="border.default" borderRadius="lg">
+							<Box as="table" w="full" minW="520px" borderCollapse="collapse">
+								{children}
+							</Box>
+						</Box>
+					),
+					thead: ({ children }) => (
+						<Box as="thead" bg="bg.subtle">
+							{children}
+						</Box>
+					),
+					th: ({ children }) => (
+						<Box as="th" borderBottom="1px solid" borderColor="border.default" fontSize="sm" p={3} textAlign="left">
+							{children}
+						</Box>
+					),
+					td: ({ children }) => (
+						<Box as="td" borderTop="1px solid" borderColor="border.default" fontSize="sm" p={3}>
+							{children}
+						</Box>
+					)
+				}}
+			>
+				{value}
+			</ReactMarkdown>
+		</Box>
+	);
+};
+
+const LessonResourceCard = ({
+	block,
+	label,
+	children
+}: {
+	block: CourseLessonContentBlock;
+	label: string;
+	children?: ReactNode;
+}) => {
+	const safeUrl = getSafeExternalUrl(block.url);
+
+	return (
+		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" overflow="hidden">
+			<Stack gap={4} p={{ base: 4, md: 5 }}>
+				<HStack justify="space-between" gap={4} align="start">
+					<HStack gap={3} minW={0}>
+						<Box
+							boxSize="42px"
+							borderRadius="lg"
+							bg="bg.subtle"
+							color="primary"
+							display="grid"
+							flexShrink={0}
+							placeItems="center"
+						>
+							<FiFileText />
+						</Box>
+						<Box minW={0}>
+							<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+								{label}
+							</Text>
+							<Heading mt={1} size="sm" lineClamp={2}>
+								{block.title || block.fileName || label}
+							</Heading>
+						</Box>
+					</HStack>
+					{safeUrl ? (
+						<Button asChild size="sm" variant="outline" borderRadius="full" flexShrink={0}>
+							<Link href={safeUrl} target="_blank" rel="noopener noreferrer">
+								Open <FiExternalLink />
+							</Link>
+						</Button>
+					) : null}
+				</HStack>
+				{children}
+				{!safeUrl ? (
+					<Text color="red.500" fontSize="sm">
+						This resource is missing a valid URL.
+					</Text>
+				) : null}
+			</Stack>
+		</Box>
+	);
+};
+
+const TextLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => (
+	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+		{block.title ? (
+			<Heading size="md" mb={4}>
+				{block.title}
+			</Heading>
+		) : null}
+		<MarkdownContent value={block.body} />
+	</Box>
+);
+
+const YouTubeLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
+	const videoId = getYouTubeVideoId(block.url);
+
+	return (
+		<LessonResourceCard block={block} label="YouTube video">
+			{videoId ? (
+				<Box aspectRatio="16 / 9" borderRadius="lg" overflow="hidden" bg="black">
+					<iframe
+						title={block.title || 'YouTube lesson video'}
+						src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						allowFullScreen
+						style={{ border: 0, height: '100%', width: '100%' }}
+					/>
+				</Box>
+			) : (
+				<Text color="red.500" fontSize="sm">
+					Enter a valid YouTube URL to preview this video.
+				</Text>
+			)}
+		</LessonResourceCard>
+	);
+};
+
+const UploadedVideoLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
+	const safeUrl = getSafeExternalUrl(block.url);
+
+	return (
+		<LessonResourceCard block={block} label="Uploaded video">
+			{safeUrl ? (
+				<>
+					{/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+					<video
+						controls
+						src={safeUrl}
+						style={{
+							background: '#000',
+							borderRadius: 'var(--chakra-radii-lg)',
+							maxHeight: '520px',
+							width: '100%'
+						}}
+					/>
+				</>
+			) : null}
+		</LessonResourceCard>
+	);
+};
+
+const PdfLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
+	const safeUrl = getSafeExternalUrl(block.url);
+
+	return (
+		<LessonResourceCard block={block} label={block.type === 'PDF_UPLOAD' ? 'Uploaded PDF' : 'PDF link'}>
+			{safeUrl ? (
+				<iframe
+					title={block.title || 'PDF lesson resource'}
+					src={safeUrl}
+					style={{
+						border: '1px solid var(--chakra-colors-border-default)',
+						borderRadius: 'var(--chakra-radii-lg)',
+						height: 'min(560px, 70vh)',
+						width: '100%'
+					}}
+				/>
+			) : null}
+		</LessonResourceCard>
+	);
+};
+
+const LessonContentBlockView = ({ block }: { block: CourseLessonContentBlock }) => {
+	switch (block.type) {
+		case 'TEXT':
+			return <TextLessonBlock block={block} />;
+		case 'VIDEO_YOUTUBE':
+			return <YouTubeLessonBlock block={block} />;
+		case 'VIDEO_UPLOAD':
+			return <UploadedVideoLessonBlock block={block} />;
+		case 'PDF_UPLOAD':
+		case 'PDF_LINK':
+			return <PdfLessonBlock block={block} />;
+		default:
+			return <LessonResourceCard block={block} label={block.type === 'PPT_UPLOAD' ? 'Uploaded PPT' : 'PPT link'} />;
+	}
+};
+
+type LessonProgressSidebarProps = {
+	lessons: CourseLessonsState | null;
+	onLessonSelect: (subsectionId: string) => void;
+};
+
+const getLessonProgressColor = (subsection: CourseLessonsState['modules'][number]['subsections'][number]) => {
+	if (subsection.isCompleted) {
+		return 'green.500';
+	}
+
+	return subsection.isLocked ? 'text.muted' : 'primary';
+};
+
+const getLessonProgressIcon = (subsection: CourseLessonsState['modules'][number]['subsections'][number]) => {
+	if (subsection.isCompleted) {
+		return <FiCheck />;
+	}
+
+	return subsection.isLocked ? <FiLock /> : <FiPlayCircle />;
+};
+
+const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSidebarProps) => {
+	const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
+
+	useEffect(() => {
+		if (!lessons?.modules.length) {
+			return;
+		}
+
+		setExpandedModuleIds(prev => {
+			if (prev.length) {
+				return prev.filter(moduleId => lessons.modules.some(courseModule => courseModule.id === moduleId));
+			}
+
+			return lessons.modules.map(courseModule => courseModule.id);
+		});
+	}, [lessons]);
+
+	if (!lessons) {
+		return (
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={5}>
+				<Stack gap={3}>
+					<Box h="18px" w="160px" bg="bg.subtle" borderRadius="full" />
+					<Box h="10px" w="full" bg="bg.subtle" borderRadius="full" />
+					<Box h="140px" w="full" bg="bg.subtle" borderRadius="lg" />
+				</Stack>
+			</Box>
+		);
+	}
+
+	const toggleModule = (moduleId: string) => {
+		setExpandedModuleIds(prev =>
+			prev.includes(moduleId) ? prev.filter(currentModuleId => currentModuleId !== moduleId) : [...prev, moduleId]
+		);
+	};
+
+	return (
+		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 4, md: 5 }}>
+			<Stack gap={4}>
+				<Box>
+					<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+						Lesson progress
+					</Text>
+					<HStack mt={2} justify="space-between" gap={3}>
+						<Text color="text.muted" fontSize="sm">
+							{lessons.completedSubsections} of {lessons.totalSubsections} completed
+						</Text>
+						<Text fontWeight="bold">{lessons.lessonProgressPercentage}%</Text>
+					</HStack>
+					<Box mt={3} h="8px" borderRadius="full" bg="bg.subtle" overflow="hidden">
+						<Box h="full" w={`${lessons.lessonProgressPercentage}%`} bg="primary" borderRadius="full" />
+					</Box>
+				</Box>
+
+				<Stack gap={3}>
+					{lessons.modules.map((courseModule, moduleIndex) => {
+						const isExpanded = expandedModuleIds.includes(courseModule.id);
+
+						return (
+							<Box
+								key={courseModule.id}
+								border="1px solid"
+								borderColor="border.default"
+								borderRadius="lg"
+								overflow="hidden"
+							>
+								<Button
+									variant="ghost"
+									borderRadius={0}
+									h="auto"
+									justifyContent="space-between"
+									px={3}
+									py={3}
+									w="full"
+									onClick={() => toggleModule(courseModule.id)}
+								>
+									<HStack gap={2} minW={0}>
+										{isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+										<Box minW={0} textAlign="left">
+											<Text fontSize="xs" color="primary" fontWeight="bold">
+												Module {moduleIndex + 1}
+											</Text>
+											<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
+												{courseModule.title || 'Untitled module'}
+											</Text>
+										</Box>
+									</HStack>
+									{courseModule.isLocked ? <FiLock /> : null}
+								</Button>
+
+								{isExpanded ? (
+									<Stack gap={1} px={2} pb={2}>
+										{courseModule.subsections.map((subsection, subsectionIndex) => (
+											<Button
+												key={subsection.id}
+												variant="ghost"
+												borderRadius="md"
+												disabled={subsection.isLocked}
+												h="auto"
+												justifyContent="space-between"
+												px={3}
+												py={2.5}
+												bg={subsection.isActive ? 'bg.accent' : undefined}
+												border="1px solid"
+												borderColor={subsection.isActive ? 'primary' : 'transparent'}
+												onClick={() => onLessonSelect(subsection.id)}
+											>
+												<Box minW={0} textAlign="left">
+													<Text color="text.muted" fontSize="xs">
+														{subsectionIndex + 1}. {subsection.durationLabel || 'Lesson'}
+													</Text>
+													<Text fontSize="sm" fontWeight="semibold" lineClamp={2}>
+														{subsection.title || 'Untitled lesson'}
+													</Text>
+												</Box>
+												<Box color={getLessonProgressColor(subsection)}>{getLessonProgressIcon(subsection)}</Box>
+											</Button>
+										))}
+									</Stack>
+								) : null}
+							</Box>
+						);
+					})}
+				</Stack>
+			</Stack>
+		</Box>
+	);
+};
+
+type CourseLessonsTabProps = {
+	canBypassProgression: boolean;
+	hasReachedBottom: boolean;
+	isCompletingLesson: boolean;
+	isLoading: boolean;
+	lessonsResult: CourseLessonsResult | null;
+	lessonErrorMessage: string;
+	onAskDoubt: () => void;
+	onCompleteLesson: () => void;
+	onPreviousLesson: (subsectionId: string) => void;
+	onRetry: () => void;
+	onScrollBottomReached: () => void;
+};
+
+const CourseDashboardSkeleton = () => (
+	<Stack gap={4}>
+		<Box borderRadius="card" bg="bg.card" border="1px solid" borderColor="border.default" p={{ base: 5, md: 7 }}>
+			<Stack gap={4}>
+				<Box h="28px" w="240px" bg="bg.subtle" borderRadius="full" />
+				<Box h="20px" w="60%" bg="bg.subtle" borderRadius="full" />
+				<Box h="140px" w="full" bg="bg.subtle" borderRadius="card" />
+			</Stack>
+		</Box>
+		<Box borderRadius="card" bg="bg.card" border="1px solid" borderColor="border.default" h="260px" />
+	</Stack>
+);
+
+const CourseLessonsTab = ({
+	canBypassProgression,
+	hasReachedBottom,
+	isCompletingLesson,
+	isLoading,
+	lessonsResult,
+	lessonErrorMessage,
+	onAskDoubt,
+	onCompleteLesson,
+	onPreviousLesson,
+	onRetry,
+	onScrollBottomReached
+}: CourseLessonsTabProps) => {
+	const contentRef = useRef<HTMLDivElement | null>(null);
+	const lessons = lessonsResult?.lessons ?? null;
+	const activeContext = getActiveLessonContext(lessons);
+	const activeSubsectionId = activeContext?.subsection.id ?? '';
+
+	useEffect(() => {
+		if (!activeSubsectionId || isLoading || lessonErrorMessage) {
+			return;
+		}
+
+		if (canBypassProgression) {
+			onScrollBottomReached();
+			return;
+		}
+
+		const contentElement = contentRef.current;
+		if (!contentElement) {
+			return;
+		}
+
+		if (contentElement.scrollHeight <= contentElement.clientHeight + 24) {
+			onScrollBottomReached();
+		}
+	}, [activeSubsectionId, canBypassProgression, isLoading, lessonErrorMessage, onScrollBottomReached]);
+
+	if (isLoading) {
+		return <CourseDashboardSkeleton />;
+	}
+
+	if (lessonErrorMessage) {
+		return (
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+				<Stack gap={4}>
+					<Heading size="lg">Lessons unavailable</Heading>
+					<Text color="text.muted">{lessonErrorMessage}</Text>
+					<Button
+						borderRadius="full"
+						bg="primary"
+						color="text.inverse"
+						_hover={{ bg: 'primaryHover' }}
+						w="fit-content"
+						onClick={onRetry}
+					>
+						Retry lessons
+					</Button>
+				</Stack>
+			</Box>
+		);
+	}
+
+	if (!lessons || !activeContext) {
+		return (
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+				<Stack gap={3}>
+					<Heading size="lg">No lessons available yet</Heading>
+					<Text color="text.muted">
+						The course team has not added lesson content for this course yet. Check back after the next update.
+					</Text>
+				</Stack>
+			</Box>
+		);
+	}
+
+	const { courseModule, subsection } = activeContext;
+	const previousLesson = getPreviousUnlockedLessonRow(lessons, subsection.id);
+	const nextLesson = getNextLessonRow(lessons, subsection.id);
+	const canComplete = canBypassProgression || hasReachedBottom;
+	const nextButtonLabel = nextLesson ? 'Next lesson' : 'Finish lessons';
+
+	return (
+		<Stack gap={4}>
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+				<Stack gap={3}>
+					<HStack gap={2} flexWrap="wrap">
+						<Badge borderRadius="full" px={3} py={1}>
+							{courseModule.title || 'Untitled module'}
+						</Badge>
+						{subsection.isCompleted ? (
+							<Badge colorPalette="green" borderRadius="full" px={3} py={1}>
+								Completed
+							</Badge>
+						) : (
+							<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
+								In progress
+							</Badge>
+						)}
+						{lessons.hasAdminAccess ? (
+							<Badge colorPalette="purple" borderRadius="full" px={3} py={1}>
+								Admin access
+							</Badge>
+						) : null}
+					</HStack>
+					<Heading size={{ base: 'xl', md: '2xl' }}>{subsection.title || 'Untitled lesson'}</Heading>
+					{subsection.previewSummary ? (
+						<Text color="text.muted" fontSize="md" lineHeight="tall">
+							{subsection.previewSummary}
+						</Text>
+					) : null}
+				</Stack>
+			</Box>
+
+			<Box
+				ref={contentRef}
+				border="1px solid"
+				borderColor="border.default"
+				borderRadius="card"
+				bg="bg.subtle"
+				maxH={{ base: 'none', xl: 'calc(100vh - 260px)' }}
+				overflowY={{ base: 'visible', xl: 'auto' }}
+				p={{ base: 4, md: 5 }}
+				onScroll={event => {
+					const target = event.currentTarget;
+					const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
+					if (isAtBottom) {
+						onScrollBottomReached();
+					}
+				}}
+			>
+				<Stack gap={5}>
+					{subsection.contentBlocks.length ? (
+						subsection.contentBlocks.map(block => <LessonContentBlockView key={block.id} block={block} />)
+					) : (
+						<Box border="1px dashed" borderColor="border.default" borderRadius="lg" bg="bg.card" p={6}>
+							<Text color="text.muted">No detailed content has been added to this lesson yet.</Text>
+						</Box>
+					)}
+					<Box h="1px" />
+				</Stack>
+			</Box>
+
+			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 4, md: 5 }}>
+				<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3} align={{ md: 'center' }}>
+					<HStack gap={3} flexWrap="wrap">
+						<Button borderRadius="full" variant="outline" onClick={onAskDoubt}>
+							Ask Doubt - Go to Community <FiExternalLink />
+						</Button>
+						<Button
+							borderRadius="full"
+							variant="outline"
+							disabled={!previousLesson}
+							onClick={() => {
+								if (previousLesson) {
+									onPreviousLesson(previousLesson.subsection.id);
+								}
+							}}
+						>
+							Previous
+						</Button>
+					</HStack>
+
+					<Stack align={{ base: 'stretch', md: 'end' }} gap={2}>
+						{!canComplete ? (
+							<Text color="text.muted" fontSize="xs">
+								Scroll to the bottom of the lesson to enable Next.
+							</Text>
+						) : null}
+						<Button
+							borderRadius="full"
+							bg="primary"
+							color="text.inverse"
+							_hover={{ bg: 'primaryHover' }}
+							disabled={!canComplete}
+							loading={isCompletingLesson}
+							onClick={onCompleteLesson}
+						>
+							{nextButtonLabel}
+						</Button>
+					</Stack>
+				</Stack>
+			</Box>
+		</Stack>
+	);
+};
+
 const CourseNextStepsPanel = () => (
 	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, xl: 6 }}>
 		<Stack gap={5}>
@@ -196,19 +954,6 @@ const CompletionRing = ({ percentage }: { percentage: number }) => (
 			</Text>
 		</Stack>
 	</Box>
-);
-
-const CourseDashboardSkeleton = () => (
-	<Stack gap={4}>
-		<Box borderRadius="card" bg="bg.card" border="1px solid" borderColor="border.default" p={{ base: 5, md: 7 }}>
-			<Stack gap={4}>
-				<Box h="28px" w="240px" bg="bg.subtle" borderRadius="full" />
-				<Box h="20px" w="60%" bg="bg.subtle" borderRadius="full" />
-				<Box h="140px" w="full" bg="bg.subtle" borderRadius="card" />
-			</Stack>
-		</Box>
-		<Box borderRadius="card" bg="bg.card" border="1px solid" borderColor="border.default" h="260px" />
-	</Stack>
 );
 
 type CourseCompletionCardProps = {
@@ -569,6 +1314,7 @@ const CourseWorkspaceSidebar = ({
 	onTabChange
 }: CourseWorkspaceSidebarProps) => {
 	const displayName = currentUser?.name || currentUser?.email || 'User';
+	const canOpenLearningTabs = Boolean(enrollment.accessUnlockedAt) || isAdminLearner(currentUser);
 
 	return (
 		<Stack h="full" gap={0} bg="bg.card">
@@ -596,7 +1342,8 @@ const CourseWorkspaceSidebar = ({
 				{courseTabs.map(tab => {
 					const Icon = tab.icon;
 					const isActive = activeTab === tab.id;
-					const showLock = tab.id !== 'overview' || !enrollment.accessUnlockedAt;
+					const isLocked = tab.id !== 'overview' && !canOpenLearningTabs;
+					const showLock = tab.id !== 'overview' && (isLocked || tab.id !== 'lessons');
 
 					return (
 						<Button
@@ -606,6 +1353,7 @@ const CourseWorkspaceSidebar = ({
 							variant={isActive ? 'solid' : 'ghost'}
 							bg={isActive ? 'primary' : undefined}
 							color={isActive ? 'text.inverse' : 'text.primary'}
+							disabled={isLocked}
 							minH="48px"
 							px={4}
 							onClick={() => {
@@ -1041,6 +1789,140 @@ const CourseOverviewContent = ({
 	);
 };
 
+type CourseLearningMainContentProps = {
+	activeTab: CourseTabId;
+	activeTabLabel: string;
+	canBypassProgression: boolean;
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	dashboard: CourseLearningDashboard | null;
+	dashboardErrorMessage: string;
+	enrollment: CourseEnrollment;
+	hasReachedLessonBottom: boolean;
+	isCompletingLesson: boolean;
+	isDashboardLoading: boolean;
+	isLessonsLoading: boolean;
+	learnerName: string;
+	lessonErrorMessage: string;
+	lessonsResult: CourseLessonsResult | null;
+	onCourseUnlocked: (enrollment: CourseEnrollment) => void;
+	onDashboardRetry: () => void;
+	onLessonBottomReached: () => void;
+	onLessonComplete: () => void;
+	onLessonRetry: () => void;
+	onLessonSelect: (subsectionId: string) => void;
+	onTabChange: (tabId: CourseTabId) => void;
+	onAskDoubt: () => void;
+};
+
+const CourseLearningMainContent = ({
+	activeTab,
+	activeTabLabel,
+	canBypassProgression,
+	courseId,
+	currentUser,
+	dashboard,
+	dashboardErrorMessage,
+	enrollment,
+	hasReachedLessonBottom,
+	isCompletingLesson,
+	isDashboardLoading,
+	isLessonsLoading,
+	learnerName,
+	lessonErrorMessage,
+	lessonsResult,
+	onCourseUnlocked,
+	onDashboardRetry,
+	onLessonBottomReached,
+	onLessonComplete,
+	onLessonRetry,
+	onLessonSelect,
+	onTabChange,
+	onAskDoubt
+}: CourseLearningMainContentProps) => {
+	if (activeTab === 'overview') {
+		return (
+			<CourseOverviewContent
+				courseId={courseId}
+				currentUser={currentUser}
+				dashboard={dashboard}
+				dashboardErrorMessage={dashboardErrorMessage}
+				enrollment={enrollment}
+				isDashboardLoading={isDashboardLoading}
+				learnerName={learnerName}
+				onDashboardRetry={onDashboardRetry}
+				onTabChange={onTabChange}
+				onUnlocked={onCourseUnlocked}
+			/>
+		);
+	}
+
+	if (activeTab === 'lessons') {
+		return (
+			<CourseLessonsTab
+				canBypassProgression={canBypassProgression}
+				hasReachedBottom={hasReachedLessonBottom}
+				isCompletingLesson={isCompletingLesson}
+				isLoading={isLessonsLoading}
+				lessonsResult={lessonsResult}
+				lessonErrorMessage={lessonErrorMessage}
+				onAskDoubt={onAskDoubt}
+				onCompleteLesson={onLessonComplete}
+				onPreviousLesson={onLessonSelect}
+				onRetry={onLessonRetry}
+				onScrollBottomReached={onLessonBottomReached}
+			/>
+		);
+	}
+
+	return <CoursePlaceholderTab label={activeTabLabel} />;
+};
+
+type CourseLearningRailProps = {
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	dashboard: CourseLearningDashboard | null;
+	enrollment: CourseEnrollment;
+	isVisible: boolean;
+	lessons: CourseLessonsState | null;
+	onLessonSelect: (subsectionId: string) => void;
+	showLessonRail: boolean;
+	showUnlockedOverviewRail: boolean;
+};
+
+const CourseLearningRail = ({
+	courseId,
+	currentUser,
+	dashboard,
+	enrollment,
+	isVisible,
+	lessons,
+	onLessonSelect,
+	showLessonRail,
+	showUnlockedOverviewRail
+}: CourseLearningRailProps) => {
+	let content = <CourseNextStepsPanel />;
+
+	if (showUnlockedOverviewRail && dashboard) {
+		content = (
+			<CourseUnlockedOverviewRail
+				courseId={courseId}
+				currentUser={currentUser}
+				dashboard={dashboard}
+				enrollment={enrollment}
+			/>
+		);
+	} else if (showLessonRail) {
+		content = <LessonProgressSidebar lessons={lessons} onLessonSelect={onLessonSelect} />;
+	}
+
+	return (
+		<Box display={{ base: isVisible ? 'block' : 'none' }} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+			{content}
+		</Box>
+	);
+};
+
 const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const router = useRouter();
 	const currentPath = `/my-courses/${courseId}`;
@@ -1053,8 +1935,15 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isDashboardLoading, setIsDashboardLoading] = useState(false);
+	const [lessonsResult, setLessonsResult] = useState<CourseLessonsResult | null>(null);
+	const [isLessonsLoading, setIsLessonsLoading] = useState(false);
+	const [lessonErrorMessage, setLessonErrorMessage] = useState('');
+	const [hasReachedLessonBottom, setHasReachedLessonBottom] = useState(false);
+	const [isCompletingLesson, setIsCompletingLesson] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
 	const [dashboardErrorMessage, setDashboardErrorMessage] = useState('');
+	const canBypassProgression = isAdminLearner(currentUser);
+	const canOpenLearningTabs = Boolean(enrollment?.accessUnlockedAt) || canBypassProgression;
 
 	const applyDashboardResult = useCallback(
 		(result: { enrollment: CourseEnrollment; dashboard: CourseLearningDashboard }, user: AuthenticatedUser | null) => {
@@ -1090,6 +1979,48 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 			}
 		},
 		[applyDashboardResult, courseId]
+	);
+
+	const loadLessons = useCallback(
+		async (subsectionId?: string) => {
+			setIsLessonsLoading(true);
+			setLessonErrorMessage('');
+
+			try {
+				const result = await getCourseLessons(courseId, subsectionId);
+				const activeContext = getActiveLessonContext(result.lessons);
+
+				setLessonsResult(result);
+				setEnrollment(result.enrollment);
+				setHasReachedLessonBottom(result.lessons.hasAdminAccess);
+
+				if (activeContext) {
+					trackCourseDashboardEvent({
+						eventName: 'course_lesson_opened',
+						courseId,
+						courseTitle: result.course.title,
+						userId: currentUser?.id,
+						lessonId: activeContext.subsection.id,
+						lessonTitle: activeContext.subsection.title,
+						moduleId: activeContext.courseModule.id,
+						moduleTitle: activeContext.courseModule.title,
+						completionPercentage: result.enrollment.progressPercent,
+						enrollmentStatus: result.enrollment.status,
+						sourcePage: currentPath
+					});
+				}
+			} catch (error) {
+				if (error instanceof ApiRequestError && error.code === 'COURSE_ACCESS_LOCKED') {
+					setLessonErrorMessage('Lessons unlock after you confirm your WhatsApp community access from Overview.');
+					return;
+				}
+
+				setLessonErrorMessage('Unable to load lessons right now. Please try again.');
+			} finally {
+				setIsLessonsLoading(false);
+			}
+		},
+		[courseId, currentPath, currentUser?.id]
 	);
 
 	useEffect(() => {
@@ -1156,15 +2087,133 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		(updatedEnrollment: CourseEnrollment) => {
 			setEnrollment(updatedEnrollment);
 			setDashboard(null);
+			setLessonsResult(null);
 			loadDashboard(currentUser).catch(() => undefined);
 		},
 		[currentUser, loadDashboard]
 	);
 
+	const handleTabChange = useCallback(
+		(tabId: CourseTabId) => {
+			if (tabId !== 'overview' && !canOpenLearningTabs) {
+				setActiveTab('overview');
+				return;
+			}
+
+			setActiveTab(tabId);
+		},
+		[canOpenLearningTabs]
+	);
+
+	useEffect(() => {
+		if (activeTab !== 'lessons') {
+			return;
+		}
+
+		if (!canOpenLearningTabs) {
+			setActiveTab('overview');
+			return;
+		}
+
+		if (!lessonsResult && !isLessonsLoading) {
+			loadLessons().catch(() => undefined);
+		}
+	}, [activeTab, canOpenLearningTabs, isLessonsLoading, lessonsResult, loadLessons]);
+
+	const handleLessonSelect = useCallback(
+		(subsectionId: string) => {
+			setHasReachedLessonBottom(canBypassProgression);
+			loadLessons(subsectionId).catch(() => undefined);
+		},
+		[canBypassProgression, loadLessons]
+	);
+
+	const handleLessonBottomReached = useCallback(() => {
+		setHasReachedLessonBottom(true);
+	}, []);
+
+	const handleAskDoubt = useCallback(() => {
+		const whatsappGroupUrl = lessonsResult?.course.whatsappGroupUrl || enrollment?.course.whatsappGroupUrl || '';
+
+		trackCourseDashboardEvent({
+			eventName: 'course_doubt_clicked',
+			courseId,
+			courseTitle: lessonsResult?.course.title ?? enrollment?.course.title,
+			userId: currentUser?.id,
+			destination: 'community',
+			enrollmentStatus: enrollment?.status,
+			sourcePage: currentPath
+		});
+
+		if (whatsappGroupUrl && typeof window !== 'undefined') {
+			window.open(whatsappGroupUrl, '_blank', 'noopener,noreferrer');
+		}
+	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
+
+	const handleCompleteLesson = useCallback(async () => {
+		const lessons = lessonsResult?.lessons ?? null;
+		const activeContext = getActiveLessonContext(lessons);
+
+		if (!lessons || !activeContext || !enrollment) {
+			return;
+		}
+
+		const { courseModule, subsection } = activeContext;
+		const nextLesson = getNextLessonRow(lessons, subsection.id);
+
+		trackCourseDashboardEvent({
+			eventName: 'course_lesson_next_clicked',
+			courseId,
+			courseTitle: lessonsResult?.course.title,
+			userId: currentUser?.id,
+			lessonId: subsection.id,
+			lessonTitle: subsection.title,
+			moduleId: courseModule.id,
+			moduleTitle: courseModule.title,
+			destination: nextLesson ? 'lesson' : 'assignment',
+			completionPercentage: enrollment.progressPercent,
+			enrollmentStatus: enrollment.status,
+			sourcePage: currentPath
+		});
+
+		setIsCompletingLesson(true);
+		setLessonErrorMessage('');
+
+		try {
+			const result = await completeCourseLesson(courseId, subsection.id);
+			setLessonsResult(result);
+			setEnrollment(result.enrollment);
+			setHasReachedLessonBottom(result.lessons.hasAdminAccess);
+
+			trackCourseDashboardEvent({
+				eventName: 'course_lesson_completed',
+				courseId,
+				courseTitle: result.course.title,
+				userId: currentUser?.id,
+				lessonId: subsection.id,
+				lessonTitle: subsection.title,
+				moduleId: courseModule.id,
+				moduleTitle: courseModule.title,
+				completionPercentage: result.enrollment.progressPercent,
+				enrollmentStatus: result.enrollment.status,
+				sourcePage: currentPath
+			});
+
+			if (!nextLesson && !result.lessons.hasAdminAccess) {
+				setActiveTab('assignment');
+			}
+		} catch {
+			setLessonErrorMessage('Unable to mark this lesson complete right now. Please try again.');
+		} finally {
+			setIsCompletingLesson(false);
+		}
+	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
+
 	const activeTabLabel = useMemo(() => courseTabs.find(tab => tab.id === activeTab)?.label ?? 'Overview', [activeTab]);
 	const shouldShowUnlockedOverviewRail =
 		activeTab === 'overview' && Boolean(enrollment?.accessUnlockedAt && dashboard && !isDashboardLoading);
-	const shouldShowOverviewRail = activeTab === 'overview';
+	const shouldShowLessonRail = activeTab === 'lessons' && canOpenLearningTabs;
+	const shouldShowOverviewRail = activeTab === 'overview' || shouldShowLessonRail;
 
 	if (isLoading) {
 		return <ProfilePageSkeleton />;
@@ -1208,7 +2257,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 					activeTab={activeTab}
 					currentUser={currentUser}
 					enrollment={enrollment}
-					onTabChange={setActiveTab}
+					onTabChange={handleTabChange}
 				/>
 			</Box>
 
@@ -1221,7 +2270,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							currentUser={currentUser}
 							enrollment={enrollment}
 							onClose={() => setIsMobileNavOpen(false)}
-							onTabChange={setActiveTab}
+							onTabChange={handleTabChange}
 						/>
 					</Box>
 				</Box>
@@ -1300,42 +2349,50 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 						alignItems="start"
 					>
 						<Box minW={0}>
-							{activeTab === 'overview' ? (
-								<CourseOverviewContent
-									courseId={courseId}
-									currentUser={currentUser}
-									dashboard={dashboard}
-									dashboardErrorMessage={dashboardErrorMessage}
-									enrollment={enrollment}
-									isDashboardLoading={isDashboardLoading}
-									learnerName={learnerName}
-									onDashboardRetry={() => {
-										loadDashboard(currentUser).catch(() => undefined);
-									}}
-									onTabChange={setActiveTab}
-									onUnlocked={handleCourseUnlocked}
-								/>
-							) : (
-								<CoursePlaceholderTab label={activeTabLabel} />
-							)}
+							<CourseLearningMainContent
+								activeTab={activeTab}
+								activeTabLabel={activeTabLabel}
+								canBypassProgression={canBypassProgression}
+								courseId={courseId}
+								currentUser={currentUser}
+								dashboard={dashboard}
+								dashboardErrorMessage={dashboardErrorMessage}
+								enrollment={enrollment}
+								hasReachedLessonBottom={hasReachedLessonBottom}
+								isCompletingLesson={isCompletingLesson}
+								isDashboardLoading={isDashboardLoading}
+								isLessonsLoading={isLessonsLoading}
+								learnerName={learnerName}
+								lessonErrorMessage={lessonErrorMessage}
+								lessonsResult={lessonsResult}
+								onAskDoubt={handleAskDoubt}
+								onCourseUnlocked={handleCourseUnlocked}
+								onDashboardRetry={() => {
+									loadDashboard(currentUser).catch(() => undefined);
+								}}
+								onLessonBottomReached={handleLessonBottomReached}
+								onLessonComplete={() => {
+									handleCompleteLesson().catch(() => undefined);
+								}}
+								onLessonRetry={() => {
+									loadLessons(lessonsResult?.lessons.activeSubsectionId).catch(() => undefined);
+								}}
+								onLessonSelect={handleLessonSelect}
+								onTabChange={handleTabChange}
+							/>
 						</Box>
 
-						<Box
-							display={{ base: shouldShowOverviewRail ? 'block' : 'none' }}
-							position={{ xl: 'sticky' }}
-							top={{ xl: '96px' }}
-						>
-							{shouldShowUnlockedOverviewRail && dashboard ? (
-								<CourseUnlockedOverviewRail
-									courseId={courseId}
-									currentUser={currentUser}
-									dashboard={dashboard}
-									enrollment={enrollment}
-								/>
-							) : (
-								<CourseNextStepsPanel />
-							)}
-						</Box>
+						<CourseLearningRail
+							courseId={courseId}
+							currentUser={currentUser}
+							dashboard={dashboard}
+							enrollment={enrollment}
+							isVisible={shouldShowOverviewRail}
+							lessons={lessonsResult?.lessons ?? null}
+							onLessonSelect={handleLessonSelect}
+							showLessonRail={shouldShowLessonRail}
+							showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
+						/>
 					</Box>
 				</Box>
 			</Box>

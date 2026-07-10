@@ -17,7 +17,7 @@ export type CourseEditorStepId =
 	| 'instructors'
 	| 'gallery'
 	| 'reviews'
-	| 'prerequisites'
+	| 'lessons'
 	| 'liveSessions'
 	| 'postSessionMaterials'
 	| 'review';

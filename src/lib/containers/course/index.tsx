@@ -24,7 +24,7 @@ const CourseDetailsPage = ({ course }: CourseDetailsPageProps) => (
 		<CourseOverview course={course} />
 		<CourseOutcomes outcomes={course.outcomes} />
 		<CourseCurriculum
-			prerequisites={course.prerequisites}
+			lessons={course.lessons}
 			liveSessions={course.liveSessions}
 			postSessionMaterials={course.postSessionMaterials}
 		/>

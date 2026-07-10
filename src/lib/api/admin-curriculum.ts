@@ -1,6 +1,6 @@
 import { getJson, putJson } from '~/lib/api/client';
 
-export type AdminCurriculumSectionType = 'PREREQUISITES' | 'LIVE_SESSIONS' | 'POST_SESSION_MATERIALS';
+export type AdminCurriculumSectionType = 'LESSONS' | 'LIVE_SESSIONS' | 'POST_SESSION_MATERIALS';
 
 export type AdminCurriculumContentBlockType =
 	| 'TEXT'
@@ -49,7 +49,7 @@ export type AdminCurriculumModule = {
 
 export type AdminCourseCurriculum = {
 	sections: {
-		prerequisites: AdminCurriculumModule[];
+		lessons: AdminCurriculumModule[];
 		liveSessions: AdminCurriculumModule[];
 		postSessionMaterials: AdminCurriculumModule[];
 	};

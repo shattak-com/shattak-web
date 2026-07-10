@@ -20,7 +20,7 @@ export const createEditorId = (prefix: string) => `${prefix}-${Date.now()}-${Mat
 
 export const emptyCurriculum = (): AdminCourseCurriculum => ({
 	sections: {
-		prerequisites: [],
+		lessons: [],
 		liveSessions: [],
 		postSessionMaterials: []
 	}
@@ -148,7 +148,7 @@ export const normalizeCurriculum = (curriculum: AdminCourseCurriculum): AdminCou
 
 	return {
 		sections: {
-			prerequisites: normalizeModules('prerequisites', sections.prerequisites),
+			lessons: normalizeModules('lessons', sections.lessons),
 			liveSessions: normalizeModules('liveSessions', sections.liveSessions),
 			postSessionMaterials: normalizeModules('postSessionMaterials', sections.postSessionMaterials)
 		}

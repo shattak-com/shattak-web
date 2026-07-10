@@ -125,7 +125,7 @@ export type AdminCourse = {
 	completion: AdminCourseCompletion;
 	projects: AdminCourseProject[];
 	faqs: AdminCourseFaq[];
-	prerequisites: AdminCourseSessionSection[];
+	lessons: AdminCourseSessionSection[];
 	liveSessions: AdminCourseSessionSection[];
 	postSessionMaterials: AdminCourseSessionSection[];
 	requirements: string[];
@@ -170,7 +170,7 @@ export type AdminCourseInput = Partial<
 		| 'completion'
 		| 'projects'
 		| 'faqs'
-		| 'prerequisites'
+		| 'lessons'
 		| 'liveSessions'
 		| 'postSessionMaterials'
 		| 'requirements'

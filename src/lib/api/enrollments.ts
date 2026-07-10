@@ -2,6 +2,16 @@ import { getJson, postJson } from '~/lib/api/client';
 
 export type CourseEnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 export type CourseAssignmentStatus = 'NOT_STARTED' | 'SUBMITTED' | 'APPROVED';
+export type CourseLessonContentBlockType =
+	| 'TEXT'
+	| 'VIDEO_UPLOAD'
+	| 'VIDEO_YOUTUBE'
+	| 'PDF_UPLOAD'
+	| 'PDF_LINK'
+	| 'PPT_UPLOAD'
+	| 'PPT_LINK';
+
+export type CourseLessonContentVisibility = 'PUBLIC_PREVIEW' | 'ENROLLED_ONLY';
 
 export type EnrolledCourse = {
 	id: string;
@@ -80,6 +90,65 @@ export type CourseLearningDashboard = {
 	}>;
 };
 
+export type CourseLessonContentBlock = {
+	id: string;
+	type: CourseLessonContentBlockType;
+	visibility: CourseLessonContentVisibility;
+	title: string;
+	body: string;
+	url: string;
+	publicId: string;
+	mimeType: string;
+	fileName: string;
+	fileSize: number | null;
+	sortOrder: number;
+	metadata: Record<string, unknown>;
+};
+
+export type CourseLessonSubsection = {
+	id: string;
+	title: string;
+	previewSummary: string;
+	durationLabel: string;
+	durationMinutes: number | null;
+	sortOrder: number;
+	isActive: boolean;
+	isCompleted: boolean;
+	isLocked: boolean;
+	isCurrent: boolean;
+	contentBlocks: CourseLessonContentBlock[];
+};
+
+export type CourseLessonModule = {
+	id: string;
+	title: string;
+	description: string;
+	sortOrder: number;
+	isLocked: boolean;
+	subsections: CourseLessonSubsection[];
+};
+
+export type CourseLessonsState = {
+	activeSubsectionId: string;
+	completedSubsections: number;
+	hasAdminAccess: boolean;
+	lessonProgressPercentage: number;
+	modules: CourseLessonModule[];
+	totalSubsections: number;
+};
+
+export type CourseLessonsResult = {
+	enrollment: CourseEnrollment;
+	lessons: CourseLessonsState;
+	course: {
+		id: string;
+		slug: string;
+		title: string;
+		summary: string;
+		whatsappGroupUrl: string;
+	};
+};
+
 export type CourseEnrollmentStatusResult = {
 	isFreeCourse: boolean;
 	isEnrolled: boolean;
@@ -107,5 +176,16 @@ export const unlockCourseAccess = (slug: string, accessCode: string) =>
 
 export const getCourseLearningDashboard = (slug: string) =>
 	getJson<CourseLearningDashboardResult>(`/enrollments/courses/${encodeURIComponent(slug)}/dashboard`);
+
+export const getCourseLessons = (slug: string, subsectionId?: string) => {
+	const query = subsectionId ? `?subsectionId=${encodeURIComponent(subsectionId)}` : '';
+
+	return getJson<CourseLessonsResult>(`/enrollments/courses/${encodeURIComponent(slug)}/lessons${query}`);
+};
+
+export const completeCourseLesson = (slug: string, subsectionId: string) =>
+	postJson<CourseLessonsResult>(
+		`/enrollments/courses/${encodeURIComponent(slug)}/lessons/${encodeURIComponent(subsectionId)}/complete`
+	);
 
 export const listMyCourseEnrollments = () => getJson<{ enrollments: CourseEnrollment[] }>('/enrollments/my-courses');

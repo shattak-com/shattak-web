@@ -61,6 +61,10 @@ Examples:
 - `course_progress_clicked`
 - `course_whatsapp_opened`
 - `course_certificate_earned`
+- `course_lesson_opened`
+- `course_lesson_next_clicked`
+- `course_lesson_completed`
+- `course_doubt_clicked`
 
 All tracked events automatically include current page context:
 
@@ -140,6 +144,33 @@ These events should include the available course/user state without sending extr
 - `#completion_percentage`
 - `#enrollment_status`
 - `#destination`
+- `#lesson_id`
+- `#lesson_title`
+- `#module_id`
+- `#module_title`
+- `#source_page`
+
+## Lesson Tracking
+
+Student lesson consumption is tracked from the course workspace only. These events should stay aligned with the lesson engine and should not be duplicated in generic navigation handlers:
+
+- `course_lesson_opened`: fired when a learner opens an unlocked lesson.
+- `course_lesson_next_clicked`: fired when the learner uses the lesson Next action.
+- `course_lesson_completed`: fired after the backend marks the lesson complete.
+- `course_doubt_clicked`: fired when the learner uses Ask Doubt to open the course WhatsApp community.
+
+Lesson events can include:
+
+- `#course_id`
+- `#course_title`
+- `#user_id`
+- `#module_id`
+- `#module_title`
+- `#lesson_id`
+- `#lesson_title`
+- `#destination`
+- `#completion_percentage`
+- `#enrollment_status`
 - `#source_page`
 
 ## Verification Checklist

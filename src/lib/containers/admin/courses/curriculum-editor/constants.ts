@@ -7,13 +7,13 @@ import type {
 import type { CurriculumSectionKey } from './types';
 
 export const sectionTypeByKey: Record<CurriculumSectionKey, AdminCurriculumSectionType> = {
-	prerequisites: 'PREREQUISITES',
+	lessons: 'LESSONS',
 	liveSessions: 'LIVE_SESSIONS',
 	postSessionMaterials: 'POST_SESSION_MATERIALS'
 };
 
 export const sectionLabelByKey: Record<CurriculumSectionKey, string> = {
-	prerequisites: 'Prerequisites',
+	lessons: 'Lessons',
 	liveSessions: 'Live sessions',
 	postSessionMaterials: 'Post-session materials'
 };

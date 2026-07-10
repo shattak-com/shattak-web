@@ -8,13 +8,13 @@ import { FiArrowRight } from 'react-icons/fi';
 import type { CourseSessionSection } from '~/lib/containers/course/types';
 
 type CourseCurriculumProps = {
-	prerequisites: CourseSessionSection[];
+	lessons: CourseSessionSection[];
 	liveSessions: CourseSessionSection[];
 	postSessionMaterials: CourseSessionSection[];
 };
 
 type CurriculumGroupProps = {
-	id: 'prerequisites' | 'liveSessions' | 'postSessionMaterials';
+	id: 'lessons' | 'liveSessions' | 'postSessionMaterials';
 	title: string;
 	description: string;
 	tone: 'neutral' | 'brand' | 'accent';
@@ -140,18 +140,18 @@ const CurriculumGroup = ({ id, title, description, tone, sections, values, onVal
 	);
 };
 
-const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }: CourseCurriculumProps) => {
+const CourseCurriculum = ({ lessons, liveSessions, postSessionMaterials }: CourseCurriculumProps) => {
 	const allValues = useMemo(
 		() => ({
-			prerequisites: prerequisites.map(section => `prerequisites-${section.sectionName}`),
+			lessons: lessons.map(section => `lessons-${section.sectionName}`),
 			liveSessions: liveSessions.map(section => `liveSessions-${section.sectionName}`),
 			postSessionMaterials: postSessionMaterials.map(section => `postSessionMaterials-${section.sectionName}`)
 		}),
-		[prerequisites, liveSessions, postSessionMaterials]
+		[lessons, liveSessions, postSessionMaterials]
 	);
 
 	const [expandedValues, setExpandedValues] = useState(() => ({
-		prerequisites: prerequisites.map(section => `prerequisites-${section.sectionName}`),
+		lessons: lessons.map(section => `lessons-${section.sectionName}`),
 		liveSessions: liveSessions.map(section => `liveSessions-${section.sectionName}`),
 		postSessionMaterials: postSessionMaterials.map(section => `postSessionMaterials-${section.sectionName}`)
 	}));
@@ -163,7 +163,7 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 			checked
 				? allValues
 				: {
-						prerequisites: [],
+						lessons: [],
 						liveSessions: [],
 						postSessionMaterials: []
 					}
@@ -205,13 +205,13 @@ const CourseCurriculum = ({ prerequisites, liveSessions, postSessionMaterials }:
 
 					<Stack gap={6} mt={{ base: 2, md: 4 }}>
 						<CurriculumGroup
-							id="prerequisites"
-							title="Pre-Requisites Content"
-							description="Complete this section before the live session to get the most out of the course. You'll unlock this content immediately after enrolling."
+							id="lessons"
+							title="Lessons"
+							description="Start here after enrolling. These lessons form the core learning path for the course."
 							tone="neutral"
-							sections={prerequisites}
-							values={expandedValues.prerequisites}
-							onValueChange={value => handleGroupChange('prerequisites', value)}
+							sections={lessons}
+							values={expandedValues.lessons}
+							onValueChange={value => handleGroupChange('lessons', value)}
 						/>
 						<CurriculumGroup
 							id="liveSessions"

@@ -24,7 +24,7 @@ export const courseEditorSteps: CourseEditorStep[] = [
 	{ id: 'instructors', label: 'Instructors', description: 'Mentor profile details shown on the course page.' },
 	{ id: 'gallery', label: 'Project Gallery', description: 'Project overview, live link, gallery, and student proof.' },
 	{ id: 'reviews', label: 'Reviews & FAQs', description: 'Testimonials and common course questions.' },
-	{ id: 'prerequisites', label: 'Prerequisites', description: 'Pre-course requirements and prep materials.' },
+	{ id: 'lessons', label: 'Lessons', description: 'Course lessons and learning materials.' },
 	{ id: 'liveSessions', label: 'Live Sessions', description: 'Live class sections and session items.' },
 	{
 		id: 'postSessionMaterials',
@@ -52,7 +52,7 @@ export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]>
 	instructors: ['instructors'],
 	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],
-	prerequisites: ['prerequisites'],
+	lessons: ['lessons'],
 	liveSessions: ['liveSessions'],
 	postSessionMaterials: ['postSessionMaterials'],
 	review: ['durationHours', 'durationMinutes']

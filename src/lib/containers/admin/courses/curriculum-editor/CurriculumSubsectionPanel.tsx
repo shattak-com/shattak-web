@@ -1,11 +1,18 @@
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { useState } from 'react';
 
 import type { AdminCurriculumModule, AdminCurriculumSubsection } from '~/lib/api/admin-curriculum';
 
 import { contentBlockTypeOptions } from './constants';
 import { CurriculumContentBlockEditor } from './CurriculumContentBlockEditor';
-import { FieldLabel } from './FormControls';
-import type { MediaUploadHandler, SetSelectedSubsectionIndex, UpdateContentBlock, UpdateSubsection } from './types';
+import { FeedbackBox, FieldLabel } from './FormControls';
+import type {
+	CurriculumFeedback,
+	MediaUploadHandler,
+	SetSelectedSubsectionIndex,
+	UpdateContentBlock,
+	UpdateSubsection
+} from './types';
 import { createContentBlock, parseOptionalInteger } from './utils';
 
 type CurriculumSubsectionPanelProps = {
@@ -13,8 +20,11 @@ type CurriculumSubsectionPanelProps = {
 	selectedModule: AdminCurriculumModule | null;
 	selectedSubsectionIndex: number | null;
 	selectedSubsection: AdminCurriculumSubsection | null;
+	feedback: CurriculumFeedback | null;
+	isSaving: boolean;
 	uploadingBlockKey: string | null;
 	onClose: () => void;
+	onSaveCurriculum: () => void;
 	onAddSubsection: (moduleIndex: number) => void;
 	onMoveSubsection: (moduleIndex: number, subsectionIndex: number, nextIndex: number) => void;
 	onRequestRemoveSubsection: (moduleIndex: number, subsectionIndex: number) => void;
@@ -25,13 +35,36 @@ type CurriculumSubsectionPanelProps = {
 	onMediaUpload: MediaUploadHandler;
 };
 
+const getPanelWidth = (isFullScreen: boolean) => {
+	if (isFullScreen) {
+		return '100vw';
+	}
+
+	return { base: '100%', lg: 'min(1180px, calc(100vw - 260px))', '2xl': 'min(1360px, calc(100vw - 280px))' };
+};
+
+const getEditorGridColumns = (hasSubsections: boolean, isFullScreen: boolean) => {
+	if (!hasSubsections) {
+		return { base: '1fr', xl: '1fr', '2xl': '1fr' };
+	}
+
+	if (isFullScreen) {
+		return { base: '1fr', xl: '420px minmax(0, 1fr)', '2xl': '460px minmax(0, 1fr)' };
+	}
+
+	return { base: '1fr', xl: '340px minmax(0, 1fr)', '2xl': '380px minmax(0, 1fr)' };
+};
+
 export const CurriculumSubsectionPanel = ({
 	selectedModuleIndex,
 	selectedModule,
 	selectedSubsectionIndex,
 	selectedSubsection,
+	feedback,
+	isSaving,
 	uploadingBlockKey,
 	onClose,
+	onSaveCurriculum,
 	onAddSubsection,
 	onMoveSubsection,
 	onRequestRemoveSubsection,
@@ -41,12 +74,17 @@ export const CurriculumSubsectionPanel = ({
 	onUpdateContentBlock,
 	onMediaUpload
 }: CurriculumSubsectionPanelProps) => {
+	const [isFullScreen, setIsFullScreen] = useState(false);
+
 	if (selectedModuleIndex === null || !selectedModule) {
 		return null;
 	}
 
 	const moduleIndex = selectedModuleIndex;
 	const subsectionIndex = selectedSubsectionIndex;
+	const hasSubsections = selectedModule.subsections.length > 0;
+	const panelWidth = getPanelWidth(isFullScreen);
+	const editorGridColumns = getEditorGridColumns(hasSubsections, isFullScreen);
 
 	return (
 		<>
@@ -56,13 +94,14 @@ export const CurriculumSubsectionPanel = ({
 				top={0}
 				right={0}
 				bottom={0}
-				w={{ base: '100%', lg: 'min(1180px, calc(100vw - 260px))', '2xl': 'min(1360px, calc(100vw - 280px))' }}
+				w={panelWidth}
 				maxW="100vw"
 				bg="bg.card"
 				borderLeft="1px solid"
 				borderColor="border.default"
 				boxShadow="2xl"
 				zIndex={1400}
+				transition="width 0.22s ease"
 			>
 				<Stack h="100%" gap={0}>
 					<Box borderBottom="1px solid" borderColor="border.default" p={{ base: 4, md: 5 }}>
@@ -86,23 +125,48 @@ export const CurriculumSubsectionPanel = ({
 									Manage a single module&apos;s subsections and detailed content without expanding the full page.
 								</Text>
 							</Box>
-							<Button type="button" variant="outline" borderRadius="full" onClick={onClose}>
-								Close
-							</Button>
+							<HStack gap={2} flexWrap="wrap" justify="flex-end">
+								<Button
+									type="button"
+									variant="outline"
+									borderRadius="full"
+									onClick={() => setIsFullScreen(currentValue => !currentValue)}
+								>
+									{isFullScreen ? 'Exit full screen' : 'Full screen'}
+								</Button>
+								<Button
+									type="button"
+									bg="primary"
+									color="text.inverse"
+									borderRadius="full"
+									disabled={isSaving}
+									onClick={onSaveCurriculum}
+								>
+									{isSaving ? 'Saving...' : 'Save curriculum'}
+								</Button>
+								<Button type="button" variant="outline" borderRadius="full" onClick={onClose}>
+									Close
+								</Button>
+							</HStack>
 						</HStack>
 					</Box>
 
 					<Box flex="1" overflowY="auto" p={{ base: 4, md: 5 }}>
-						<Box
-							display="grid"
-							gridTemplateColumns={{
-								base: '1fr',
-								xl: selectedModule.subsections.length ? '340px minmax(0, 1fr)' : '1fr',
-								'2xl': selectedModule.subsections.length ? '380px minmax(0, 1fr)' : '1fr'
-							}}
-							gap={4}
-						>
-							<Box border="1px solid" borderColor="border.default" borderRadius="xl" p={4} alignSelf="start">
+						{feedback ? (
+							<Box mb={4}>
+								<FeedbackBox feedback={feedback} />
+							</Box>
+						) : null}
+						<Box display="grid" gridTemplateColumns={editorGridColumns} gap={{ base: 4, '2xl': isFullScreen ? 6 : 4 }}>
+							<Box
+								border="1px solid"
+								borderColor="border.default"
+								borderRadius="xl"
+								p={4}
+								alignSelf="start"
+								position={{ xl: 'sticky' }}
+								top={4}
+							>
 								<HStack justify="space-between" gap={3} mb={3}>
 									<Box>
 										<Text fontWeight="semibold">Subsections</Text>
@@ -210,8 +274,8 @@ export const CurriculumSubsectionPanel = ({
 							</Box>
 
 							{subsectionIndex !== null && selectedSubsection ? (
-								<Box border="1px solid" borderColor="border.default" borderRadius="xl" p={4}>
-									<Stack gap={4}>
+								<Box border="1px solid" borderColor="border.default" borderRadius="xl" p={{ base: 4, md: 5 }}>
+									<Stack gap={5}>
 										<HStack justify="space-between" gap={3} flexWrap="wrap">
 											<Box>
 												<HStack gap={2} flexWrap="wrap">
@@ -222,7 +286,7 @@ export const CurriculumSubsectionPanel = ({
 													Public preview fields plus enrolled-only content blocks.
 												</Text>
 											</Box>
-											<HStack gap={2} flexWrap="wrap">
+											<HStack gap={2} flexWrap="wrap" justify="flex-end">
 												{contentBlockTypeOptions.map(option => (
 													<Button
 														key={option.value}
@@ -308,8 +372,8 @@ export const CurriculumSubsectionPanel = ({
 											</Box>
 										</SimpleGrid>
 
-										<Box bg="bg.subtle" borderRadius="lg" p={3}>
-											<Stack gap={3}>
+										<Box bg="bg.subtle" borderRadius="xl" p={{ base: 3, md: 4 }}>
+											<Stack gap={4}>
 												<Box>
 													<Text fontSize="sm" fontWeight="semibold">
 														Detailed content

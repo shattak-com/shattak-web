@@ -14,6 +14,7 @@ export type CourseCurriculumEditorProps = {
 	sectionKey: CurriculumSectionKey;
 	title: string;
 	description: string;
+	onDirtyChange?: (sectionKey: CurriculumSectionKey, isDirty: boolean) => void;
 };
 
 export type CurriculumFeedback = {

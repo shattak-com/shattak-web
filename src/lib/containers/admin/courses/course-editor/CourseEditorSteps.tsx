@@ -163,30 +163,42 @@ const ReviewsFaqsStep = ({ control, register, errors }: CourseEditorSectionProps
 	</Stack>
 );
 
-const LessonsStep = ({ courseId }: { courseId?: string }) => (
+const LessonsStep = ({
+	courseId,
+	onCurriculumDirtyChange
+}: Pick<CourseEditorStepFieldsProps, 'courseId' | 'onCurriculumDirtyChange'>) => (
 	<CourseCurriculumEditor
 		courseId={courseId}
 		sectionKey="lessons"
 		title="Lessons"
 		description="Build ordered course lessons, preview rows, and enrolled-only learning content."
+		onDirtyChange={onCurriculumDirtyChange}
 	/>
 );
 
-const LiveSessionsStep = ({ courseId }: { courseId?: string }) => (
+const LiveSessionsStep = ({
+	courseId,
+	onCurriculumDirtyChange
+}: Pick<CourseEditorStepFieldsProps, 'courseId' | 'onCurriculumDirtyChange'>) => (
 	<CourseCurriculumEditor
 		courseId={courseId}
 		sectionKey="liveSessions"
 		title="Live sessions"
 		description="Organize live-session modules and attach content learners unlock after enrollment."
+		onDirtyChange={onCurriculumDirtyChange}
 	/>
 );
 
-const PostSessionMaterialsStep = ({ courseId }: { courseId?: string }) => (
+const PostSessionMaterialsStep = ({
+	courseId,
+	onCurriculumDirtyChange
+}: Pick<CourseEditorStepFieldsProps, 'courseId' | 'onCurriculumDirtyChange'>) => (
 	<CourseCurriculumEditor
 		courseId={courseId}
 		sectionKey="postSessionMaterials"
 		title="Post section"
 		description="Manage follow-up modules, references, recordings, PDFs, and presentations."
+		onDirtyChange={onCurriculumDirtyChange}
 	/>
 );
 
@@ -229,7 +241,8 @@ export const CourseEditorStepFields = ({
 	errors,
 	summaryItems,
 	course,
-	courseId
+	courseId,
+	onCurriculumDirtyChange
 }: CourseEditorStepFieldsProps) => {
 	switch (activeStepId) {
 		case 'basics':
@@ -249,11 +262,11 @@ export const CourseEditorStepFields = ({
 		case 'reviews':
 			return <ReviewsFaqsStep control={control} register={register} errors={errors} />;
 		case 'lessons':
-			return <LessonsStep courseId={courseId} />;
+			return <LessonsStep courseId={courseId} onCurriculumDirtyChange={onCurriculumDirtyChange} />;
 		case 'liveSessions':
-			return <LiveSessionsStep courseId={courseId} />;
+			return <LiveSessionsStep courseId={courseId} onCurriculumDirtyChange={onCurriculumDirtyChange} />;
 		case 'postSessionMaterials':
-			return <PostSessionMaterialsStep courseId={courseId} />;
+			return <PostSessionMaterialsStep courseId={courseId} onCurriculumDirtyChange={onCurriculumDirtyChange} />;
 		case 'review':
 			return <ReviewStep summaryItems={summaryItems} course={course} />;
 		default:

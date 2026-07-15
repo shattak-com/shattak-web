@@ -1,4 +1,5 @@
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { FiChevronDown, FiChevronRight, FiEdit3 } from 'react-icons/fi';
 
 import type { AdminCurriculumModule } from '~/lib/api/admin-curriculum';
 
@@ -33,8 +34,11 @@ export const CurriculumModuleCard = ({
 	<Box
 		key={module.id ?? `module-${moduleIndex}`}
 		border="1px solid"
-		borderColor="border.default"
+		borderColor="gray.500"
+		borderLeftWidth="4px"
+		borderLeftColor={isCollapsed ? 'gray.500' : 'brand.600'}
 		borderRadius="xl"
+		bg={isCollapsed ? 'bg.subtle' : 'bg.card'}
 		p={4}
 	>
 		<Stack gap={4}>
@@ -46,6 +50,7 @@ export const CurriculumModuleCard = ({
 						{module.subsections.reduce((total, subsection) => total + subsection.contentBlocks.length, 0)} content
 						blocks
 					</Badge>
+					<Badge colorPalette={isCollapsed ? 'gray' : 'green'}>{isCollapsed ? 'Collapsed' : 'Expanded'}</Badge>
 					<Text fontWeight="semibold">{module.title.trim() || 'Untitled module'}</Text>
 				</HStack>
 				<HStack gap={2}>
@@ -56,7 +61,10 @@ export const CurriculumModuleCard = ({
 						borderRadius="full"
 						onClick={() => onToggleCollapse(module, moduleIndex)}
 					>
-						{isCollapsed ? 'Expand' : 'Collapse'}
+						<HStack gap={1}>
+							{isCollapsed ? <FiChevronRight aria-hidden /> : <FiChevronDown aria-hidden />}
+							<Text as="span">{isCollapsed ? 'Expand' : 'Collapse'}</Text>
+						</HStack>
 					</Button>
 					<Button
 						type="button"
@@ -163,7 +171,7 @@ export const CurriculumModuleCard = ({
 									type="button"
 									size="sm"
 									bg="primary"
-									color="text.inverse"
+									color="ink.900"
 									borderRadius="full"
 									onClick={() => onOpenSubsectionPanel(moduleIndex)}
 								>
@@ -179,7 +187,7 @@ export const CurriculumModuleCard = ({
 										key={subsection.id ?? `subsection-summary-${subsectionIndex}`}
 										type="button"
 										variant="outline"
-										borderColor="border.brandSoft"
+										borderColor="gray.500"
 										borderRadius="lg"
 										h="auto"
 										justifyContent="flex-start"
@@ -188,7 +196,7 @@ export const CurriculumModuleCard = ({
 										_focusVisible={{ borderColor: 'primary', boxShadow: 'primary' }}
 										onClick={() => onOpenSubsectionPanel(moduleIndex, subsectionIndex)}
 									>
-										<Stack gap={1} align="stretch" minW={0}>
+										<Stack gap={1.5} align="stretch" minW={0} w="full">
 											<HStack gap={2} flexWrap="wrap">
 												<Badge colorPalette="gray">Subsection {subsectionIndex + 1}</Badge>
 												{subsection.contentBlocks.length ? (
@@ -201,6 +209,13 @@ export const CurriculumModuleCard = ({
 											<Text fontSize="xs" color="text.muted" textAlign="left">
 												{subsection.durationLabel.trim() || 'No duration set'}
 											</Text>
+											<HStack gap={1} color="brand.600">
+												<FiEdit3 aria-hidden />
+												<Text fontSize="xs" fontWeight="bold">
+													Edit content
+												</Text>
+												<FiChevronRight aria-hidden />
+											</HStack>
 										</Stack>
 									</Button>
 								))}

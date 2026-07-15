@@ -433,7 +433,7 @@ export const CurriculumContentBlockEditor = ({
 		<Box
 			key={block.id ?? `block-${blockIndex}`}
 			border="1px solid"
-			borderColor="border.brandSoft"
+			borderColor="gray.500"
 			borderRadius="xl"
 			bg="bg.card"
 			p={{ base: 3, md: 4 }}

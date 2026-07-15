@@ -1,6 +1,7 @@
 import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import type { AdminCourse } from '~/lib/api/admin-courses';
+import type { CurriculumSectionKey } from '~/lib/containers/admin/courses/curriculum-editor/types';
 
 import type { CourseEditorFormValues } from './schema';
 
@@ -28,6 +29,11 @@ export type CourseEditorStep = {
 	description: string;
 };
 
+export type CourseEditorStepGroup = {
+	label: string;
+	stepIds: CourseEditorStepId[];
+};
+
 export type CourseEditorSectionProps = {
 	control: Control<CourseEditorFormValues>;
 	register: UseFormRegister<CourseEditorFormValues>;
@@ -49,4 +55,5 @@ export type CourseEditorStepFieldsProps = CourseEditorSectionProps & {
 	summaryItems: CourseEditorSummaryItem[];
 	course: AdminCourse | null;
 	courseId?: string;
+	onCurriculumDirtyChange: (sectionKey: CurriculumSectionKey, isDirty: boolean) => void;
 };

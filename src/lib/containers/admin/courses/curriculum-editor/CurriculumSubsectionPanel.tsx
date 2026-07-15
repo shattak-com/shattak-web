@@ -1,5 +1,6 @@
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { useState } from 'react';
+import { FiEdit3 } from 'react-icons/fi';
 
 import type { AdminCurriculumModule, AdminCurriculumSubsection } from '~/lib/api/admin-curriculum';
 
@@ -21,6 +22,7 @@ type CurriculumSubsectionPanelProps = {
 	selectedSubsectionIndex: number | null;
 	selectedSubsection: AdminCurriculumSubsection | null;
 	feedback: CurriculumFeedback | null;
+	isDirty: boolean;
 	isSaving: boolean;
 	uploadingBlockKey: string | null;
 	onClose: () => void;
@@ -61,6 +63,7 @@ export const CurriculumSubsectionPanel = ({
 	selectedSubsectionIndex,
 	selectedSubsection,
 	feedback,
+	isDirty,
 	isSaving,
 	uploadingBlockKey,
 	onClose,
@@ -98,13 +101,13 @@ export const CurriculumSubsectionPanel = ({
 				maxW="100vw"
 				bg="bg.card"
 				borderLeft="1px solid"
-				borderColor="border.default"
+				borderColor="gray.500"
 				boxShadow="2xl"
 				zIndex={1400}
 				transition="width 0.22s ease"
 			>
 				<Stack h="100%" gap={0}>
-					<Box borderBottom="1px solid" borderColor="border.default" p={{ base: 4, md: 5 }}>
+					<Box borderBottom="1px solid" borderColor="gray.500" bg="bg.card" p={{ base: 4, md: 5 }}>
 						<HStack justify="space-between" gap={3} align="flex-start">
 							<Box minW={0}>
 								<HStack gap={2} flexWrap="wrap">
@@ -116,6 +119,9 @@ export const CurriculumSubsectionPanel = ({
 											0
 										)}{' '}
 										content blocks
+									</Badge>
+									<Badge colorPalette={isDirty ? 'orange' : 'green'}>
+										{isDirty ? 'Unsaved curriculum' : 'Curriculum saved'}
 									</Badge>
 								</HStack>
 								<Text mt={2} fontSize="xl" fontWeight="bold">
@@ -137,7 +143,7 @@ export const CurriculumSubsectionPanel = ({
 								<Button
 									type="button"
 									bg="primary"
-									color="text.inverse"
+									color="ink.900"
 									borderRadius="full"
 									disabled={isSaving}
 									onClick={onSaveCurriculum}
@@ -160,7 +166,7 @@ export const CurriculumSubsectionPanel = ({
 						<Box display="grid" gridTemplateColumns={editorGridColumns} gap={{ base: 4, '2xl': isFullScreen ? 6 : 4 }}>
 							<Box
 								border="1px solid"
-								borderColor="border.default"
+								borderColor="gray.500"
 								borderRadius="xl"
 								p={4}
 								alignSelf="start"
@@ -187,82 +193,90 @@ export const CurriculumSubsectionPanel = ({
 
 								{selectedModule.subsections.length ? (
 									<Stack gap={2}>
-										{selectedModule.subsections.map((subsection, currentSubsectionIndex) => (
-											<Box
-												key={subsection.id ?? `subsection-${currentSubsectionIndex}`}
-												border="1px solid"
-												borderColor={
-													currentSubsectionIndex === selectedSubsectionIndex ? 'primary' : 'border.brandSoft'
-												}
-												borderRadius="lg"
-												bg={currentSubsectionIndex === selectedSubsectionIndex ? 'bg.subtle' : 'transparent'}
-												p={3}
-												transition="border-color 0.16s ease, background-color 0.16s ease"
-												_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
-											>
-												<Stack gap={2}>
-													<Button
-														type="button"
-														variant="ghost"
-														justifyContent="flex-start"
-														h="auto"
-														p={0}
-														onClick={() => onSetSelectedSubsectionIndex(currentSubsectionIndex)}
-													>
-														<Stack gap={1} align="stretch" w="100%">
-															<HStack gap={2} flexWrap="wrap">
-																<Badge colorPalette="gray">Subsection {currentSubsectionIndex + 1}</Badge>
-																{subsection.contentBlocks.length ? (
-																	<Badge colorPalette="purple">{subsection.contentBlocks.length} blocks</Badge>
-																) : null}
-															</HStack>
-															<Text fontSize="sm" fontWeight="semibold" textAlign="left">
-																{subsection.title.trim() || 'Untitled subsection'}
-															</Text>
-															<Text fontSize="xs" color="text.muted" textAlign="left">
-																{subsection.durationLabel.trim() || 'No duration set'}
-															</Text>
-														</Stack>
-													</Button>
-													<HStack gap={2} flexWrap="wrap">
+										{selectedModule.subsections.map((subsection, currentSubsectionIndex) => {
+											const isSelected = currentSubsectionIndex === selectedSubsectionIndex;
+
+											return (
+												<Box
+													key={subsection.id ?? `subsection-${currentSubsectionIndex}`}
+													border="2px solid"
+													borderColor={isSelected ? 'brand.600' : 'gray.500'}
+													borderRadius="lg"
+													bg={isSelected ? 'bg.subtle' : 'bg.card'}
+													boxShadow={isSelected ? '0 0 0 1px var(--chakra-colors-brand-600)' : 'none'}
+													p={3}
+													transition="border-color 0.16s ease, background-color 0.16s ease"
+													_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
+												>
+													<Stack gap={2}>
 														<Button
 															type="button"
-															size="xs"
-															variant="outline"
-															borderRadius="full"
-															disabled={currentSubsectionIndex === 0}
-															onClick={() =>
-																onMoveSubsection(moduleIndex, currentSubsectionIndex, currentSubsectionIndex - 1)
-															}
+															variant="ghost"
+															justifyContent="flex-start"
+															h="auto"
+															p={0}
+															onClick={() => onSetSelectedSubsectionIndex(currentSubsectionIndex)}
 														>
-															Move up
+															<Stack gap={1} align="stretch" w="100%">
+																<HStack gap={2} flexWrap="wrap">
+																	<Badge colorPalette="gray">Subsection {currentSubsectionIndex + 1}</Badge>
+																	{subsection.contentBlocks.length ? (
+																		<Badge colorPalette="purple">{subsection.contentBlocks.length} blocks</Badge>
+																	) : null}
+																	{isSelected ? (
+																		<Badge colorPalette="orange" gap={1}>
+																			<FiEdit3 aria-hidden /> Editing
+																		</Badge>
+																	) : null}
+																</HStack>
+																<Text fontSize="sm" fontWeight="semibold" textAlign="left">
+																	{subsection.title.trim() || 'Untitled subsection'}
+																</Text>
+																<Text fontSize="xs" color="text.muted" textAlign="left">
+																	{subsection.durationLabel.trim() || 'No duration set'}
+																</Text>
+															</Stack>
 														</Button>
-														<Button
-															type="button"
-															size="xs"
-															variant="outline"
-															borderRadius="full"
-															disabled={currentSubsectionIndex === selectedModule.subsections.length - 1}
-															onClick={() =>
-																onMoveSubsection(moduleIndex, currentSubsectionIndex, currentSubsectionIndex + 1)
-															}
-														>
-															Move down
-														</Button>
-														<Button
-															type="button"
-															size="xs"
-															variant="outline"
-															borderRadius="full"
-															color="red.500"
-															onClick={() => onRequestRemoveSubsection(moduleIndex, currentSubsectionIndex)}
-														>
-															Remove
-														</Button>
-													</HStack>
-												</Stack>
-											</Box>
-										))}
+														<HStack gap={2} flexWrap="wrap">
+															<Button
+																type="button"
+																size="xs"
+																variant="outline"
+																borderRadius="full"
+																disabled={currentSubsectionIndex === 0}
+																onClick={() =>
+																	onMoveSubsection(moduleIndex, currentSubsectionIndex, currentSubsectionIndex - 1)
+																}
+															>
+																Move up
+															</Button>
+															<Button
+																type="button"
+																size="xs"
+																variant="outline"
+																borderRadius="full"
+																disabled={currentSubsectionIndex === selectedModule.subsections.length - 1}
+																onClick={() =>
+																	onMoveSubsection(moduleIndex, currentSubsectionIndex, currentSubsectionIndex + 1)
+																}
+															>
+																Move down
+															</Button>
+															<Button
+																type="button"
+																size="xs"
+																variant="outline"
+																borderRadius="full"
+																color="red.500"
+																onClick={() => onRequestRemoveSubsection(moduleIndex, currentSubsectionIndex)}
+															>
+																Remove
+															</Button>
+														</HStack>
+													</Stack>
+												</Box>
+											);
+										})}
 									</Stack>
 								) : (
 									<Box border="1px dashed" borderColor="border.default" borderRadius="lg" p={4}>
@@ -274,7 +288,7 @@ export const CurriculumSubsectionPanel = ({
 							</Box>
 
 							{subsectionIndex !== null && selectedSubsection ? (
-								<Box border="1px solid" borderColor="border.default" borderRadius="xl" p={{ base: 4, md: 5 }}>
+								<Box border="1px solid" borderColor="gray.500" borderRadius="xl" p={{ base: 4, md: 5 }}>
 									<Stack gap={5}>
 										<HStack justify="space-between" gap={3} flexWrap="wrap">
 											<Box>
@@ -372,7 +386,13 @@ export const CurriculumSubsectionPanel = ({
 											</Box>
 										</SimpleGrid>
 
-										<Box bg="bg.subtle" borderRadius="xl" p={{ base: 3, md: 4 }}>
+										<Box
+											bg="bg.subtle"
+											border="1px solid"
+											borderColor="gray.500"
+											borderRadius="xl"
+											p={{ base: 3, md: 4 }}
+										>
 											<Stack gap={4}>
 												<Box>
 													<Text fontSize="sm" fontWeight="semibold">

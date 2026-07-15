@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, type SubmitErrorHandler } from 'react-hook-form';
 
 import { createAdminCourse, getAdminCourse, updateAdminCourse, type AdminCourse } from '~/lib/api/admin-courses';
+import type { CurriculumSectionKey } from '~/lib/containers/admin/courses/curriculum-editor/types';
 
 import { courseEditorSteps, defaultFormValues } from './constants';
 import { courseEditorSchema, type CourseEditorFormValues } from './schema';
 import type { CourseEditorFeedback } from './types';
+import { useUnsavedCourseEditorGuard } from './useUnsavedCourseEditorGuard';
 import {
 	collectErrorPaths,
 	countErrorsByStep,
@@ -24,6 +26,7 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 	const [isLoading, setIsLoading] = useState(Boolean(courseId));
 	const [isSaving, setIsSaving] = useState(false);
 	const [feedback, setFeedback] = useState<CourseEditorFeedback | null>(null);
+	const [dirtyCurriculumSection, setDirtyCurriculumSection] = useState<CurriculumSectionKey | null>(null);
 	const isEditMode = Boolean(courseId);
 	const activeStep = courseEditorSteps[activeStepIndex];
 
@@ -72,31 +75,47 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 	const errorPaths = useMemo(() => collectErrorPaths(errors), [errors]);
 	const errorCountsByStep = useMemo(() => countErrorsByStep(errorPaths), [errorPaths]);
 
-	useEffect(() => {
-		if (!isDirty || isSaving) {
-			return undefined;
-		}
+	const hasUnsavedChanges = isDirty || dirtyCurriculumSection !== null;
+	const confirmLeaveEditor = useUnsavedCourseEditorGuard({
+		hasUnsavedChanges,
+		isSaving: isSaving && dirtyCurriculumSection === null
+	});
 
-		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-			event.preventDefault();
-			Reflect.set(event, 'returnValue', '');
-		};
+	const handleCurriculumDirtyChange = useCallback((sectionKey: CurriculumSectionKey, sectionIsDirty: boolean) => {
+		setDirtyCurriculumSection(currentSection => {
+			if (sectionIsDirty) {
+				return sectionKey;
+			}
 
-		window.addEventListener('beforeunload', handleBeforeUnload);
+			return currentSection === sectionKey ? null : currentSection;
+		});
+	}, []);
 
-		return () => {
-			window.removeEventListener('beforeunload', handleBeforeUnload);
-		};
-	}, [isDirty, isSaving]);
+	const requestStepChange = useCallback(
+		(targetStepIndex: number) => {
+			if (targetStepIndex === activeStepIndex || !courseEditorSteps[targetStepIndex]) {
+				return;
+			}
 
-	const confirmLeaveEditor = useCallback(() => {
-		if (!isDirty) {
-			return true;
-		}
+			if (dirtyCurriculumSection) {
+				const dirtyStep = courseEditorSteps.find(step => step.id === dirtyCurriculumSection);
+				const sectionLabel = dirtyStep?.label ?? 'current';
+				// eslint-disable-next-line no-alert -- Curriculum state is local to the active section until explicitly saved.
+				const shouldDiscard = window.confirm(
+					`You have unsaved ${sectionLabel} curriculum changes. Switch sections and discard them?`
+				);
 
-		// eslint-disable-next-line no-alert -- Native confirmation is appropriate for unsaved editor navigation.
-		return window.confirm('You have unsaved course changes. Leave without saving?');
-	}, [isDirty]);
+				if (!shouldDiscard) {
+					return;
+				}
+
+				setDirtyCurriculumSection(null);
+			}
+
+			setActiveStepIndex(targetStepIndex);
+		},
+		[activeStepIndex, dirtyCurriculumSection]
+	);
 
 	const handleSave = useCallback(
 		async (values: CourseEditorFormValues) => {
@@ -123,25 +142,28 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 		[courseId, reset, router]
 	);
 
-	const handleInvalidSave = useCallback<SubmitErrorHandler<CourseEditorFormValues>>(formErrors => {
-		const currentErrorPaths = collectErrorPaths(formErrors);
-		const firstErrorPath = currentErrorPaths[0];
-		const targetStepId = firstErrorPath ? getStepForErrorPath(firstErrorPath) : 'basics';
-		const targetStepIndex = courseEditorSteps.findIndex(step => step.id === targetStepId);
-		const targetStep = courseEditorSteps[targetStepIndex];
-		const errorCount = currentErrorPaths.length;
-		const issueLabel = errorCount === 1 ? 'issue' : 'issues';
-		const targetStepMessage = targetStep ? `, starting in ${targetStep.label}` : '';
+	const handleInvalidSave = useCallback<SubmitErrorHandler<CourseEditorFormValues>>(
+		formErrors => {
+			const currentErrorPaths = collectErrorPaths(formErrors);
+			const firstErrorPath = currentErrorPaths[0];
+			const targetStepId = firstErrorPath ? getStepForErrorPath(firstErrorPath) : 'basics';
+			const targetStepIndex = courseEditorSteps.findIndex(step => step.id === targetStepId);
+			const targetStep = courseEditorSteps[targetStepIndex];
+			const errorCount = currentErrorPaths.length;
+			const issueLabel = errorCount === 1 ? 'issue' : 'issues';
+			const targetStepMessage = targetStep ? `, starting in ${targetStep.label}` : '';
 
-		if (targetStepIndex >= 0) {
-			setActiveStepIndex(targetStepIndex);
-		}
+			if (targetStepIndex >= 0) {
+				requestStepChange(targetStepIndex);
+			}
 
-		setFeedback({
-			tone: 'error',
-			message: `Course was not saved. Fix ${errorCount} validation ${issueLabel}${targetStepMessage}.`
-		});
-	}, []);
+			setFeedback({
+				tone: 'error',
+				message: `Course was not saved. Fix ${errorCount} validation ${issueLabel}${targetStepMessage}.`
+			});
+		},
+		[requestStepChange]
+	);
 
 	const handleBackToCourses = useCallback(() => {
 		if (confirmLeaveEditor()) {
@@ -177,12 +199,15 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 		form,
 		handleBackToCourses,
 		handleInvalidSave,
+		handleCurriculumDirtyChange,
 		handleSave,
+		dirtyCurriculumSection,
+		hasUnsavedChanges,
 		isDirty,
 		isEditMode,
 		isLoading,
 		isSaving,
-		setActiveStepIndex,
+		requestStepChange,
 		summaryItems,
 		watchedValues
 	};

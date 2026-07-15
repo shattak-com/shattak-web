@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge, Box, Button, HStack, Stack, Text } from '@chakra-ui/react';
+import { useEffect } from 'react';
 
 import { ConfirmationDialog } from './curriculum-editor/ConfirmationDialog';
 import { CurriculumModuleCard } from './curriculum-editor/CurriculumModuleCard';
@@ -9,8 +10,18 @@ import { FeedbackBox } from './curriculum-editor/FormControls';
 import type { CourseCurriculumEditorProps } from './curriculum-editor/types';
 import { useCourseCurriculumEditor } from './curriculum-editor/useCourseCurriculumEditor';
 
-const CourseCurriculumEditor = ({ courseId, sectionKey, title, description }: CourseCurriculumEditorProps) => {
+const CourseCurriculumEditor = ({
+	courseId,
+	sectionKey,
+	title,
+	description,
+	onDirtyChange
+}: CourseCurriculumEditorProps) => {
 	const editor = useCourseCurriculumEditor({ courseId, sectionKey });
+
+	useEffect(() => {
+		onDirtyChange?.(sectionKey, editor.isDirty);
+	}, [editor.isDirty, onDirtyChange, sectionKey]);
 
 	if (!courseId) {
 		return (
@@ -33,7 +44,7 @@ const CourseCurriculumEditor = ({ courseId, sectionKey, title, description }: Co
 
 	return (
 		<Stack gap={4}>
-			<Box border="1px solid" borderColor="border.default" borderRadius="xl" p={4}>
+			<Box border="1px solid" borderColor="gray.500" borderRadius="xl" bg="bg.card" p={4}>
 				<HStack justify="space-between" gap={3} flexWrap="wrap">
 					<Box>
 						<HStack gap={2} flexWrap="wrap">
@@ -44,6 +55,7 @@ const CourseCurriculumEditor = ({ courseId, sectionKey, title, description }: Co
 							{editor.collapsedModuleCount ? (
 								<Badge colorPalette="gray">{editor.collapsedModuleCount} collapsed</Badge>
 							) : null}
+							{editor.isDirty ? <Badge colorPalette="orange">Unsaved curriculum</Badge> : null}
 						</HStack>
 						<Text mt={1} fontSize="sm" color="text.muted">
 							{description}
@@ -74,12 +86,12 @@ const CourseCurriculumEditor = ({ courseId, sectionKey, title, description }: Co
 						<Button
 							type="button"
 							bg="primary"
-							color="text.inverse"
+							color="ink.900"
 							borderRadius="full"
 							disabled={editor.isSaving}
 							onClick={editor.saveCurriculum}
 						>
-							{editor.isSaving ? 'Saving...' : 'Save curriculum'}
+							{editor.isSaving ? 'Saving curriculum...' : 'Save curriculum'}
 						</Button>
 					</HStack>
 				</HStack>
@@ -117,6 +129,7 @@ const CourseCurriculumEditor = ({ courseId, sectionKey, title, description }: Co
 				selectedSubsectionIndex={editor.selectedSubsectionIndex}
 				selectedSubsection={editor.selectedSubsection}
 				feedback={editor.feedback}
+				isDirty={editor.isDirty}
 				isSaving={editor.isSaving}
 				uploadingBlockKey={editor.uploadingBlockKey}
 				onClose={editor.closeSubsectionPanel}

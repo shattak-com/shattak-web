@@ -1,7 +1,7 @@
 import type { AdminCourseLevel, AdminCourseMode, AdminCourseStatus } from '~/lib/api/admin-courses';
 
 import type { CourseEditorFormValues } from './schema';
-import type { CourseEditorStep, CourseEditorStepId } from './types';
+import type { CourseEditorStep, CourseEditorStepGroup, CourseEditorStepId } from './types';
 
 export const courseEditorSteps: CourseEditorStep[] = [
 	{ id: 'basics', label: 'Basics', description: 'Public identity, categories, and course positioning.' },
@@ -32,6 +32,21 @@ export const courseEditorSteps: CourseEditorStep[] = [
 		description: 'Materials learners receive after sessions.'
 	},
 	{ id: 'review', label: 'Review', description: 'Confirm status and save the course.' }
+];
+
+export const courseEditorStepGroups: CourseEditorStepGroup[] = [
+	{
+		label: 'Course details',
+		stepIds: ['basics', 'media', 'highlights', 'outcomes', 'audienceTools', 'instructors', 'gallery', 'reviews']
+	},
+	{
+		label: 'Curriculum',
+		stepIds: ['lessons', 'liveSessions', 'postSessionMaterials']
+	},
+	{
+		label: 'Final check',
+		stepIds: ['review']
+	}
 ];
 
 export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {

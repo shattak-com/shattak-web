@@ -33,6 +33,7 @@ export const useCourseCurriculumEditor = ({
 	const [curriculum, setCurriculum] = useState<AdminCourseCurriculum>(emptyCurriculum);
 	const [isLoading, setIsLoading] = useState(Boolean(courseId));
 	const [isSaving, setIsSaving] = useState(false);
+	const [isDirty, setIsDirty] = useState(false);
 	const [uploadingBlockKey, setUploadingBlockKey] = useState<string | null>(null);
 	const [feedback, setFeedback] = useState<CurriculumFeedback | null>(null);
 	const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval | null>(null);
@@ -72,6 +73,7 @@ export const useCourseCurriculumEditor = ({
 			.then(result => {
 				if (isMounted) {
 					setCurriculum(normalizeCurriculum(result.curriculum));
+					setIsDirty(false);
 				}
 			})
 			.catch(error => {
@@ -117,6 +119,7 @@ export const useCourseCurriculumEditor = ({
 	}, [sectionModules, selectedModuleIndex, selectedSubsectionIndex]);
 
 	const updateSectionModules = (update: (modules: AdminCurriculumModule[]) => AdminCurriculumModule[]) => {
+		setIsDirty(true);
 		setCurriculum(currentCurriculum => {
 			const nextModules = normalizeModules(sectionKey, update(currentCurriculum.sections[sectionKey] ?? []));
 
@@ -398,6 +401,7 @@ export const useCourseCurriculumEditor = ({
 			const result = await replaceAdminCourseCurriculum(courseId, normalizedCurriculum);
 
 			setCurriculum(normalizeCurriculum(result.curriculum));
+			setIsDirty(false);
 			setFeedback({ tone: 'success', message: 'Curriculum saved.' });
 		} catch (error) {
 			setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Unable to save curriculum.' });
@@ -459,6 +463,7 @@ export const useCourseCurriculumEditor = ({
 		expandAllModules,
 		feedback,
 		isLoading,
+		isDirty,
 		isModuleCollapsed,
 		isSaving,
 		moveModule,

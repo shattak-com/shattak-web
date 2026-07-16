@@ -11,6 +11,7 @@ import remarkMath from 'remark-math';
 import { getSafeExternalUrl, getSafeIframeUrl } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 import { lessonMarkdownSanitizeSchema } from '~/lib/components/learning/lesson-content/lesson-markdown-sanitize';
 import { MermaidDiagram } from '~/lib/components/learning/lesson-content/MermaidDiagram';
+import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
 
 type LessonMarkdownContentProps = {
 	value: string;
@@ -221,33 +222,15 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 
 						return safeSrc ? <source src={safeSrc} type={type} media={media} /> : null;
 					},
-					object: ({ data, type, width, height, children }) => {
+					object: ({ data, type, height }) => {
 						const safeData = getSafeExternalUrl(typeof data === 'string' ? data : '');
 
-						return safeData && type === 'application/pdf' ? (
-							<object
-								data={safeData}
-								type="application/pdf"
-								width={width}
-								height={height}
-								style={{ border: '1px solid var(--chakra-colors-border-default)', minHeight: '560px', width: '100%' }}
-							>
-								{children || 'This browser cannot preview the PDF.'}
-							</object>
-						) : null;
+						return safeData && type === 'application/pdf' ? <PdfPreview url={safeData} height={height} /> : null;
 					},
-					embed: ({ src, type, width, height }) => {
+					embed: ({ src, type, height }) => {
 						const safeSrc = getSafeExternalUrl(typeof src === 'string' ? src : '');
 
-						return safeSrc && type === 'application/pdf' ? (
-							<embed
-								src={safeSrc}
-								type="application/pdf"
-								width={width}
-								height={height}
-								style={{ border: '1px solid var(--chakra-colors-border-default)', minHeight: '560px', width: '100%' }}
-							/>
-						) : null;
+						return safeSrc && type === 'application/pdf' ? <PdfPreview url={safeSrc} height={height} /> : null;
 					},
 					input: ({
 						type,

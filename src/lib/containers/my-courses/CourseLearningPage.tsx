@@ -45,6 +45,7 @@ import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
 import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
+import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
 
 type CourseLearningPageProps = {
 	courseId: string;
@@ -303,18 +304,7 @@ const PdfLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
 
 	return (
 		<LessonResourceCard block={block} label={block.type === 'PDF_UPLOAD' ? 'Uploaded PDF' : 'PDF link'}>
-			{safeUrl ? (
-				<iframe
-					title={block.title || 'PDF lesson resource'}
-					src={safeUrl}
-					style={{
-						border: '1px solid var(--chakra-colors-border-default)',
-						borderRadius: 'var(--chakra-radii-lg)',
-						height: 'min(560px, 70vh)',
-						width: '100%'
-					}}
-				/>
-			) : null}
+			{safeUrl ? <PdfPreview url={safeUrl} height={560} title={block.title || 'PDF lesson resource'} /> : null}
 		</LessonResourceCard>
 	);
 };

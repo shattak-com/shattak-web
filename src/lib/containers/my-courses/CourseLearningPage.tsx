@@ -10,6 +10,7 @@ import {
 	FiCheck,
 	FiCheckCircle,
 	FiChevronDown,
+	FiChevronLeft,
 	FiChevronRight,
 	FiClipboard,
 	FiExternalLink,
@@ -47,6 +48,7 @@ import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/
 import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
 import { PresentationPreview } from '~/lib/components/learning/lesson-content/PresentationPreview';
+import ThemeToggle from '~/lib/components/ThemeToggle';
 
 type CourseLearningPageProps = {
 	courseId: string;
@@ -534,6 +536,8 @@ const CourseLessonsTab = ({
 	onScrollBottomReached
 }: CourseLessonsTabProps) => {
 	const contentRef = useRef<HTMLDivElement | null>(null);
+	const lessonStartRef = useRef<HTMLDivElement | null>(null);
+	const previousActiveSubsectionIdRef = useRef('');
 	const lessons = lessonsResult?.lessons ?? null;
 	const activeContext = getActiveLessonContext(lessons);
 	const activeSubsectionId = activeContext?.subsection.id ?? '';
@@ -543,13 +547,25 @@ const CourseLessonsTab = ({
 			return;
 		}
 
-		if (canBypassProgression) {
-			onScrollBottomReached();
+		const contentElement = contentRef.current;
+		if (!contentElement) {
 			return;
 		}
 
-		const contentElement = contentRef.current;
-		if (!contentElement) {
+		const previousActiveSubsectionId = previousActiveSubsectionIdRef.current;
+		previousActiveSubsectionIdRef.current = activeSubsectionId;
+
+		if (previousActiveSubsectionId && previousActiveSubsectionId !== activeSubsectionId) {
+			contentElement.scrollTo({ top: 0, behavior: 'auto' });
+
+			const overflowY = window.getComputedStyle(contentElement).overflowY;
+			if (overflowY !== 'auto' && overflowY !== 'scroll') {
+				lessonStartRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+			}
+		}
+
+		if (canBypassProgression) {
+			onScrollBottomReached();
 			return;
 		}
 
@@ -604,7 +620,15 @@ const CourseLessonsTab = ({
 
 	return (
 		<Stack gap={4}>
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+			<Box
+				ref={lessonStartRef}
+				border="1px solid"
+				borderColor="border.default"
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 6 }}
+				scrollMarginTop="88px"
+			>
 				<Stack gap={3}>
 					<HStack gap={2} flexWrap="wrap">
 						<Badge borderRadius="full" px={3} py={1}>
@@ -1115,35 +1139,73 @@ type CourseWorkspaceSidebarProps = {
 	activeTab: CourseTabId;
 	currentUser: AuthenticatedUser | null;
 	enrollment: CourseEnrollment;
+	isCollapsed?: boolean;
 	onClose?: () => void;
 	onTabChange: (tabId: CourseTabId) => void;
+	onToggleCollapse?: () => void;
 };
 
 const CourseWorkspaceSidebar = ({
 	activeTab,
 	currentUser,
 	enrollment,
+	isCollapsed = false,
 	onClose,
-	onTabChange
+	onTabChange,
+	onToggleCollapse
 }: CourseWorkspaceSidebarProps) => {
 	const displayName = currentUser?.name || currentUser?.email || 'User';
 	const canOpenLearningTabs = Boolean(enrollment.accessUnlockedAt) || isAdminLearner(currentUser);
 
 	return (
 		<Stack h="full" gap={0} bg="bg.card">
-			<HStack h="72px" px={6} justify="space-between" borderBottom="1px solid" borderColor="border.default">
-				<Text fontSize="3xl" fontWeight="bold" color="text.primary">
-					Shattak
-				</Text>
+			<HStack
+				h="72px"
+				px={isCollapsed ? 1.5 : 6}
+				justify="space-between"
+				borderBottom="1px solid"
+				borderColor="border.default"
+			>
+				{isCollapsed ? (
+					<Box
+						boxSize="32px"
+						borderRadius="lg"
+						bg="primary"
+						color="text.inverse"
+						display="grid"
+						fontWeight="bold"
+						placeItems="center"
+					>
+						S
+					</Box>
+				) : (
+					<Text fontSize="3xl" fontWeight="bold" color="text.primary">
+						Shattak
+					</Text>
+				)}
 				{onClose ? (
 					<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
 						<FiX />
 					</Button>
+				) : onToggleCollapse ? (
+					<Button
+						variant="ghost"
+						size="sm"
+						borderRadius="full"
+						boxSize="30px"
+						minW="30px"
+						p={0}
+						onClick={onToggleCollapse}
+						aria-label={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
+						title={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
+					>
+						{isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+					</Button>
 				) : null}
 			</HStack>
 
-			<Stack flex="1" gap={3} px={4} py={5}>
-				<Box px={2} pb={2}>
+			<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5}>
+				<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
 					<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 						Course dashboard
 					</Text>
@@ -1161,14 +1223,16 @@ const CourseWorkspaceSidebar = ({
 					return (
 						<Button
 							key={tab.id}
-							justifyContent="space-between"
+							justifyContent={isCollapsed ? 'center' : 'space-between'}
 							borderRadius="lg"
 							variant={isActive ? 'solid' : 'ghost'}
 							bg={isActive ? 'primary' : undefined}
 							color={isActive ? 'text.inverse' : 'text.primary'}
 							disabled={isLocked}
 							minH="48px"
-							px={4}
+							px={isCollapsed ? 0 : 4}
+							position="relative"
+							title={isCollapsed ? tab.label : undefined}
 							onClick={() => {
 								onTabChange(tab.id);
 								onClose?.();
@@ -1176,18 +1240,32 @@ const CourseWorkspaceSidebar = ({
 						>
 							<HStack gap={3}>
 								<Icon />
-								<Text as="span" fontWeight="semibold">
-									{tab.label}
-								</Text>
+								{!isCollapsed ? (
+									<Text as="span" fontWeight="semibold">
+										{tab.label}
+									</Text>
+								) : null}
 							</HStack>
-							{showLock ? <FiLock /> : null}
+							{showLock && !isCollapsed ? (
+								<Box>
+									<FiLock size={16} />
+								</Box>
+							) : null}
 						</Button>
 					);
 				})}
 			</Stack>
 
-			<Box borderTop="1px solid" borderColor="border.default" p={4}>
-				<HStack border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.subtle" p={3} gap={3}>
+			<Box borderTop="1px solid" borderColor="border.default" p={isCollapsed ? 2 : 4}>
+				<HStack
+					justify={isCollapsed ? 'center' : 'flex-start'}
+					border="1px solid"
+					borderColor="border.default"
+					borderRadius="xl"
+					bg="bg.subtle"
+					p={isCollapsed ? 2 : 3}
+					gap={3}
+				>
 					{currentUser ? (
 						<UserAvatar user={currentUser} label={displayName} size="42px" />
 					) : (
@@ -1204,7 +1282,7 @@ const CourseWorkspaceSidebar = ({
 							U
 						</Box>
 					)}
-					<Box minW={0}>
+					<Box display={isCollapsed ? 'none' : 'block'} minW={0}>
 						<Text fontWeight="semibold" lineClamp={1}>
 							{displayName}
 						</Text>
@@ -1697,8 +1775,10 @@ type CourseLearningRailProps = {
 	dashboard: CourseLearningDashboard | null;
 	enrollment: CourseEnrollment;
 	isVisible: boolean;
+	isCollapsed: boolean;
 	lessons: CourseLessonsState | null;
 	onLessonSelect: (subsectionId: string) => void;
+	onToggleCollapse: () => void;
 	showLessonRail: boolean;
 	showUnlockedOverviewRail: boolean;
 };
@@ -1709,11 +1789,17 @@ const CourseLearningRail = ({
 	dashboard,
 	enrollment,
 	isVisible,
+	isCollapsed,
 	lessons,
 	onLessonSelect,
+	onToggleCollapse,
 	showLessonRail,
 	showUnlockedOverviewRail
 }: CourseLearningRailProps) => {
+	if (!isVisible) {
+		return null;
+	}
+
 	let content = <CourseNextStepsPanel />;
 
 	if (showUnlockedOverviewRail && dashboard) {
@@ -1729,10 +1815,48 @@ const CourseLearningRail = ({
 		content = <LessonProgressSidebar lessons={lessons} onLessonSelect={onLessonSelect} />;
 	}
 
+	if (isCollapsed) {
+		return (
+			<Box justifySelf="end" position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+				<Button
+					variant="outline"
+					borderRadius="lg"
+					boxSize="44px"
+					minW="44px"
+					p={0}
+					bg="bg.card"
+					onClick={onToggleCollapse}
+					aria-label="Expand course side panel"
+					title="Expand course side panel"
+				>
+					<FiChevronLeft />
+				</Button>
+			</Box>
+		);
+	}
+
 	return (
-		<Box display={{ base: isVisible ? 'block' : 'none' }} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+		<Stack gap={2} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+			<HStack justify="space-between" px={2}>
+				<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+					Course panel
+				</Text>
+				<Button
+					variant="ghost"
+					size="sm"
+					borderRadius="full"
+					boxSize="34px"
+					minW="34px"
+					p={0}
+					onClick={onToggleCollapse}
+					aria-label="Collapse course side panel"
+					title="Collapse course side panel"
+				>
+					<FiChevronRight />
+				</Button>
+			</HStack>
 			{content}
-		</Box>
+		</Stack>
 	);
 };
 
@@ -1746,6 +1870,8 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
 	const [learnerName, setLearnerName] = useState('');
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+	const [isWorkspaceSidebarCollapsed, setIsWorkspaceSidebarCollapsed] = useState(false);
+	const [isLearningRailCollapsed, setIsLearningRailCollapsed] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 	const [lessonsResult, setLessonsResult] = useState<CourseLessonsResult | null>(null);
@@ -2061,16 +2187,23 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				position="fixed"
 				insetY={0}
 				left={0}
-				w={{ lg: '280px', '2xl': '300px' }}
+				w={{
+					lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
+					'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
+				}}
 				borderRight="1px solid"
 				borderColor="border.default"
 				zIndex={20}
+				transition="width 180ms ease"
+				_motionReduce={{ transition: 'none' }}
 			>
 				<CourseWorkspaceSidebar
 					activeTab={activeTab}
 					currentUser={currentUser}
 					enrollment={enrollment}
+					isCollapsed={isWorkspaceSidebarCollapsed}
 					onTabChange={handleTabChange}
+					onToggleCollapse={() => setIsWorkspaceSidebarCollapsed(value => !value)}
 				/>
 			</Box>
 
@@ -2089,7 +2222,15 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				</Box>
 			) : null}
 
-			<Box ml={{ lg: '280px', '2xl': '300px' }} minH="100vh">
+			<Box
+				ml={{
+					lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
+					'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
+				}}
+				minH="100vh"
+				transition="margin-left 180ms ease"
+				_motionReduce={{ transition: 'none' }}
+			>
 				<Box
 					position="sticky"
 					top={0}
@@ -2143,6 +2284,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							<Badge colorPalette={enrollment.accessUnlockedAt ? 'green' : 'orange'} borderRadius="full" px={3} py={1}>
 								{enrollment.accessUnlockedAt ? 'Overview unlocked' : 'Overview locked'}
 							</Badge>
+							<ThemeToggle />
 							<Button asChild borderRadius="full" size="sm" variant="outline">
 								<Link href={`/course/${courseId}`}>Back to course</Link>
 							</Button>
@@ -2153,11 +2295,15 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				<Box px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
 					<Box
 						display="grid"
-						gridTemplateColumns={{
-							base: '1fr',
-							xl: 'minmax(520px, 1fr) 300px',
-							'2xl': 'minmax(680px, 1fr) 340px'
-						}}
+						gridTemplateColumns={
+							shouldShowOverviewRail
+								? {
+										base: '1fr',
+										xl: isLearningRailCollapsed ? 'minmax(0, 1fr) 44px' : 'minmax(520px, 1fr) 340px',
+										'2xl': isLearningRailCollapsed ? 'minmax(0, 1fr) 44px' : 'minmax(680px, 1fr) 380px'
+									}
+								: '1fr'
+						}
 						gap={{ base: 4, xl: 5 }}
 						alignItems="start"
 					>
@@ -2201,8 +2347,10 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							dashboard={dashboard}
 							enrollment={enrollment}
 							isVisible={shouldShowOverviewRail}
+							isCollapsed={isLearningRailCollapsed}
 							lessons={lessonsResult?.lessons ?? null}
 							onLessonSelect={handleLessonSelect}
+							onToggleCollapse={() => setIsLearningRailCollapsed(value => !value)}
 							showLessonRail={shouldShowLessonRail}
 							showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
 						/>

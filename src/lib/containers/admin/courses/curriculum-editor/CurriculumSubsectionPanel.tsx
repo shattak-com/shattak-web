@@ -205,6 +205,8 @@ export const CurriculumSubsectionPanel = ({
 													bg={isSelected ? 'bg.subtle' : 'bg.card'}
 													boxShadow={isSelected ? '0 0 0 1px var(--chakra-colors-brand-600)' : 'none'}
 													p={3}
+													minW={0}
+													overflow="hidden"
 													transition="border-color 0.16s ease, background-color 0.16s ease"
 													_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
 												>
@@ -214,10 +216,14 @@ export const CurriculumSubsectionPanel = ({
 															variant="ghost"
 															justifyContent="flex-start"
 															h="auto"
+															minW={0}
+															w="full"
+															overflow="hidden"
+															whiteSpace="normal"
 															p={0}
 															onClick={() => onSetSelectedSubsectionIndex(currentSubsectionIndex)}
 														>
-															<Stack gap={1} align="stretch" w="100%">
+															<Stack gap={1} align="stretch" minW={0} w="100%" overflow="hidden">
 																<HStack gap={2} flexWrap="wrap">
 																	<Badge colorPalette="gray">Subsection {currentSubsectionIndex + 1}</Badge>
 																	{subsection.contentBlocks.length ? (
@@ -229,7 +235,14 @@ export const CurriculumSubsectionPanel = ({
 																		</Badge>
 																	) : null}
 																</HStack>
-																<Text fontSize="sm" fontWeight="semibold" textAlign="left">
+																<Text
+																	fontSize="sm"
+																	fontWeight="semibold"
+																	textAlign="left"
+																	whiteSpace="normal"
+																	overflowWrap="anywhere"
+																	wordBreak="break-word"
+																>
 																	{subsection.title.trim() || 'Untitled subsection'}
 																</Text>
 																<Text fontSize="xs" color="text.muted" textAlign="left">

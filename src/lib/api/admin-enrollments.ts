@@ -1,3 +1,4 @@
+import type { AdminCourseLevel, AdminCourseMode, AdminCourseStatus } from '~/lib/api/admin-courses';
 import { getJson } from '~/lib/api/client';
 
 export type AdminEnrollmentCourseSummary = {
@@ -5,6 +6,9 @@ export type AdminEnrollmentCourseSummary = {
 	slug: string;
 	title: string;
 	status: 'DRAFT' | 'PUBLISHED';
+	categories: string[];
+	level: AdminCourseLevel;
+	mode: AdminCourseMode;
 	price: number;
 	thumbnailImage: string;
 	enrollmentCount: number;
@@ -48,6 +52,12 @@ export type AdminEnrollmentPagination = {
 
 export type AdminEnrollmentCourseListParams = {
 	q?: string;
+	status?: AdminCourseStatus | '';
+	categories?: string[];
+	level?: AdminCourseLevel | '';
+	mode?: AdminCourseMode | '';
+	sortBy?: 'createdAt' | 'updatedAt' | 'title' | 'status' | 'publishedAt' | 'price' | 'enrollmentCount' | 'rating';
+	sortOrder?: 'asc' | 'desc';
 	page?: number;
 	pageSize?: number;
 };
@@ -57,7 +67,13 @@ export const listAdminEnrollmentCourses = (params: AdminEnrollmentCourseListPara
 
 	Object.entries(params).forEach(([key, value]) => {
 		if (value !== undefined && value !== '') {
-			searchParams.set(key, String(value));
+			if (Array.isArray(value)) {
+				if (value.length) {
+					searchParams.set(key, value.join(','));
+				}
+			} else {
+				searchParams.set(key, String(value));
+			}
 		}
 	});
 

@@ -190,20 +190,30 @@ export const CurriculumModuleCard = ({
 										borderColor="gray.500"
 										borderRadius="lg"
 										h="auto"
+										minW={0}
+										overflow="hidden"
+										whiteSpace="normal"
 										justifyContent="flex-start"
 										p={3}
 										_hover={{ borderColor: 'primary', bg: 'bg.subtle' }}
 										_focusVisible={{ borderColor: 'primary', boxShadow: 'primary' }}
 										onClick={() => onOpenSubsectionPanel(moduleIndex, subsectionIndex)}
 									>
-										<Stack gap={1.5} align="stretch" minW={0} w="full">
+										<Stack gap={1.5} align="stretch" minW={0} w="full" overflow="hidden">
 											<HStack gap={2} flexWrap="wrap">
 												<Badge colorPalette="gray">Subsection {subsectionIndex + 1}</Badge>
 												{subsection.contentBlocks.length ? (
 													<Badge colorPalette="purple">{subsection.contentBlocks.length} blocks</Badge>
 												) : null}
 											</HStack>
-											<Text fontSize="sm" fontWeight="semibold" textAlign="left">
+											<Text
+												fontSize="sm"
+												fontWeight="semibold"
+												textAlign="left"
+												whiteSpace="normal"
+												overflowWrap="anywhere"
+												wordBreak="break-word"
+											>
 												{subsection.title.trim() || 'Untitled subsection'}
 											</Text>
 											<Text fontSize="xs" color="text.muted" textAlign="left">

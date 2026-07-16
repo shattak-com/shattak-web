@@ -41,6 +41,16 @@ export const getSafeExternalUrl = (value: string) => {
 	}
 };
 
+export const getSafePresentationViewerUrl = (value: string) => {
+	const sourceUrl = getSafeExternalUrl(value);
+
+	if (!sourceUrl) {
+		return '';
+	}
+
+	return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(sourceUrl)}`;
+};
+
 export const getSafeIframeUrl = (value: string) => {
 	const videoId = getYouTubeVideoId(value);
 

@@ -46,6 +46,7 @@ import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
 import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
+import { PresentationPreview } from '~/lib/components/learning/lesson-content/PresentationPreview';
 
 type CourseLearningPageProps = {
 	courseId: string;
@@ -188,11 +189,13 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 const LessonResourceCard = ({
 	block,
 	label,
-	children
+	children,
+	showOpenAction = true
 }: {
 	block: CourseLessonContentBlock;
 	label: string;
 	children?: ReactNode;
+	showOpenAction?: boolean;
 }) => {
 	const safeUrl = getSafeExternalUrl(block.url);
 
@@ -221,7 +224,7 @@ const LessonResourceCard = ({
 							</Heading>
 						</Box>
 					</HStack>
-					{safeUrl ? (
+					{safeUrl && showOpenAction ? (
 						<Button asChild size="sm" variant="outline" borderRadius="full" flexShrink={0}>
 							<Link href={safeUrl} target="_blank" rel="noopener noreferrer">
 								Open <FiExternalLink />
@@ -309,6 +312,19 @@ const PdfLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
 	);
 };
 
+const PresentationLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
+	const safeUrl = getSafeExternalUrl(block.url);
+	const label = block.type === 'PPT_UPLOAD' ? 'Uploaded presentation' : 'Presentation link';
+
+	return (
+		<LessonResourceCard block={block} label={label} showOpenAction={false}>
+			{safeUrl ? (
+				<PresentationPreview url={safeUrl} title={block.title || block.fileName || 'Course presentation'} />
+			) : null}
+		</LessonResourceCard>
+	);
+};
+
 const LessonContentBlockView = ({ block }: { block: CourseLessonContentBlock }) => {
 	switch (block.type) {
 		case 'TEXT':
@@ -320,8 +336,11 @@ const LessonContentBlockView = ({ block }: { block: CourseLessonContentBlock }) 
 		case 'PDF_UPLOAD':
 		case 'PDF_LINK':
 			return <PdfLessonBlock block={block} />;
+		case 'PPT_UPLOAD':
+		case 'PPT_LINK':
+			return <PresentationLessonBlock block={block} />;
 		default:
-			return <LessonResourceCard block={block} label={block.type === 'PPT_UPLOAD' ? 'Uploaded PPT' : 'PPT link'} />;
+			return null;
 	}
 };
 

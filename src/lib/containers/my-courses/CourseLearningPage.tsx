@@ -23,9 +23,6 @@ import {
 	FiUsers,
 	FiX
 } from 'react-icons/fi';
-import ReactMarkdown from 'react-markdown';
-import rehypeSanitize from 'rehype-sanitize';
-import remarkGfm from 'remark-gfm';
 
 import { trackCourseDashboardEvent, trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
@@ -46,6 +43,8 @@ import {
 import UserAvatar from '~/lib/components/auth/UserAvatar';
 import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
+import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
+import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 
 type CourseLearningPageProps = {
 	courseId: string;
@@ -82,49 +81,6 @@ const courseNextSteps = [
 
 const isAdminLearner = (user: AuthenticatedUser | null) =>
 	user?.roles.some(role => role === 'ADMIN' || role === 'SUPER_ADMIN') ?? false;
-
-const getYouTubeVideoId = (value: string) => {
-	if (!value.trim()) {
-		return null;
-	}
-
-	try {
-		const url = new URL(value.trim());
-		const hostname = url.hostname.replace(/^www\./, '');
-
-		if (hostname === 'youtu.be') {
-			return url.pathname.split('/').filter(Boolean)[0] ?? null;
-		}
-
-		if (!['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'].includes(hostname)) {
-			return null;
-		}
-
-		if (url.pathname === '/watch') {
-			return url.searchParams.get('v');
-		}
-
-		const [firstSegment, secondSegment] = url.pathname.split('/').filter(Boolean);
-
-		if (['embed', 'shorts', 'live'].includes(firstSegment ?? '')) {
-			return secondSegment ?? null;
-		}
-
-		return null;
-	} catch {
-		return null;
-	}
-};
-
-const getSafeExternalUrl = (value: string) => {
-	try {
-		const url = new URL(value);
-
-		return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : '';
-	} catch {
-		return '';
-	}
-};
 
 const getActiveLessonContext = (lessons: CourseLessonsState | null) => {
 	if (!lessons) {
@@ -228,158 +184,6 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	</Box>
 );
 
-const MarkdownContent = ({ value }: { value: string }) => {
-	if (!value.trim()) {
-		return (
-			<Text color="text.muted" fontSize="sm">
-				No text content added yet.
-			</Text>
-		);
-	}
-
-	return (
-		<Box
-			color="text.secondary"
-			lineHeight="tall"
-			overflowWrap="anywhere"
-			css={{
-				'& > * + *': {
-					marginTop: '1rem'
-				}
-			}}
-		>
-			<ReactMarkdown
-				remarkPlugins={[remarkGfm]}
-				rehypePlugins={[rehypeSanitize]}
-				components={{
-					h1: ({ children }) => (
-						<Heading as="h1" size="xl" color="text.primary" mt={2}>
-							{children}
-						</Heading>
-					),
-					h2: ({ children }) => (
-						<Heading as="h2" size="lg" color="text.primary" mt={2}>
-							{children}
-						</Heading>
-					),
-					h3: ({ children }) => (
-						<Heading as="h3" size="md" color="text.primary">
-							{children}
-						</Heading>
-					),
-					h4: ({ children }) => (
-						<Heading as="h4" size="sm" color="text.primary">
-							{children}
-						</Heading>
-					),
-					p: ({ children }) => (
-						<Text color="text.secondary" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
-							{children}
-						</Text>
-					),
-					a: ({ href, children }) => {
-						const safeHref = getSafeExternalUrl(href ?? '');
-
-						return safeHref ? (
-							<a
-								href={safeHref}
-								target="_blank"
-								rel="noopener noreferrer"
-								style={{ color: 'var(--chakra-colors-primary)', fontWeight: 600 }}
-							>
-								{children}
-							</a>
-						) : (
-							<Box as="span">{children}</Box>
-						);
-					},
-					img: ({ src, alt }) => {
-						const safeSrc = getSafeExternalUrl(typeof src === 'string' ? src : '');
-
-						return safeSrc ? (
-							<img
-								src={safeSrc}
-								alt={alt ?? ''}
-								style={{
-									border: '1px solid var(--chakra-colors-border-default)',
-									borderRadius: 'var(--chakra-radii-lg)',
-									margin: '1rem 0',
-									maxWidth: '100%'
-								}}
-							/>
-						) : null;
-					},
-					blockquote: ({ children }) => (
-						<Box borderLeft="4px solid" borderColor="primary" bg="bg.subtle" borderRadius="md" px={4} py={3}>
-							{children}
-						</Box>
-					),
-					ul: ({ children }) => (
-						<Box as="ul" ps={6}>
-							{children}
-						</Box>
-					),
-					ol: ({ children }) => (
-						<Box as="ol" ps={6}>
-							{children}
-						</Box>
-					),
-					li: ({ children }) => (
-						<Box as="li" mb={1.5}>
-							{children}
-						</Box>
-					),
-					code: ({ children }) => (
-						<Box as="code" bg="bg.subtle" borderRadius="sm" px={1.5} py={0.5}>
-							{children}
-						</Box>
-					),
-					pre: ({ children }) => (
-						<Box
-							as="pre"
-							bg="bg.subtle"
-							border="1px solid"
-							borderColor="border.default"
-							borderRadius="lg"
-							color="text.primary"
-							fontSize="sm"
-							overflowX="auto"
-							p={4}
-						>
-							{children}
-						</Box>
-					),
-					hr: () => <Box borderTop="1px solid" borderColor="border.default" />,
-					table: ({ children }) => (
-						<Box overflowX="auto" border="1px solid" borderColor="border.default" borderRadius="lg">
-							<Box as="table" w="full" minW="520px" borderCollapse="collapse">
-								{children}
-							</Box>
-						</Box>
-					),
-					thead: ({ children }) => (
-						<Box as="thead" bg="bg.subtle">
-							{children}
-						</Box>
-					),
-					th: ({ children }) => (
-						<Box as="th" borderBottom="1px solid" borderColor="border.default" fontSize="sm" p={3} textAlign="left">
-							{children}
-						</Box>
-					),
-					td: ({ children }) => (
-						<Box as="td" borderTop="1px solid" borderColor="border.default" fontSize="sm" p={3}>
-							{children}
-						</Box>
-					)
-				}}
-			>
-				{value}
-			</ReactMarkdown>
-		</Box>
-	);
-};
-
 const LessonResourceCard = ({
 	block,
 	label,
@@ -442,7 +246,7 @@ const TextLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => (
 				{block.title}
 			</Heading>
 		) : null}
-		<MarkdownContent value={block.body} />
+		<LessonMarkdownContent value={block.body} />
 	</Box>
 );
 

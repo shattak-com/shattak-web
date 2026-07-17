@@ -605,6 +605,9 @@ type CourseDashboardEventName =
 	| 'course_lesson_next_clicked'
 	| 'course_lesson_completed'
 	| 'course_doubt_clicked'
+	| 'course_focus_mode_entered'
+	| 'course_focus_mode_exited'
+	| 'course_fullscreen_toggled'
 	| 'course_certificate_earned';
 
 export const trackCourseDashboardEvent = (payload: {
@@ -622,6 +625,7 @@ export const trackCourseDashboardEvent = (payload: {
 	lessonTitle?: string;
 	moduleId?: string;
 	moduleTitle?: string;
+	displayMode?: 'standard' | 'focus' | 'fullscreen';
 	sourcePage?: string;
 }) =>
 	trackMixpanelEvent(payload.eventName, {
@@ -638,6 +642,7 @@ export const trackCourseDashboardEvent = (payload: {
 		lesson_title: payload.lessonTitle,
 		module_id: payload.moduleId,
 		module_title: payload.moduleTitle,
+		display_mode: payload.displayMode,
 		source_page: payload.sourcePage,
 		timestamp: new Date().toISOString()
 	});

@@ -17,8 +17,10 @@ import {
 	FiFileText,
 	FiGift,
 	FiLock,
+	FiMaximize2,
 	FiMenu,
 	FiMessageCircle,
+	FiMinimize2,
 	FiPlayCircle,
 	FiTrendingUp,
 	FiUsers,
@@ -567,7 +569,6 @@ type CourseLessonsTabProps = {
 	isLoading: boolean;
 	lessonsResult: CourseLessonsResult | null;
 	lessonErrorMessage: string;
-	onAskDoubt: () => void;
 	onCompleteLesson: () => void;
 	onPreviousLesson: (subsectionId: string) => void;
 	onRetry: () => void;
@@ -587,25 +588,23 @@ const CourseDashboardSkeleton = () => (
 	</Stack>
 );
 
-type LessonActionBarProps = {
+type LessonNavigationFooterProps = {
 	canComplete: boolean;
 	isCompletingLesson: boolean;
 	nextButtonLabel: string;
-	onAskDoubt: () => void;
 	onCompleteLesson: () => void;
 	onPreviousLesson: () => void;
 	showPreviousLesson: boolean;
 };
 
-const LessonActionBar = ({
+const LessonNavigationFooter = ({
 	canComplete,
 	isCompletingLesson,
 	nextButtonLabel,
-	onAskDoubt,
 	onCompleteLesson,
 	onPreviousLesson,
 	showPreviousLesson
-}: LessonActionBarProps) => (
+}: LessonNavigationFooterProps) => (
 	<Box
 		border="1px solid"
 		borderColor={workspaceBoundaryColor}
@@ -615,23 +614,30 @@ const LessonActionBar = ({
 		p={{ base: 4, md: 5 }}
 	>
 		<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3} align={{ md: 'center' }}>
-			<HStack gap={3} flexWrap="wrap">
-				<Button borderRadius="full" variant="outline" onClick={onAskDoubt}>
-					Ask Doubt - Go to Community <FiExternalLink />
-				</Button>
-				<Button borderRadius="full" variant="outline" disabled={!showPreviousLesson} onClick={onPreviousLesson}>
-					Previous
-				</Button>
-			</HStack>
-
-			<Stack align={{ base: 'stretch', md: 'end' }} gap={2}>
-				<HStack gap={2} justify={{ base: 'flex-start', md: 'flex-end' }}>
+			<Stack gap={2}>
+				<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+					Lesson navigation
+				</Text>
+				<HStack gap={2}>
 					<Box color={canComplete ? 'green.500' : 'text.muted'}>{canComplete ? <FiCheckCircle /> : <FiBookOpen />}</Box>
-					<Text color={canComplete ? 'text.primary' : 'text.muted'} fontSize="xs" fontWeight="semibold">
-						{canComplete ? 'Lesson ready to complete.' : 'Continue reading to unlock the next lesson.'}
+					<Text color={canComplete ? 'text.primary' : 'text.muted'} fontSize="sm" fontWeight="semibold">
+						{canComplete ? 'Lesson ready to complete.' : 'Reach the end of this lesson to continue.'}
 					</Text>
 				</HStack>
+			</Stack>
+
+			<HStack gap={3} flexWrap="wrap" justify={{ base: 'stretch', md: 'flex-end' }}>
 				<Button
+					flex={{ base: 1, md: 'initial' }}
+					borderRadius="full"
+					variant="outline"
+					disabled={!showPreviousLesson}
+					onClick={onPreviousLesson}
+				>
+					Previous
+				</Button>
+				<Button
+					flex={{ base: 1, md: 'initial' }}
 					borderRadius="full"
 					bg="primary"
 					color={workspaceActiveTextColor}
@@ -642,7 +648,7 @@ const LessonActionBar = ({
 				>
 					{nextButtonLabel}
 				</Button>
-			</Stack>
+			</HStack>
 		</Stack>
 	</Box>
 );
@@ -654,7 +660,6 @@ const CourseLessonsTab = ({
 	isLoading,
 	lessonsResult,
 	lessonErrorMessage,
-	onAskDoubt,
 	onCompleteLesson,
 	onPreviousLesson,
 	onRetry,
@@ -768,12 +773,11 @@ const CourseLessonsTab = ({
 			onPreviousLesson(previousLesson.subsection.id);
 		}
 	};
-	const lessonActionBar = (
-		<LessonActionBar
+	const lessonNavigationFooter = (
+		<LessonNavigationFooter
 			canComplete={canComplete}
 			isCompletingLesson={isCompletingLesson}
 			nextButtonLabel={nextButtonLabel}
-			onAskDoubt={onAskDoubt}
 			onCompleteLesson={onCompleteLesson}
 			onPreviousLesson={handlePreviousLesson}
 			showPreviousLesson={Boolean(previousLesson)}
@@ -820,10 +824,6 @@ const CourseLessonsTab = ({
 				</Stack>
 			</Box>
 
-			<Box display={{ base: 'none', lg: 'block' }} position="sticky" top="84px" zIndex={5}>
-				{lessonActionBar}
-			</Box>
-
 			<Box
 				border="1px solid"
 				borderColor={workspaceBoundaryColor}
@@ -843,7 +843,7 @@ const CourseLessonsTab = ({
 				</Stack>
 			</Box>
 
-			<Box display={{ base: 'block', lg: 'none' }}>{lessonActionBar}</Box>
+			{lessonNavigationFooter}
 		</Stack>
 	);
 };
@@ -1981,7 +1981,6 @@ type CourseLearningMainContentProps = {
 	onLessonRetry: () => void;
 	onLessonSelect: (subsectionId: string) => void;
 	onTabChange: (tabId: CourseTabId) => void;
-	onAskDoubt: () => void;
 };
 
 const CourseLearningMainContent = ({
@@ -2006,8 +2005,7 @@ const CourseLearningMainContent = ({
 	onLessonComplete,
 	onLessonRetry,
 	onLessonSelect,
-	onTabChange,
-	onAskDoubt
+	onTabChange
 }: CourseLearningMainContentProps) => {
 	if (activeTab === 'overview') {
 		return (
@@ -2035,7 +2033,6 @@ const CourseLearningMainContent = ({
 				isLoading={isLessonsLoading}
 				lessonsResult={lessonsResult}
 				lessonErrorMessage={lessonErrorMessage}
-				onAskDoubt={onAskDoubt}
 				onCompleteLesson={onLessonComplete}
 				onPreviousLesson={onLessonSelect}
 				onRetry={onLessonRetry}
@@ -2251,6 +2248,10 @@ const useCourseWorkspaceBootstrap = ({
 const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const currentPath = `/my-courses/${courseId}`;
 	const hasTrackedCertificateRef = useRef<string | null>(null);
+	const workspaceRootRef = useRef<HTMLDivElement | null>(null);
+	const focusModeButtonRef = useRef<HTMLButtonElement | null>(null);
+	const exitFocusModeButtonRef = useRef<HTMLButtonElement | null>(null);
+	const wasFocusModeRef = useRef(false);
 	const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
 	const [dashboard, setDashboard] = useState<CourseLearningDashboard | null>(null);
 	const [activeTab, setActiveTab] = useState<CourseTabId>('overview');
@@ -2259,6 +2260,9 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 	const [isWorkspaceSidebarCollapsed, setIsWorkspaceSidebarCollapsed] = useState(false);
 	const [isLearningRailCollapsed, setIsLearningRailCollapsed] = useState(false);
+	const [isFocusMode, setIsFocusMode] = useState(false);
+	const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+	const [isBrowserFullscreenSupported, setIsBrowserFullscreenSupported] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 	const [lessonsResult, setLessonsResult] = useState<CourseLessonsResult | null>(null);
@@ -2440,6 +2444,147 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		}
 	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
 
+	const restoreScrollAfterWorkspaceChange = useCallback((scrollTop: number) => {
+		window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
+				window.scrollTo({ top: scrollTop, behavior: 'auto' });
+			});
+		});
+	}, []);
+
+	const handleEnterFocusMode = useCallback(() => {
+		const scrollTop = window.scrollY;
+		const activeContext = getActiveLessonContext(lessonsResult?.lessons ?? null);
+
+		trackCourseDashboardEvent({
+			eventName: 'course_focus_mode_entered',
+			courseId,
+			courseTitle: enrollment?.course.title,
+			userId: currentUser?.id,
+			lessonId: activeContext?.subsection.id,
+			lessonTitle: activeContext?.subsection.title,
+			moduleId: activeContext?.courseModule.id,
+			moduleTitle: activeContext?.courseModule.title,
+			displayMode: 'focus',
+			sourcePage: currentPath
+		});
+
+		setIsMobileNavOpen(false);
+		setIsFocusMode(true);
+		restoreScrollAfterWorkspaceChange(scrollTop);
+	}, [
+		courseId,
+		currentPath,
+		currentUser?.id,
+		enrollment?.course.title,
+		lessonsResult?.lessons,
+		restoreScrollAfterWorkspaceChange
+	]);
+
+	const handleExitFocusMode = useCallback(() => {
+		const scrollTop = window.scrollY;
+		const activeContext = getActiveLessonContext(lessonsResult?.lessons ?? null);
+
+		trackCourseDashboardEvent({
+			eventName: 'course_focus_mode_exited',
+			courseId,
+			courseTitle: enrollment?.course.title,
+			userId: currentUser?.id,
+			lessonId: activeContext?.subsection.id,
+			lessonTitle: activeContext?.subsection.title,
+			moduleId: activeContext?.courseModule.id,
+			moduleTitle: activeContext?.courseModule.title,
+			displayMode: 'standard',
+			sourcePage: currentPath
+		});
+
+		if (document.fullscreenElement) {
+			document.exitFullscreen().catch(() => undefined);
+		}
+
+		setIsFocusMode(false);
+		restoreScrollAfterWorkspaceChange(scrollTop);
+	}, [
+		courseId,
+		currentPath,
+		currentUser?.id,
+		enrollment?.course.title,
+		lessonsResult?.lessons,
+		restoreScrollAfterWorkspaceChange
+	]);
+
+	const handleToggleBrowserFullscreen = useCallback(async () => {
+		const workspaceRoot = workspaceRootRef.current;
+		if (!workspaceRoot || !document.fullscreenEnabled) {
+			return;
+		}
+
+		if (document.fullscreenElement) {
+			trackCourseDashboardEvent({
+				eventName: 'course_fullscreen_toggled',
+				courseId,
+				courseTitle: enrollment?.course.title,
+				userId: currentUser?.id,
+				displayMode: 'focus',
+				sourcePage: currentPath
+			});
+			await document.exitFullscreen();
+			return;
+		}
+
+		trackCourseDashboardEvent({
+			eventName: 'course_fullscreen_toggled',
+			courseId,
+			courseTitle: enrollment?.course.title,
+			userId: currentUser?.id,
+			displayMode: 'fullscreen',
+			sourcePage: currentPath
+		});
+		await workspaceRoot.requestFullscreen();
+	}, [courseId, currentPath, currentUser?.id, enrollment?.course.title]);
+
+	useEffect(() => {
+		setIsBrowserFullscreenSupported(document.fullscreenEnabled);
+
+		const handleFullscreenChange = () => {
+			setIsBrowserFullscreen(Boolean(document.fullscreenElement));
+		};
+
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+	}, []);
+
+	useEffect(() => {
+		if (isFocusMode) {
+			exitFocusModeButtonRef.current?.focus({ preventScroll: true });
+		} else if (wasFocusModeRef.current) {
+			focusModeButtonRef.current?.focus({ preventScroll: true });
+		}
+
+		wasFocusModeRef.current = isFocusMode;
+	}, [isFocusMode]);
+
+	useEffect(() => {
+		if (!isFocusMode) {
+			return undefined;
+		}
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape' && !document.fullscreenElement) {
+				handleExitFocusMode();
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [handleExitFocusMode, isFocusMode]);
+
+	useEffect(() => {
+		if (isFocusMode && activeTab !== 'lessons') {
+			handleExitFocusMode();
+		}
+	}, [activeTab, handleExitFocusMode, isFocusMode]);
+
 	const handleCompleteLesson = useCallback(async () => {
 		const lessons = lessonsResult?.lessons ?? null;
 		const activeContext = getActiveLessonContext(lessons);
@@ -2500,11 +2645,17 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
 
 	const activeTabLabel = useMemo(() => courseTabs.find(tab => tab.id === activeTab)?.label ?? 'Overview', [activeTab]);
+	const activeLessonContext = useMemo(
+		() => getActiveLessonContext(lessonsResult?.lessons ?? null),
+		[lessonsResult?.lessons]
+	);
 	const shouldShowUnlockedOverviewRail =
 		activeTab === 'overview' && Boolean(enrollment?.accessUnlockedAt && dashboard && !isDashboardLoading);
 	const shouldShowLessonRail = activeTab === 'lessons' && canOpenLearningTabs;
 	const shouldShowOverviewRail = activeTab === 'overview' || shouldShowLessonRail;
-	const workspaceGridColumns = getCourseWorkspaceGridColumns(shouldShowOverviewRail, isLearningRailCollapsed);
+	const workspaceGridColumns = isFocusMode
+		? 'minmax(0, 1fr)'
+		: getCourseWorkspaceGridColumns(shouldShowOverviewRail, isLearningRailCollapsed);
 
 	if (isLoading) {
 		return <ProfilePageSkeleton />;
@@ -2544,10 +2695,20 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	}
 
 	return (
-		<Box bg="bg.subtle" minH="100vh" w="full">
+		<Box
+			ref={workspaceRootRef}
+			bg="bg.subtle"
+			minH="100vh"
+			w="full"
+			css={{
+				'&:fullscreen': {
+					overflowY: 'auto'
+				}
+			}}
+		>
 			<Box
 				as="aside"
-				display={{ base: 'none', lg: 'block' }}
+				display={isFocusMode ? 'none' : { base: 'none', lg: 'block' }}
 				position="fixed"
 				insetY={0}
 				left={0}
@@ -2571,7 +2732,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				/>
 			</Box>
 
-			{isMobileNavOpen ? (
+			{isMobileNavOpen && !isFocusMode ? (
 				<Box display={{ base: 'block', lg: 'none' }} position="fixed" inset={0} zIndex={1500}>
 					<Box position="absolute" inset={0} bg="blackAlpha.600" onClick={() => setIsMobileNavOpen(false)} />
 					<Box position="relative" h="100vh" w="min(320px, 88vw)" boxShadow="2xl">
@@ -2587,10 +2748,14 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 			) : null}
 
 			<Box
-				ml={{
-					lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
-					'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
-				}}
+				ml={
+					isFocusMode
+						? 0
+						: {
+								lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
+								'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
+							}
+				}
 				minH="100vh"
 				transition="margin-left 180ms ease"
 				_motionReduce={{ transition: 'none' }}
@@ -2608,58 +2773,156 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 					display="flex"
 					alignItems="center"
 				>
-					<HStack w="full" justify="space-between" gap={4} flexWrap="wrap">
-						<HStack gap={3} minW={0}>
-							<Button
-								display={{ base: 'inline-flex', lg: 'none' }}
-								variant="outline"
-								size="sm"
-								borderRadius="full"
-								onClick={() => setIsMobileNavOpen(true)}
-								aria-label="Open course navigation"
-							>
-								<FiMenu />
-							</Button>
-							<Image
-								src={enrollment.course.thumbnailImage || enrollment.course.promoImage || shattakMarkUrl}
-								alt=""
-								boxSize="40px"
-								borderRadius="lg"
-								flexShrink={0}
-								objectFit="cover"
-							/>
+					{isFocusMode ? (
+						<HStack w="full" justify="space-between" gap={4}>
 							<Box minW={0}>
-								<Heading size="sm" lineClamp={1}>
+								<Text color="text.muted" fontSize="xs" fontWeight="semibold" lineClamp={1}>
 									{enrollment.course.title}
-								</Heading>
-								<Text color="text.muted" fontSize="xs">
-									Enrolled on {formatDate(enrollment.enrolledAt)}
 								</Text>
+								<Heading size="sm" lineClamp={1}>
+									{activeLessonContext?.subsection.title || 'Lessons'}
+								</Heading>
 							</Box>
-						</HStack>
-						<HStack gap={2} flexWrap="wrap">
-							<Badge borderRadius="full" px={3} py={1}>
-								{enrollment.status}
-							</Badge>
-							<Badge borderRadius="full" px={3} py={1}>
-								{enrollment.progressPercent}% progress
-							</Badge>
-							{!enrollment.accessUnlockedAt ? (
-								<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
-									Overview locked
+
+							<HStack gap={2} flexShrink={0}>
+								<Badge display={{ base: 'none', sm: 'inline-flex' }} borderRadius="full" px={3} py={1}>
+									{enrollment.progressPercent}% progress
 								</Badge>
-							) : null}
-							<ThemeToggle />
-							<Button asChild borderRadius="full" size="sm" variant="outline">
-								<Link href={`/course/${courseId}`}>Back to course</Link>
-							</Button>
+								<Button
+									borderRadius="full"
+									size="sm"
+									variant="outline"
+									onClick={handleAskDoubt}
+									aria-label="Ask a doubt in the course community"
+									title="Ask a doubt in the course community"
+								>
+									<FiMessageCircle />
+									<Box as="span" display={{ base: 'none', md: 'inline' }}>
+										Ask doubt
+									</Box>
+								</Button>
+								{isBrowserFullscreenSupported ? (
+									<Button
+										borderRadius="full"
+										size="sm"
+										variant="outline"
+										onClick={() => {
+											handleToggleBrowserFullscreen().catch(() => undefined);
+										}}
+										aria-label={isBrowserFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
+										title={isBrowserFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
+									>
+										{isBrowserFullscreen ? <FiMinimize2 /> : <FiMaximize2 />}
+										<Box as="span" display={{ base: 'none', lg: 'inline' }}>
+											{isBrowserFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+										</Box>
+									</Button>
+								) : null}
+								<ThemeToggle />
+								<Button
+									ref={exitFocusModeButtonRef}
+									borderRadius="full"
+									size="sm"
+									bg="primary"
+									color={workspaceActiveTextColor}
+									_hover={{ bg: 'primaryHover' }}
+									onClick={handleExitFocusMode}
+									aria-label="Exit focus mode"
+									aria-pressed={true}
+								>
+									<FiMinimize2 />
+									<Box as="span" display={{ base: 'none', sm: 'inline' }}>
+										Exit focus
+									</Box>
+								</Button>
+							</HStack>
 						</HStack>
-					</HStack>
+					) : (
+						<HStack w="full" justify="space-between" gap={4} flexWrap="wrap">
+							<HStack gap={3} minW={0}>
+								<Button
+									display={{ base: 'inline-flex', lg: 'none' }}
+									variant="outline"
+									size="sm"
+									borderRadius="full"
+									onClick={() => setIsMobileNavOpen(true)}
+									aria-label="Open course navigation"
+								>
+									<FiMenu />
+								</Button>
+								<Image
+									src={enrollment.course.thumbnailImage || enrollment.course.promoImage || shattakMarkUrl}
+									alt=""
+									boxSize="40px"
+									borderRadius="lg"
+									flexShrink={0}
+									objectFit="cover"
+								/>
+								<Box minW={0}>
+									<Heading size="sm" lineClamp={1}>
+										{enrollment.course.title}
+									</Heading>
+									<Text color="text.muted" fontSize="xs">
+										Enrolled on {formatDate(enrollment.enrolledAt)}
+									</Text>
+								</Box>
+							</HStack>
+							<HStack gap={2} flexWrap="wrap">
+								<Badge borderRadius="full" px={3} py={1}>
+									{enrollment.status}
+								</Badge>
+								<Badge borderRadius="full" px={3} py={1}>
+									{enrollment.progressPercent}% progress
+								</Badge>
+								{!enrollment.accessUnlockedAt ? (
+									<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
+										Overview locked
+									</Badge>
+								) : null}
+								{activeTab === 'lessons' ? (
+									<>
+										<Button
+											borderRadius="full"
+											size="sm"
+											variant="outline"
+											onClick={handleAskDoubt}
+											aria-label="Ask a doubt in the course community"
+											title="Ask a doubt in the course community"
+										>
+											<FiMessageCircle />
+											<Box as="span" display={{ base: 'none', xl: 'inline' }}>
+												Ask doubt
+											</Box>
+										</Button>
+										<Button
+											ref={focusModeButtonRef}
+											borderRadius="full"
+											size="sm"
+											variant="outline"
+											onClick={handleEnterFocusMode}
+											aria-label="Enter focus mode"
+											aria-pressed={false}
+											title="Hide course navigation and focus on this lesson"
+										>
+											<FiMaximize2 />
+											<Box as="span" display={{ base: 'none', xl: 'inline' }}>
+												Focus mode
+											</Box>
+										</Button>
+									</>
+								) : null}
+								<ThemeToggle />
+								<Button asChild borderRadius="full" size="sm" variant="outline">
+									<Link href={`/course/${courseId}`}>Back to course</Link>
+								</Button>
+							</HStack>
+						</HStack>
+					)}
 				</Box>
 
-				<Box px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
+				<Box px={isFocusMode ? { base: 3, md: 5, xl: 8 } : { base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
 					<Box display="grid" gridTemplateColumns={workspaceGridColumns} gap={{ base: 4, xl: 5 }} alignItems="start">
-						<Box minW={0}>
+						<Box minW={0} w="full" maxW={isFocusMode ? '960px' : undefined} mx={isFocusMode ? 'auto' : undefined}>
 							<CourseLearningMainContent
 								activeTab={activeTab}
 								activeTabLabel={activeTabLabel}
@@ -2676,7 +2939,6 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 								learnerName={learnerName}
 								lessonErrorMessage={lessonErrorMessage}
 								lessonsResult={lessonsResult}
-								onAskDoubt={handleAskDoubt}
 								onCourseUnlocked={handleCourseUnlocked}
 								onDashboardRetry={() => {
 									loadDashboard(currentUser).catch(() => undefined);
@@ -2693,19 +2955,21 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							/>
 						</Box>
 
-						<CourseLearningRail
-							courseId={courseId}
-							currentUser={currentUser}
-							dashboard={dashboard}
-							enrollment={enrollment}
-							isVisible={shouldShowOverviewRail}
-							isCollapsed={isLearningRailCollapsed}
-							lessons={lessonsResult?.lessons ?? null}
-							onLessonSelect={handleLessonSelect}
-							onToggleCollapse={() => setIsLearningRailCollapsed(value => !value)}
-							showLessonRail={shouldShowLessonRail}
-							showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
-						/>
+						{!isFocusMode ? (
+							<CourseLearningRail
+								courseId={courseId}
+								currentUser={currentUser}
+								dashboard={dashboard}
+								enrollment={enrollment}
+								isVisible={shouldShowOverviewRail}
+								isCollapsed={isLearningRailCollapsed}
+								lessons={lessonsResult?.lessons ?? null}
+								onLessonSelect={handleLessonSelect}
+								onToggleCollapse={() => setIsLearningRailCollapsed(value => !value)}
+								showLessonRail={shouldShowLessonRail}
+								showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
+							/>
+						) : null}
 					</Box>
 				</Box>
 			</Box>

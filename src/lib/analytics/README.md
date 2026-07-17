@@ -65,6 +65,9 @@ Examples:
 - `course_lesson_next_clicked`
 - `course_lesson_completed`
 - `course_doubt_clicked`
+- `course_focus_mode_entered`
+- `course_focus_mode_exited`
+- `course_fullscreen_toggled`
 
 All tracked events automatically include current page context:
 
@@ -158,6 +161,9 @@ Student lesson consumption is tracked from the course workspace only. These even
 - `course_lesson_next_clicked`: fired when the learner uses the lesson Next action.
 - `course_lesson_completed`: fired after the backend marks the lesson complete.
 - `course_doubt_clicked`: fired when the learner uses Ask Doubt to open the course WhatsApp community.
+- `course_focus_mode_entered`: fired when a learner hides the course navigation and progress rail to focus on lesson content.
+- `course_focus_mode_exited`: fired when a learner returns to the standard course workspace.
+- `course_fullscreen_toggled`: fired when a learner enters or exits browser fullscreen from focus mode.
 
 Lesson events can include:
 

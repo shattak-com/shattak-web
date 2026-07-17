@@ -32,7 +32,7 @@ const getMermaidChart = (node: unknown) => {
 		return '';
 	}
 
-	const properties = codeNode.properties;
+	const { properties } = codeNode;
 	const classNames =
 		properties && typeof properties === 'object' && 'className' in properties && Array.isArray(properties.className)
 			? properties.className
@@ -119,14 +119,14 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 						const safeHref = getSafeExternalUrl(href ?? '');
 
 						return safeHref ? (
-							<a
-								href={safeHref}
-								target="_blank"
-								rel="noopener noreferrer"
-								style={{ color: 'var(--chakra-colors-primary)', fontWeight: 600 }}
+							<Box
+								as="span"
+								color="primary"
+								fontWeight="semibold"
+								title="External lesson links are available only inside Shattak content previews."
 							>
 								{children}
-							</a>
+							</Box>
 						) : (
 							<Box as="span">{children}</Box>
 						);
@@ -144,6 +144,8 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 								width={width}
 								height={height}
 								loading="lazy"
+								draggable={false}
+								onContextMenu={event => event.preventDefault()}
 								style={{
 									border: '1px solid var(--chakra-colors-border-default)',
 									borderRadius: 'var(--chakra-radii-lg)',
@@ -168,9 +170,9 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 									height={height}
 									loading="lazy"
 									referrerPolicy="strict-origin-when-cross-origin"
-									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+									allow="accelerometer; autoplay; encrypted-media; gyroscope"
 									allowFullScreen
-									sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+									sandbox="allow-scripts allow-same-origin allow-presentation"
 									style={{ border: 0, height: '100%', width: '100%' }}
 								/>
 							</Box>
@@ -186,7 +188,14 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 						return safeSrc || children ? (
 							// Caption/transcript metadata is not part of the current inline HTML content model.
 							// eslint-disable-next-line jsx-a11y/media-has-caption
-							<audio controls src={safeSrc || undefined} title={title} preload="metadata">
+							<audio
+								controls
+								controlsList="nodownload noremoteplayback"
+								src={safeSrc || undefined}
+								title={title}
+								preload="metadata"
+								onContextMenu={event => event.preventDefault()}
+							>
 								{children}
 							</audio>
 						) : null;
@@ -200,11 +209,16 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 							// eslint-disable-next-line jsx-a11y/media-has-caption
 							<video
 								controls
+								controlsList="nodownload noremoteplayback"
+								disablePictureInPicture
+								disableRemotePlayback
+								draggable={false}
 								src={safeSrc || undefined}
 								poster={safePoster || undefined}
 								title={title}
 								preload="metadata"
 								playsInline
+								onContextMenu={event => event.preventDefault()}
 								style={{
 									background: '#000',
 									borderRadius: 'var(--chakra-radii-lg)',
@@ -261,8 +275,8 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 							step={step}
 						/>
 					),
-					button: ({ children, disabled, value }) => (
-						<button disabled={disabled} value={value} type="button">
+					button: ({ children, disabled, value: buttonValue }) => (
+						<button disabled={disabled} value={buttonValue} type="button">
 							{children}
 						</button>
 					),

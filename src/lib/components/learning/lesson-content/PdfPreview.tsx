@@ -1,7 +1,6 @@
 'use client';
 
 import { Box, Flex, Text } from '@chakra-ui/react';
-import { FiExternalLink } from 'react-icons/fi';
 
 type PdfPreviewProps = {
 	url: string;
@@ -21,43 +20,19 @@ const getPreviewHeight = (height: PdfPreviewProps['height']) => {
 
 export const PdfPreview = ({ url, height, title = 'PDF lesson resource' }: PdfPreviewProps) => {
 	const previewHeight = getPreviewHeight(height);
+	const previewUrl = `${url.split('#')[0]}#toolbar=0&navpanes=0&scrollbar=1`;
 
 	return (
 		<Box border="1px solid" borderColor="border.default" borderRadius="lg" bg="bg.card" my={4} overflow="hidden">
-			<Flex
-				align="center"
-				justify="space-between"
-				gap={3}
-				borderBottom="1px solid"
-				borderColor="border.default"
-				px={{ base: 3, md: 4 }}
-				py={3}
-			>
+			<Flex align="center" gap={3} borderBottom="1px solid" borderColor="border.default" px={{ base: 3, md: 4 }} py={3}>
 				<Text color="text.primary" fontSize="sm" fontWeight="semibold">
 					{title}
 				</Text>
-				<a
-					href={url}
-					target="_blank"
-					rel="noopener noreferrer"
-					style={{
-						alignItems: 'center',
-						color: 'var(--chakra-colors-primary)',
-						display: 'inline-flex',
-						fontSize: '0.875rem',
-						fontWeight: 600,
-						gap: '0.375rem',
-						whiteSpace: 'nowrap'
-					}}
-				>
-					Open PDF
-					<FiExternalLink aria-hidden />
-				</a>
 			</Flex>
 
 			<Box h={{ base: '65vh', md: `${previewHeight}px` }} minH="420px" bg="white">
 				<iframe
-					src={url}
+					src={previewUrl}
 					title={title}
 					loading="lazy"
 					referrerPolicy="strict-origin-when-cross-origin"

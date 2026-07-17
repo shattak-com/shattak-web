@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Box, Button, Container, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, Container, Heading, HStack, Image, Input, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -44,8 +44,8 @@ import {
 import UserAvatar from '~/lib/components/auth/UserAvatar';
 import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
-import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
 import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
+import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
 import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
 import { PresentationPreview } from '~/lib/components/learning/lesson-content/PresentationPreview';
 import ThemeToggle from '~/lib/components/ThemeToggle';
@@ -65,6 +65,23 @@ const courseTabs: Array<{ id: CourseTabId; label: string; icon: typeof FiBookOpe
 	{ id: 'certificate', label: 'Certificate', icon: FiAward },
 	{ id: 'peerNetwork', label: 'Peer Community', icon: FiMessageCircle }
 ];
+
+const workspaceBoundaryColor = 'gray.500';
+const workspaceSelectedBoundaryColor = { _light: 'brand.600', _dark: 'brand.300' };
+const workspaceActiveTextColor = 'ink.900';
+const shattakMarkUrl = '/assets/shattak-logo.jpg';
+
+const getCourseWorkspaceGridColumns = (showRail: boolean, isRailCollapsed: boolean) => {
+	if (!showRail) {
+		return '1fr';
+	}
+
+	return {
+		base: '1fr',
+		xl: isRailCollapsed ? 'minmax(0, 1fr) 64px' : 'minmax(520px, 1fr) 340px',
+		'2xl': isRailCollapsed ? 'minmax(0, 1fr) 64px' : 'minmax(680px, 1fr) 380px'
+	};
+};
 
 const formatDate = (value: string) =>
 	new Intl.DateTimeFormat('en-IN', {
@@ -119,10 +136,22 @@ const getPreviousUnlockedLessonRow = (lessons: CourseLessonsState, subsectionId:
 	return [...rows.slice(0, currentIndex)].reverse().find(row => !row.subsection.isLocked) ?? null;
 };
 
+const getLessonStateLabel = (subsection: CourseLessonsState['modules'][number]['subsections'][number]) => {
+	if (subsection.isActive) {
+		return 'Current';
+	}
+
+	if (subsection.isCompleted) {
+		return 'Completed';
+	}
+
+	return subsection.isLocked ? 'Locked' : 'Available';
+};
+
 const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	<Box
 		border="1px solid"
-		borderColor="border.default"
+		borderColor={workspaceBoundaryColor}
 		borderRadius="card"
 		bg="bg.card"
 		minH={{ base: '420px', md: 'calc(100vh - 168px)' }}
@@ -135,7 +164,7 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 				borderRadius="card"
 				bg="bg.subtle"
 				border="1px solid"
-				borderColor="border.default"
+				borderColor={workspaceBoundaryColor}
 				p={{ base: 5, md: 7 }}
 				w="full"
 			>
@@ -191,20 +220,18 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 const LessonResourceCard = ({
 	block,
 	label,
-	children,
-	showOpenAction = true
+	children
 }: {
 	block: CourseLessonContentBlock;
 	label: string;
 	children?: ReactNode;
-	showOpenAction?: boolean;
 }) => {
 	const safeUrl = getSafeExternalUrl(block.url);
 
 	return (
-		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" overflow="hidden">
+		<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" overflow="hidden">
 			<Stack gap={4} p={{ base: 4, md: 5 }}>
-				<HStack justify="space-between" gap={4} align="start">
+				<HStack gap={4} align="start">
 					<HStack gap={3} minW={0}>
 						<Box
 							boxSize="42px"
@@ -226,13 +253,6 @@ const LessonResourceCard = ({
 							</Heading>
 						</Box>
 					</HStack>
-					{safeUrl && showOpenAction ? (
-						<Button asChild size="sm" variant="outline" borderRadius="full" flexShrink={0}>
-							<Link href={safeUrl} target="_blank" rel="noopener noreferrer">
-								Open <FiExternalLink />
-							</Link>
-						</Button>
-					) : null}
 				</HStack>
 				{children}
 				{!safeUrl ? (
@@ -246,7 +266,7 @@ const LessonResourceCard = ({
 };
 
 const TextLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => (
-	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+	<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
 		{block.title ? (
 			<Heading size="md" mb={4}>
 				{block.title}
@@ -266,8 +286,9 @@ const YouTubeLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => {
 					<iframe
 						title={block.title || 'YouTube lesson video'}
 						src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						allow="accelerometer; autoplay; encrypted-media; gyroscope"
 						allowFullScreen
+						sandbox="allow-scripts allow-same-origin allow-presentation"
 						style={{ border: 0, height: '100%', width: '100%' }}
 					/>
 				</Box>
@@ -290,6 +311,11 @@ const UploadedVideoLessonBlock = ({ block }: { block: CourseLessonContentBlock }
 					{/* eslint-disable-next-line jsx-a11y/media-has-caption */}
 					<video
 						controls
+						controlsList="nodownload noremoteplayback"
+						disablePictureInPicture
+						disableRemotePlayback
+						draggable={false}
+						onContextMenu={event => event.preventDefault()}
 						src={safeUrl}
 						style={{
 							background: '#000',
@@ -319,7 +345,7 @@ const PresentationLessonBlock = ({ block }: { block: CourseLessonContentBlock })
 	const label = block.type === 'PPT_UPLOAD' ? 'Uploaded presentation' : 'Presentation link';
 
 	return (
-		<LessonResourceCard block={block} label={label} showOpenAction={false}>
+		<LessonResourceCard block={block} label={label}>
 			{safeUrl ? (
 				<PresentationPreview url={safeUrl} title={block.title || block.fileName || 'Course presentation'} />
 			) : null}
@@ -369,24 +395,47 @@ const getLessonProgressIcon = (subsection: CourseLessonsState['modules'][number]
 
 const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSidebarProps) => {
 	const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
+	const activeLessonRef = useRef<HTMLButtonElement | null>(null);
+	const moduleIds = lessons?.modules.map(courseModule => courseModule.id).join('|') ?? '';
+	const activeModuleId =
+		lessons?.modules.find(courseModule =>
+			courseModule.subsections.some(subsection => subsection.id === lessons.activeSubsectionId)
+		)?.id ?? '';
 
 	useEffect(() => {
 		if (!lessons?.modules.length) {
+			setExpandedModuleIds([]);
 			return;
 		}
 
 		setExpandedModuleIds(prev => {
-			if (prev.length) {
-				return prev.filter(moduleId => lessons.modules.some(courseModule => courseModule.id === moduleId));
+			const validExpandedIds = prev.filter(moduleId =>
+				lessons.modules.some(courseModule => courseModule.id === moduleId)
+			);
+
+			if (!activeModuleId) {
+				return validExpandedIds.length ? validExpandedIds : [lessons.modules[0].id];
 			}
 
-			return lessons.modules.map(courseModule => courseModule.id);
+			return validExpandedIds.includes(activeModuleId) ? validExpandedIds : [...validExpandedIds, activeModuleId];
 		});
-	}, [lessons]);
+	}, [activeModuleId, lessons, moduleIds]);
+
+	useEffect(() => {
+		if (!activeModuleId || !expandedModuleIds.includes(activeModuleId)) {
+			return undefined;
+		}
+
+		const frame = window.requestAnimationFrame(() => {
+			activeLessonRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+		});
+
+		return () => window.cancelAnimationFrame(frame);
+	}, [activeModuleId, expandedModuleIds, lessons?.activeSubsectionId]);
 
 	if (!lessons) {
 		return (
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={5}>
+			<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={5}>
 				<Stack gap={3}>
 					<Box h="18px" w="160px" bg="bg.subtle" borderRadius="full" />
 					<Box h="10px" w="full" bg="bg.subtle" borderRadius="full" />
@@ -403,7 +452,13 @@ const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSideba
 	};
 
 	return (
-		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 4, md: 5 }}>
+		<Box
+			border="1px solid"
+			borderColor={workspaceBoundaryColor}
+			borderRadius="card"
+			bg="bg.card"
+			p={{ base: 4, md: 5 }}
+		>
 			<Stack gap={4}>
 				<Box>
 					<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
@@ -423,14 +478,16 @@ const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSideba
 				<Stack gap={3}>
 					{lessons.modules.map((courseModule, moduleIndex) => {
 						const isExpanded = expandedModuleIds.includes(courseModule.id);
+						const containsActiveLesson = courseModule.id === activeModuleId;
 
 						return (
 							<Box
 								key={courseModule.id}
 								border="1px solid"
-								borderColor="border.default"
+								borderColor={containsActiveLesson ? workspaceSelectedBoundaryColor : workspaceBoundaryColor}
 								borderRadius="lg"
 								overflow="hidden"
+								bg={containsActiveLesson ? 'bg.accent' : 'bg.card'}
 							>
 								<Button
 									variant="ghost"
@@ -441,6 +498,7 @@ const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSideba
 									py={3}
 									w="full"
 									onClick={() => toggleModule(courseModule.id)}
+									aria-expanded={isExpanded}
 								>
 									<HStack gap={2} minW={0}>
 										{isExpanded ? <FiChevronDown /> : <FiChevronRight />}
@@ -448,7 +506,7 @@ const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSideba
 											<Text fontSize="xs" color="primary" fontWeight="bold">
 												Module {moduleIndex + 1}
 											</Text>
-											<Text fontSize="sm" fontWeight="semibold" lineClamp={1}>
+											<Text fontSize="sm" fontWeight="semibold" lineClamp={2}>
 												{courseModule.title || 'Untitled module'}
 											</Text>
 										</Box>
@@ -458,32 +516,39 @@ const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSideba
 
 								{isExpanded ? (
 									<Stack gap={1} px={2} pb={2}>
-										{courseModule.subsections.map((subsection, subsectionIndex) => (
-											<Button
-												key={subsection.id}
-												variant="ghost"
-												borderRadius="md"
-												disabled={subsection.isLocked}
-												h="auto"
-												justifyContent="space-between"
-												px={3}
-												py={2.5}
-												bg={subsection.isActive ? 'bg.accent' : undefined}
-												border="1px solid"
-												borderColor={subsection.isActive ? 'primary' : 'transparent'}
-												onClick={() => onLessonSelect(subsection.id)}
-											>
-												<Box minW={0} textAlign="left">
-													<Text color="text.muted" fontSize="xs">
-														{subsectionIndex + 1}. {subsection.durationLabel || 'Lesson'}
-													</Text>
-													<Text fontSize="sm" fontWeight="semibold" lineClamp={2}>
-														{subsection.title || 'Untitled lesson'}
-													</Text>
-												</Box>
-												<Box color={getLessonProgressColor(subsection)}>{getLessonProgressIcon(subsection)}</Box>
-											</Button>
-										))}
+										{courseModule.subsections.map((subsection, subsectionIndex) => {
+											const lessonState = getLessonStateLabel(subsection);
+
+											return (
+												<Button
+													key={subsection.id}
+													ref={subsection.isActive ? activeLessonRef : undefined}
+													variant="ghost"
+													borderRadius="md"
+													disabled={subsection.isLocked}
+													h="auto"
+													justifyContent="space-between"
+													px={3}
+													py={2.5}
+													bg={subsection.isActive ? 'bg.card' : undefined}
+													border="1px solid"
+													borderColor={subsection.isActive ? workspaceSelectedBoundaryColor : 'transparent'}
+													onClick={() => onLessonSelect(subsection.id)}
+													aria-current={subsection.isActive ? 'step' : undefined}
+												>
+													<Box minW={0} textAlign="left">
+														<Text color="text.muted" fontSize="xs">
+															{subsectionIndex + 1}. {lessonState}
+															{subsection.durationLabel ? ` · ${subsection.durationLabel}` : ''}
+														</Text>
+														<Text fontSize="sm" fontWeight="semibold" lineClamp={2}>
+															{subsection.title || 'Untitled lesson'}
+														</Text>
+													</Box>
+													<Box color={getLessonProgressColor(subsection)}>{getLessonProgressIcon(subsection)}</Box>
+												</Button>
+											);
+										})}
 									</Stack>
 								) : null}
 							</Box>
@@ -522,6 +587,66 @@ const CourseDashboardSkeleton = () => (
 	</Stack>
 );
 
+type LessonActionBarProps = {
+	canComplete: boolean;
+	isCompletingLesson: boolean;
+	nextButtonLabel: string;
+	onAskDoubt: () => void;
+	onCompleteLesson: () => void;
+	onPreviousLesson: () => void;
+	showPreviousLesson: boolean;
+};
+
+const LessonActionBar = ({
+	canComplete,
+	isCompletingLesson,
+	nextButtonLabel,
+	onAskDoubt,
+	onCompleteLesson,
+	onPreviousLesson,
+	showPreviousLesson
+}: LessonActionBarProps) => (
+	<Box
+		border="1px solid"
+		borderColor={workspaceBoundaryColor}
+		borderRadius="card"
+		bg="bg.card"
+		boxShadow="sm"
+		p={{ base: 4, md: 5 }}
+	>
+		<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3} align={{ md: 'center' }}>
+			<HStack gap={3} flexWrap="wrap">
+				<Button borderRadius="full" variant="outline" onClick={onAskDoubt}>
+					Ask Doubt - Go to Community <FiExternalLink />
+				</Button>
+				<Button borderRadius="full" variant="outline" disabled={!showPreviousLesson} onClick={onPreviousLesson}>
+					Previous
+				</Button>
+			</HStack>
+
+			<Stack align={{ base: 'stretch', md: 'end' }} gap={2}>
+				<HStack gap={2} justify={{ base: 'flex-start', md: 'flex-end' }}>
+					<Box color={canComplete ? 'green.500' : 'text.muted'}>{canComplete ? <FiCheckCircle /> : <FiBookOpen />}</Box>
+					<Text color={canComplete ? 'text.primary' : 'text.muted'} fontSize="xs" fontWeight="semibold">
+						{canComplete ? 'Lesson ready to complete.' : 'Continue reading to unlock the next lesson.'}
+					</Text>
+				</HStack>
+				<Button
+					borderRadius="full"
+					bg="primary"
+					color={workspaceActiveTextColor}
+					_hover={{ bg: 'primaryHover' }}
+					disabled={!canComplete}
+					loading={isCompletingLesson}
+					onClick={onCompleteLesson}
+				>
+					{nextButtonLabel}
+				</Button>
+			</Stack>
+		</Stack>
+	</Box>
+);
+
 const CourseLessonsTab = ({
 	canBypassProgression,
 	hasReachedBottom,
@@ -535,8 +660,8 @@ const CourseLessonsTab = ({
 	onRetry,
 	onScrollBottomReached
 }: CourseLessonsTabProps) => {
-	const contentRef = useRef<HTMLDivElement | null>(null);
 	const lessonStartRef = useRef<HTMLDivElement | null>(null);
+	const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
 	const previousActiveSubsectionIdRef = useRef('');
 	const lessons = lessonsResult?.lessons ?? null;
 	const activeContext = getActiveLessonContext(lessons);
@@ -544,34 +669,43 @@ const CourseLessonsTab = ({
 
 	useEffect(() => {
 		if (!activeSubsectionId || isLoading || lessonErrorMessage) {
-			return;
-		}
-
-		const contentElement = contentRef.current;
-		if (!contentElement) {
-			return;
+			return undefined;
 		}
 
 		const previousActiveSubsectionId = previousActiveSubsectionIdRef.current;
 		previousActiveSubsectionIdRef.current = activeSubsectionId;
 
 		if (previousActiveSubsectionId && previousActiveSubsectionId !== activeSubsectionId) {
-			contentElement.scrollTo({ top: 0, behavior: 'auto' });
-
-			const overflowY = window.getComputedStyle(contentElement).overflowY;
-			if (overflowY !== 'auto' && overflowY !== 'scroll') {
+			window.requestAnimationFrame(() => {
 				lessonStartRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
-			}
+			});
 		}
 
 		if (canBypassProgression) {
 			onScrollBottomReached();
-			return;
+			return undefined;
 		}
 
-		if (contentElement.scrollHeight <= contentElement.clientHeight + 24) {
-			onScrollBottomReached();
+		const bottomSentinel = bottomSentinelRef.current;
+		if (!bottomSentinel) {
+			return undefined;
 		}
+
+		const observer = new IntersectionObserver(
+			entries => {
+				if (entries.some(entry => entry.isIntersecting)) {
+					onScrollBottomReached();
+				}
+			},
+			{
+				root: null,
+				rootMargin: '0px 0px 48px',
+				threshold: 0.5
+			}
+		);
+
+		observer.observe(bottomSentinel);
+		return () => observer.disconnect();
 	}, [activeSubsectionId, canBypassProgression, isLoading, lessonErrorMessage, onScrollBottomReached]);
 
 	if (isLoading) {
@@ -580,14 +714,20 @@ const CourseLessonsTab = ({
 
 	if (lessonErrorMessage) {
 		return (
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 6 }}
+			>
 				<Stack gap={4}>
 					<Heading size="lg">Lessons unavailable</Heading>
 					<Text color="text.muted">{lessonErrorMessage}</Text>
 					<Button
 						borderRadius="full"
 						bg="primary"
-						color="text.inverse"
+						color={workspaceActiveTextColor}
 						_hover={{ bg: 'primaryHover' }}
 						w="fit-content"
 						onClick={onRetry}
@@ -601,7 +741,13 @@ const CourseLessonsTab = ({
 
 	if (!lessons || !activeContext) {
 		return (
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 6 }}
+			>
 				<Stack gap={3}>
 					<Heading size="lg">No lessons available yet</Heading>
 					<Text color="text.muted">
@@ -617,13 +763,29 @@ const CourseLessonsTab = ({
 	const nextLesson = getNextLessonRow(lessons, subsection.id);
 	const canComplete = canBypassProgression || hasReachedBottom;
 	const nextButtonLabel = nextLesson ? 'Next lesson' : 'Finish lessons';
+	const handlePreviousLesson = () => {
+		if (previousLesson) {
+			onPreviousLesson(previousLesson.subsection.id);
+		}
+	};
+	const lessonActionBar = (
+		<LessonActionBar
+			canComplete={canComplete}
+			isCompletingLesson={isCompletingLesson}
+			nextButtonLabel={nextButtonLabel}
+			onAskDoubt={onAskDoubt}
+			onCompleteLesson={onCompleteLesson}
+			onPreviousLesson={handlePreviousLesson}
+			showPreviousLesson={Boolean(previousLesson)}
+		/>
+	);
 
 	return (
 		<Stack gap={4}>
 			<Box
 				ref={lessonStartRef}
 				border="1px solid"
-				borderColor="border.default"
+				borderColor={workspaceBoundaryColor}
 				borderRadius="card"
 				bg="bg.card"
 				p={{ base: 5, md: 6 }}
@@ -658,81 +820,36 @@ const CourseLessonsTab = ({
 				</Stack>
 			</Box>
 
+			<Box display={{ base: 'none', lg: 'block' }} position="sticky" top="84px" zIndex={5}>
+				{lessonActionBar}
+			</Box>
+
 			<Box
-				ref={contentRef}
 				border="1px solid"
-				borderColor="border.default"
+				borderColor={workspaceBoundaryColor}
 				borderRadius="card"
 				bg="bg.subtle"
-				maxH={{ base: 'none', xl: 'calc(100vh - 260px)' }}
-				overflowY={{ base: 'visible', xl: 'auto' }}
 				p={{ base: 4, md: 5 }}
-				onScroll={event => {
-					const target = event.currentTarget;
-					const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
-					if (isAtBottom) {
-						onScrollBottomReached();
-					}
-				}}
 			>
 				<Stack gap={5}>
 					{subsection.contentBlocks.length ? (
 						subsection.contentBlocks.map(block => <LessonContentBlockView key={block.id} block={block} />)
 					) : (
-						<Box border="1px dashed" borderColor="border.default" borderRadius="lg" bg="bg.card" p={6}>
+						<Box border="1px dashed" borderColor={workspaceBoundaryColor} borderRadius="lg" bg="bg.card" p={6}>
 							<Text color="text.muted">No detailed content has been added to this lesson yet.</Text>
 						</Box>
 					)}
-					<Box h="1px" />
+					<Box ref={bottomSentinelRef} h="1px" aria-hidden="true" />
 				</Stack>
 			</Box>
 
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 4, md: 5 }}>
-				<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3} align={{ md: 'center' }}>
-					<HStack gap={3} flexWrap="wrap">
-						<Button borderRadius="full" variant="outline" onClick={onAskDoubt}>
-							Ask Doubt - Go to Community <FiExternalLink />
-						</Button>
-						<Button
-							borderRadius="full"
-							variant="outline"
-							disabled={!previousLesson}
-							onClick={() => {
-								if (previousLesson) {
-									onPreviousLesson(previousLesson.subsection.id);
-								}
-							}}
-						>
-							Previous
-						</Button>
-					</HStack>
-
-					<Stack align={{ base: 'stretch', md: 'end' }} gap={2}>
-						{!canComplete ? (
-							<Text color="text.muted" fontSize="xs">
-								Scroll to the bottom of the lesson to enable Next.
-							</Text>
-						) : null}
-						<Button
-							borderRadius="full"
-							bg="primary"
-							color="text.inverse"
-							_hover={{ bg: 'primaryHover' }}
-							disabled={!canComplete}
-							loading={isCompletingLesson}
-							onClick={onCompleteLesson}
-						>
-							{nextButtonLabel}
-						</Button>
-					</Stack>
-				</Stack>
-			</Box>
+			<Box display={{ base: 'block', lg: 'none' }}>{lessonActionBar}</Box>
 		</Stack>
 	);
 };
 
 const CourseNextStepsPanel = () => (
-	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, xl: 6 }}>
+	<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={{ base: 5, xl: 6 }}>
 		<Stack gap={5}>
 			<Box>
 				<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
@@ -758,11 +875,44 @@ const CourseNextStepsPanel = () => (
 	</Box>
 );
 
-const getStreakTiles = (currentStreak: number) => {
-	return Array.from({ length: 10 }, (_, index) => ({
-		label: `Day ${index + 1}`,
-		isActive: index < currentStreak
-	}));
+const streakWeekdayFormatter = new Intl.DateTimeFormat('en-US', {
+	weekday: 'short',
+	timeZone: 'UTC'
+});
+
+const streakDateFormatter = new Intl.DateTimeFormat('en-US', {
+	day: '2-digit',
+	month: 'short',
+	timeZone: 'UTC'
+});
+
+const getStreakWindowEnd = (lastActiveDate: string | null) => {
+	const datePart = lastActiveDate?.slice(0, 10) ?? '';
+	if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+		const [year, month, day] = datePart.split('-').map(Number);
+		return new Date(Date.UTC(year, month - 1, day));
+	}
+
+	const now = new Date();
+	return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+};
+
+const getStreakTiles = (currentStreak: number, lastActiveDate: string | null) => {
+	const windowEnd = getStreakWindowEnd(lastActiveDate);
+	const activeTileCount = Math.min(Math.max(currentStreak, 0), 10);
+
+	return Array.from({ length: 10 }, (_, index) => {
+		const date = new Date(windowEnd);
+		date.setUTCDate(windowEnd.getUTCDate() - (9 - index));
+
+		return {
+			dateKey: date.toISOString().slice(0, 10),
+			dayLabel: streakWeekdayFormatter.format(date),
+			dateLabel: streakDateFormatter.format(date),
+			isActive: index >= 10 - activeTileCount,
+			isLatest: index === 9
+		};
+	});
 };
 
 const CompletionRing = ({ percentage }: { percentage: number }) => (
@@ -798,7 +948,7 @@ type CourseCompletionCardProps = {
 };
 
 const CourseCompletionCard = ({ dashboard }: CourseCompletionCardProps) => (
-	<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+	<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
 		<Stack align="center" gap={4}>
 			<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 				Course completion
@@ -832,7 +982,13 @@ const CourseLeaderboardCard = ({ dashboard }: CourseLeaderboardCardProps) => {
 	}
 
 	return (
-		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+		<Box
+			border="1px solid"
+			borderColor={workspaceBoundaryColor}
+			borderRadius="card"
+			bg="bg.card"
+			p={{ base: 5, md: 6 }}
+		>
 			<Stack gap={4}>
 				<HStack justify="space-between" align="center">
 					<Box>
@@ -852,7 +1008,7 @@ const CourseLeaderboardCard = ({ dashboard }: CourseLeaderboardCardProps) => {
 						<HStack
 							key={item.id}
 							border="1px solid"
-							borderColor="border.default"
+							borderColor={workspaceBoundaryColor}
 							borderRadius="lg"
 							bg="bg.subtle"
 							p={3}
@@ -862,7 +1018,7 @@ const CourseLeaderboardCard = ({ dashboard }: CourseLeaderboardCardProps) => {
 								boxSize="38px"
 								borderRadius="full"
 								bg="primary"
-								color="text.inverse"
+								color={workspaceActiveTextColor}
 								display="grid"
 								flexShrink={0}
 								fontWeight="bold"
@@ -902,14 +1058,20 @@ const CourseCommunityShortcutCard = ({
 	const { course } = enrollment;
 
 	return (
-		<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+		<Box
+			border="1px solid"
+			borderColor={workspaceBoundaryColor}
+			borderRadius="card"
+			bg="bg.card"
+			p={{ base: 5, md: 6 }}
+		>
 			<Stack gap={4}>
 				<HStack gap={4} align="start">
 					<Box
 						boxSize="52px"
 						borderRadius="xl"
 						bg="primary"
-						color="text.inverse"
+						color={workspaceActiveTextColor}
 						display="grid"
 						fontSize="2xl"
 						placeItems="center"
@@ -931,7 +1093,13 @@ const CourseCommunityShortcutCard = ({
 				</Text>
 
 				{dashboard.community.whatsappGroupUrl ? (
-					<Button asChild borderRadius="full" bg="primary" color="text.inverse" _hover={{ bg: 'primaryHover' }}>
+					<Button
+						asChild
+						borderRadius="full"
+						bg="primary"
+						color={workspaceActiveTextColor}
+						_hover={{ bg: 'primaryHover' }}
+					>
 						<Link
 							href={dashboard.community.whatsappGroupUrl}
 							target="_blank"
@@ -1001,7 +1169,7 @@ const CourseUnlockedOverviewTab = ({
 	learnerName,
 	onTabChange
 }: CourseUnlockedOverviewTabProps) => {
-	const streakTiles = getStreakTiles(dashboard.streak.currentStreak);
+	const streakTiles = getStreakTiles(dashboard.streak.currentStreak, dashboard.streak.lastActiveDate);
 	const { course } = enrollment;
 
 	const handleProgressClick = () => {
@@ -1020,24 +1188,21 @@ const CourseUnlockedOverviewTab = ({
 
 	return (
 		<Stack gap={4}>
-			<Box borderRadius="card" bg="primary" color="text.inverse" px={{ base: 4, md: 5 }} py={3}>
-				<HStack gap={3}>
-					<FiCheckCircle />
-					<Text fontSize="sm" fontWeight="semibold">
-						Overview unlocked. Your course workspace is ready.
-					</Text>
-				</HStack>
-			</Box>
-
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 7 }}
+			>
 				<Stack gap={4}>
-					<HStack gap={2} flexWrap="wrap">
-						<Badge colorPalette="green" borderRadius="full" px={3} py={1}>
-							Community verified
-						</Badge>
-						<Badge borderRadius="full" px={3} py={1}>
-							{dashboard.completion.percentage}% complete
-						</Badge>
+					<HStack gap={2}>
+						<Box color="green.500">
+							<FiCheckCircle />
+						</Box>
+						<Text color="green.600" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+							Course workspace ready
+						</Text>
 					</HStack>
 					<Heading size={{ base: 'xl', md: '2xl' }}>
 						Welcome to the Course{learnerName ? `, ${learnerName}` : ''}.
@@ -1052,8 +1217,53 @@ const CourseUnlockedOverviewTab = ({
 				</Stack>
 			</Box>
 
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 6 }}
+			>
+				<Stack gap={5}>
+					<HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
+						<Box maxW="3xl">
+							<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+								Your next learning action
+							</Text>
+							<Heading mt={2} size={{ base: 'lg', md: 'xl' }}>
+								{dashboard.learningProgress.title}
+							</Heading>
+							<Text mt={2} color="text.muted" fontSize="md" lineHeight="tall">
+								{dashboard.learningProgress.subtitle}
+							</Text>
+						</Box>
+						<Button
+							borderRadius="full"
+							bg="primary"
+							color={workspaceActiveTextColor}
+							_hover={{ bg: 'primaryHover' }}
+							onClick={handleProgressClick}
+						>
+							{dashboard.learningProgress.buttonLabel}
+						</Button>
+					</HStack>
+					<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor={workspaceBoundaryColor} p={4}>
+						<Text color="text.muted" fontSize="sm">
+							{dashboard.completion.completedSubsections} of {dashboard.completion.totalSubsections} learning units
+							completed. Assignment status: {dashboard.completion.assignmentStatus.replace('_', ' ').toLowerCase()}.
+						</Text>
+					</Box>
+				</Stack>
+			</Box>
+
 			{!dashboard.streak.hidden ? (
-				<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+				<Box
+					border="1px solid"
+					borderColor={workspaceBoundaryColor}
+					borderRadius="card"
+					bg="bg.card"
+					p={{ base: 5, md: 6 }}
+				>
 					<Stack gap={4}>
 						<HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
 							<Box>
@@ -1061,8 +1271,11 @@ const CourseUnlockedOverviewTab = ({
 									Learning streak
 								</Text>
 								<Heading mt={1} size="lg">
-									{dashboard.streak.currentStreak} day streak
+									{dashboard.streak.currentStreak} {dashboard.streak.currentStreak === 1 ? 'day' : 'days'} streak
 								</Heading>
+								<Text mt={1} color="text.muted" fontSize="xs">
+									Rolling ten-day activity window
+								</Text>
 							</Box>
 							<Box color="primary" fontSize="3xl">
 								<FiTrendingUp />
@@ -1072,25 +1285,40 @@ const CourseUnlockedOverviewTab = ({
 						<Box display="grid" gridTemplateColumns={{ base: 'repeat(5, 1fr)', md: 'repeat(10, 1fr)' }} gap={2}>
 							{streakTiles.map(tile => (
 								<Stack
-									key={tile.label}
+									key={tile.dateKey}
 									align="center"
 									gap={1}
 									border="1px solid"
-									borderColor={tile.isActive ? 'primary' : 'border.default'}
+									borderColor={tile.isActive ? workspaceSelectedBoundaryColor : workspaceBoundaryColor}
 									borderRadius="lg"
 									bg={tile.isActive ? 'bg.accent' : 'bg.subtle'}
 									px={2}
 									py={3}
+									position="relative"
 								>
 									<Text color={tile.isActive ? 'primary' : 'text.muted'} fontSize="xs" fontWeight="bold">
-										{tile.label}
+										{tile.dayLabel}
+									</Text>
+									<Text color="text.muted" fontSize="2xs" whiteSpace="nowrap">
+										{tile.dateLabel}
 									</Text>
 									<Box boxSize="10px" borderRadius="full" bg={tile.isActive ? 'primary' : 'border.default'} />
+									{tile.isLatest ? (
+										<Box
+											position="absolute"
+											insetX={2}
+											bottom={0}
+											h="2px"
+											borderRadius="full"
+											bg="primary"
+											aria-hidden="true"
+										/>
+									) : null}
 								</Stack>
 							))}
 						</Box>
 
-						<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor="border.default" px={4} py={3}>
+						<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor={workspaceBoundaryColor} px={4} py={3}>
 							<Text color="text.muted" fontSize="sm">
 								{dashboard.streak.message}
 							</Text>
@@ -1098,39 +1326,6 @@ const CourseUnlockedOverviewTab = ({
 					</Stack>
 				</Box>
 			) : null}
-
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
-				<Stack gap={4}>
-					<HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
-						<Box>
-							<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-								Learning progress
-							</Text>
-							<Heading mt={1} size="md">
-								{dashboard.learningProgress.title}
-							</Heading>
-							<Text mt={2} color="text.muted" fontSize="sm">
-								{dashboard.learningProgress.subtitle}
-							</Text>
-						</Box>
-						<Button
-							borderRadius="full"
-							bg="primary"
-							color="text.inverse"
-							_hover={{ bg: 'primaryHover' }}
-							onClick={handleProgressClick}
-						>
-							{dashboard.learningProgress.buttonLabel}
-						</Button>
-					</HStack>
-					<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor="border.default" p={4}>
-						<Text color="text.muted" fontSize="sm">
-							{dashboard.completion.completedSubsections} of {dashboard.completion.totalSubsections} learning units
-							completed. Assignment status: {dashboard.completion.assignmentStatus.replace('_', ' ').toLowerCase()}.
-						</Text>
-					</Box>
-				</Stack>
-			</Box>
 		</Stack>
 	);
 };
@@ -1145,122 +1340,159 @@ type CourseWorkspaceSidebarProps = {
 	onToggleCollapse?: () => void;
 };
 
-const CourseWorkspaceSidebar = ({
-	activeTab,
-	currentUser,
-	enrollment,
+type CourseWorkspaceSidebarHeaderProps = Pick<
+	CourseWorkspaceSidebarProps,
+	'isCollapsed' | 'onClose' | 'onToggleCollapse'
+>;
+
+const CourseWorkspaceSidebarHeader = ({
 	isCollapsed = false,
 	onClose,
-	onTabChange,
 	onToggleCollapse
-}: CourseWorkspaceSidebarProps) => {
-	const displayName = currentUser?.name || currentUser?.email || 'User';
-	const canOpenLearningTabs = Boolean(enrollment.accessUnlockedAt) || isAdminLearner(currentUser);
+}: CourseWorkspaceSidebarHeaderProps) => {
+	let sidebarControl: ReactNode = null;
+
+	if (onClose) {
+		sidebarControl = (
+			<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
+				<FiX />
+			</Button>
+		);
+	} else if (onToggleCollapse) {
+		sidebarControl = (
+			<Button
+				variant="ghost"
+				size="sm"
+				borderRadius="full"
+				boxSize="30px"
+				minW="30px"
+				p={0}
+				onClick={onToggleCollapse}
+				aria-label={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
+				title={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
+			>
+				{isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+			</Button>
+		);
+	}
 
 	return (
-		<Stack h="full" gap={0} bg="bg.card">
-			<HStack
-				h="72px"
-				px={isCollapsed ? 1.5 : 6}
-				justify="space-between"
-				borderBottom="1px solid"
-				borderColor="border.default"
-			>
-				{isCollapsed ? (
-					<Box
-						boxSize="32px"
-						borderRadius="lg"
-						bg="primary"
-						color="text.inverse"
-						display="grid"
-						fontWeight="bold"
-						placeItems="center"
-					>
-						S
-					</Box>
-				) : (
-					<Text fontSize="3xl" fontWeight="bold" color="text.primary">
-						Shattak
-					</Text>
-				)}
-				{onClose ? (
-					<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
-						<FiX />
-					</Button>
-				) : onToggleCollapse ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						borderRadius="full"
-						boxSize="30px"
-						minW="30px"
-						p={0}
-						onClick={onToggleCollapse}
-						aria-label={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
-						title={isCollapsed ? 'Expand course navigation' : 'Collapse course navigation'}
-					>
-						{isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
-					</Button>
-				) : null}
-			</HStack>
+		<HStack
+			h="72px"
+			px={isCollapsed ? 1.5 : 6}
+			justify={isCollapsed ? 'center' : 'space-between'}
+			borderBottom="1px solid"
+			borderColor={workspaceBoundaryColor}
+			position="relative"
+		>
+			{isCollapsed ? (
+				<Image src={shattakMarkUrl} alt="Shattak" boxSize="40px" borderRadius="lg" objectFit="cover" />
+			) : (
+				<Text fontSize="3xl" fontWeight="bold" color="text.primary">
+					Shattak
+				</Text>
+			)}
+			<Box position={isCollapsed ? 'absolute' : 'static'} right={isCollapsed ? 1 : undefined}>
+				{sidebarControl}
+			</Box>
+		</HStack>
+	);
+};
 
-			<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5}>
-				<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
-					<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-						Course dashboard
-					</Text>
-					<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
-						{enrollment.course.title}
-					</Text>
-				</Box>
+type CourseWorkspaceNavigationProps = Pick<
+	CourseWorkspaceSidebarProps,
+	'activeTab' | 'isCollapsed' | 'onClose' | 'onTabChange'
+> & {
+	canOpenLearningTabs: boolean;
+	courseTitle: string;
+};
 
-				{courseTabs.map(tab => {
-					const Icon = tab.icon;
-					const isActive = activeTab === tab.id;
-					const isLocked = tab.id !== 'overview' && !canOpenLearningTabs;
-					const showLock = tab.id !== 'overview' && (isLocked || tab.id !== 'lessons');
+const CourseWorkspaceNavigation = ({
+	activeTab,
+	canOpenLearningTabs,
+	courseTitle,
+	isCollapsed = false,
+	onClose,
+	onTabChange
+}: CourseWorkspaceNavigationProps) => (
+	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5}>
+		<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
+			<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+				Course dashboard
+			</Text>
+			<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
+				{courseTitle}
+			</Text>
+		</Box>
 
-					return (
-						<Button
-							key={tab.id}
-							justifyContent={isCollapsed ? 'center' : 'space-between'}
-							borderRadius="lg"
-							variant={isActive ? 'solid' : 'ghost'}
-							bg={isActive ? 'primary' : undefined}
-							color={isActive ? 'text.inverse' : 'text.primary'}
-							disabled={isLocked}
-							minH="48px"
-							px={isCollapsed ? 0 : 4}
-							position="relative"
-							title={isCollapsed ? tab.label : undefined}
-							onClick={() => {
-								onTabChange(tab.id);
-								onClose?.();
-							}}
-						>
-							<HStack gap={3}>
-								<Icon />
-								{!isCollapsed ? (
-									<Text as="span" fontWeight="semibold">
-										{tab.label}
-									</Text>
-								) : null}
-							</HStack>
-							{showLock && !isCollapsed ? (
-								<Box>
-									<FiLock size={16} />
-								</Box>
-							) : null}
-						</Button>
-					);
-				})}
-			</Stack>
+		{courseTabs.map(tab => {
+			const Icon = tab.icon;
+			const isActive = activeTab === tab.id;
+			const isLocked = tab.id !== 'overview' && !canOpenLearningTabs;
+			const showLock = tab.id !== 'overview' && (isLocked || tab.id !== 'lessons');
 
-			<Box borderTop="1px solid" borderColor="border.default" p={isCollapsed ? 2 : 4}>
+			return (
+				<Button
+					key={tab.id}
+					justifyContent={isCollapsed ? 'center' : 'space-between'}
+					borderRadius="lg"
+					variant={isActive ? 'solid' : 'ghost'}
+					bg={isActive ? 'primary' : undefined}
+					color={isActive ? workspaceActiveTextColor : 'text.primary'}
+					disabled={isLocked}
+					minH="48px"
+					px={isCollapsed ? 0 : 4}
+					position="relative"
+					title={isCollapsed ? tab.label : undefined}
+					aria-current={isActive ? 'page' : undefined}
+					onClick={() => {
+						onTabChange(tab.id);
+						onClose?.();
+					}}
+				>
+					<HStack gap={3}>
+						<Icon />
+						{!isCollapsed ? (
+							<Text as="span" fontWeight="semibold">
+								{tab.label}
+							</Text>
+						) : null}
+					</HStack>
+					{showLock && !isCollapsed ? (
+						<Box>
+							<FiLock size={16} />
+						</Box>
+					) : null}
+				</Button>
+			);
+		})}
+	</Stack>
+);
+
+const CourseWorkspaceUser = ({
+	currentUser,
+	displayName,
+	isCollapsed
+}: {
+	currentUser: AuthenticatedUser | null;
+	displayName: string;
+	isCollapsed: boolean;
+}) => (
+	<Box borderTop="1px solid" borderColor={workspaceBoundaryColor} p={isCollapsed ? 2 : 4}>
+		<Box
+			asChild
+			display="block"
+			borderRadius="xl"
+			_hover={{ bg: 'bg.muted' }}
+			_focusVisible={{ outline: '2px solid', outlineColor: workspaceSelectedBoundaryColor, outlineOffset: '2px' }}
+			transition="background-color 150ms ease"
+			_motionReduce={{ transition: 'none' }}
+		>
+			<Link href="/profile" aria-label={`Open ${displayName}'s profile`}>
 				<HStack
 					justify={isCollapsed ? 'center' : 'flex-start'}
 					border="1px solid"
-					borderColor="border.default"
+					borderColor={workspaceBoundaryColor}
 					borderRadius="xl"
 					bg="bg.subtle"
 					p={isCollapsed ? 2 : 3}
@@ -1273,7 +1505,7 @@ const CourseWorkspaceSidebar = ({
 							boxSize="42px"
 							borderRadius="full"
 							bg="primary"
-							color="text.inverse"
+							color={workspaceActiveTextColor}
 							display="grid"
 							flexShrink={0}
 							fontWeight="bold"
@@ -1291,7 +1523,35 @@ const CourseWorkspaceSidebar = ({
 						</Text>
 					</Box>
 				</HStack>
-			</Box>
+			</Link>
+		</Box>
+	</Box>
+);
+
+const CourseWorkspaceSidebar = ({
+	activeTab,
+	currentUser,
+	enrollment,
+	isCollapsed = false,
+	onClose,
+	onTabChange,
+	onToggleCollapse
+}: CourseWorkspaceSidebarProps) => {
+	const displayName = currentUser?.name || currentUser?.email || 'User';
+	const canOpenLearningTabs = Boolean(enrollment.accessUnlockedAt) || isAdminLearner(currentUser);
+
+	return (
+		<Stack h="full" gap={0} bg="bg.card">
+			<CourseWorkspaceSidebarHeader isCollapsed={isCollapsed} onClose={onClose} onToggleCollapse={onToggleCollapse} />
+			<CourseWorkspaceNavigation
+				activeTab={activeTab}
+				canOpenLearningTabs={canOpenLearningTabs}
+				courseTitle={enrollment.course.title}
+				isCollapsed={isCollapsed}
+				onClose={onClose}
+				onTabChange={onTabChange}
+			/>
+			<CourseWorkspaceUser currentUser={currentUser} displayName={displayName} isCollapsed={isCollapsed} />
 		</Stack>
 	);
 };
@@ -1383,7 +1643,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 
 	return (
 		<Stack gap={4}>
-			<Box borderRadius="card" bg="primary" color="text.inverse" px={{ base: 4, md: 5 }} py={3}>
+			<Box borderRadius="card" bg="primary" color={workspaceActiveTextColor} px={{ base: 4, md: 5 }} py={3}>
 				<HStack gap={3}>
 					<FiCheckCircle />
 					<Text fontSize="sm" fontWeight="semibold">
@@ -1392,7 +1652,13 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 				</HStack>
 			</Box>
 
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 7 }}
+			>
 				<Stack gap={4}>
 					<Heading size={{ base: 'xl', md: '2xl' }} lineHeight="short">
 						Welcome to the Course{learnerName ? `, ${learnerName}` : ''}.
@@ -1420,7 +1686,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 
 			<Box
 				border="1px solid"
-				borderColor="border.default"
+				borderColor={workspaceBoundaryColor}
 				borderRadius="card"
 				bg="bg.card"
 				overflow="hidden"
@@ -1433,7 +1699,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 								boxSize="56px"
 								borderRadius="xl"
 								bg="primary"
-								color="text.inverse"
+								color={workspaceActiveTextColor}
 								display="grid"
 								flexShrink={0}
 								fontSize="2xl"
@@ -1458,7 +1724,13 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 
 						<HStack gap={3} flexWrap="wrap">
 							{hasInviteLink ? (
-								<Button asChild borderRadius="full" bg="primary" color="text.inverse" _hover={{ bg: 'primaryHover' }}>
+								<Button
+									asChild
+									borderRadius="full"
+									bg="primary"
+									color={workspaceActiveTextColor}
+									_hover={{ bg: 'primaryHover' }}
+								>
 									<Link href={course.whatsappGroupUrl} target="_blank" rel="noopener noreferrer">
 										Join WhatsApp Group <FiExternalLink />
 									</Link>
@@ -1500,7 +1772,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 							<Button
 								borderRadius="full"
 								bg="primary"
-								color="text.inverse"
+								color={workspaceActiveTextColor}
 								h="46px"
 								_hover={{ bg: 'primaryHover' }}
 								loading={isSubmitting}
@@ -1526,7 +1798,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 						justify="center"
 						bg="bg.subtle"
 						borderLeft={{ xl: '1px solid' }}
-						borderColor="border.default"
+						borderColor={workspaceBoundaryColor}
 						p={{ base: 5, md: 6 }}
 					>
 						<QrCodePreview value={course.whatsappGroupUrl} label="WhatsApp group QR" size={220} />
@@ -1650,14 +1922,20 @@ const CourseOverviewContent = ({
 
 	if (enrollment.accessUnlockedAt && dashboardErrorMessage) {
 		return (
-			<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+			<Box
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="card"
+				bg="bg.card"
+				p={{ base: 5, md: 6 }}
+			>
 				<Stack gap={4}>
 					<Heading size="lg">Dashboard temporarily unavailable</Heading>
 					<Text color="text.muted">{dashboardErrorMessage}</Text>
 					<Button
 						borderRadius="full"
 						bg="primary"
-						color="text.inverse"
+						color={workspaceActiveTextColor}
 						_hover={{ bg: 'primaryHover' }}
 						w="fit-content"
 						onClick={onDashboardRetry}
@@ -1816,22 +2094,51 @@ const CourseLearningRail = ({
 	}
 
 	if (isCollapsed) {
+		const compactPercentage = showLessonRail
+			? (lessons?.lessonProgressPercentage ?? enrollment.progressPercent)
+			: (dashboard?.completion.percentage ?? enrollment.progressPercent);
+
 		return (
-			<Box justifySelf="end" position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+			<Stack
+				align="center"
+				gap={3}
+				justifySelf="end"
+				position={{ xl: 'sticky' }}
+				top={{ xl: '96px' }}
+				border="1px solid"
+				borderColor={workspaceBoundaryColor}
+				borderRadius="xl"
+				bg="bg.card"
+				px={2}
+				py={3}
+				w="64px"
+			>
 				<Button
-					variant="outline"
+					variant="ghost"
 					borderRadius="lg"
-					boxSize="44px"
-					minW="44px"
+					boxSize="40px"
+					minW="40px"
 					p={0}
-					bg="bg.card"
 					onClick={onToggleCollapse}
 					aria-label="Expand course side panel"
 					title="Expand course side panel"
 				>
 					<FiChevronLeft />
 				</Button>
-			</Box>
+				<Box color="primary" fontSize="xl" aria-hidden="true">
+					{showLessonRail ? <FiBookOpen /> : <FiTrendingUp />}
+				</Box>
+				<Text
+					color="text.primary"
+					fontSize="xs"
+					fontWeight="bold"
+					title={`${compactPercentage}% course progress`}
+					writingMode="vertical-rl"
+					transform="rotate(180deg)"
+				>
+					{compactPercentage}% progress
+				</Text>
+			</Stack>
 		);
 	}
 
@@ -1860,8 +2167,88 @@ const CourseLearningRail = ({
 	);
 };
 
-const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
+type CourseWorkspaceBootstrapOptions = {
+	courseId: string;
+	currentPath: string;
+	loadDashboard: (user: AuthenticatedUser | null) => Promise<void>;
+	onEnrollmentLoaded: (enrollment: CourseEnrollment) => void;
+	onError: (message: string) => void;
+	onLoadingComplete: () => void;
+	onUserLoaded: (user: AuthenticatedUser) => void;
+};
+
+const useCourseWorkspaceBootstrap = ({
+	courseId,
+	currentPath,
+	loadDashboard,
+	onEnrollmentLoaded,
+	onError,
+	onLoadingComplete,
+	onUserLoaded
+}: CourseWorkspaceBootstrapOptions) => {
 	const router = useRouter();
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadCourseWorkspace = async () => {
+			try {
+				const [userResult, enrollmentResult] = await Promise.all([
+					getCurrentUser(),
+					getCourseEnrollmentStatus(courseId)
+				]);
+
+				if (!isMounted) {
+					return;
+				}
+
+				onUserLoaded(userResult.user);
+
+				if (!enrollmentResult.isEnrolled || !enrollmentResult.enrollment) {
+					onError('You are not enrolled in this course yet.');
+					return;
+				}
+
+				onEnrollmentLoaded(enrollmentResult.enrollment);
+				trackEnrollmentEvent({
+					location: 'course_learning',
+					eventName: 'Course Learning Page Viewed',
+					courseId,
+					courseTitle: enrollmentResult.enrollment.course.title,
+					userId: userResult.user.id,
+					isFreeCourse: enrollmentResult.enrollment.course.price === 0,
+					enrollmentStatus: enrollmentResult.enrollment.status,
+					sourcePage: currentPath
+				});
+
+				if (enrollmentResult.enrollment.accessUnlockedAt && isMounted) {
+					await loadDashboard(userResult.user);
+				}
+			} catch (error) {
+				if (error instanceof ApiRequestError && error.statusCode === 401) {
+					router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
+					return;
+				}
+
+				if (isMounted) {
+					onError('Unable to load this course right now.');
+				}
+			} finally {
+				if (isMounted) {
+					onLoadingComplete();
+				}
+			}
+		};
+
+		loadCourseWorkspace().catch(() => undefined);
+
+		return () => {
+			isMounted = false;
+		};
+	}, [courseId, currentPath, loadDashboard, onEnrollmentLoaded, onError, onLoadingComplete, onUserLoaded, router]);
+};
+
+const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	const currentPath = `/my-courses/${courseId}`;
 	const hasTrackedCertificateRef = useRef<string | null>(null);
 	const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
@@ -1962,65 +2349,29 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		[courseId, currentPath, currentUser?.id]
 	);
 
-	useEffect(() => {
-		let isMounted = true;
+	const handleWorkspaceUserLoaded = useCallback((user: AuthenticatedUser) => {
+		setCurrentUser(user);
+		setLearnerName(user.name.split(' ')[0] ?? '');
+	}, []);
+	const handleWorkspaceEnrollmentLoaded = useCallback((loadedEnrollment: CourseEnrollment) => {
+		setEnrollment(loadedEnrollment);
+	}, []);
+	const handleWorkspaceError = useCallback((message: string) => {
+		setErrorMessage(message);
+	}, []);
+	const handleWorkspaceLoadingComplete = useCallback(() => {
+		setIsLoading(false);
+	}, []);
 
-		const loadCourseWorkspace = async () => {
-			try {
-				const [userResult, enrollmentResult] = await Promise.all([
-					getCurrentUser(),
-					getCourseEnrollmentStatus(courseId)
-				]);
-
-				if (!isMounted) {
-					return;
-				}
-
-				setCurrentUser(userResult.user);
-				setLearnerName(userResult.user.name.split(' ')[0] ?? '');
-
-				if (!enrollmentResult.isEnrolled || !enrollmentResult.enrollment) {
-					setErrorMessage('You are not enrolled in this course yet.');
-					return;
-				}
-
-				setEnrollment(enrollmentResult.enrollment);
-				trackEnrollmentEvent({
-					location: 'course_learning',
-					eventName: 'Course Learning Page Viewed',
-					courseId,
-					courseTitle: enrollmentResult.enrollment.course.title,
-					userId: userResult.user.id,
-					isFreeCourse: enrollmentResult.enrollment.course.price === 0,
-					enrollmentStatus: enrollmentResult.enrollment.status,
-					sourcePage: currentPath
-				});
-
-				if (enrollmentResult.enrollment.accessUnlockedAt && isMounted) {
-					await loadDashboard(userResult.user);
-				}
-			} catch (error) {
-				if (error instanceof ApiRequestError && error.statusCode === 401) {
-					router.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
-					return;
-				}
-
-				if (isMounted) {
-					setErrorMessage('Unable to load this course right now.');
-				}
-			} finally {
-				if (isMounted) {
-					setIsLoading(false);
-				}
-			}
-		};
-
-		loadCourseWorkspace().catch(() => undefined);
-
-		return () => {
-			isMounted = false;
-		};
-	}, [courseId, currentPath, loadDashboard, router]);
+	useCourseWorkspaceBootstrap({
+		courseId,
+		currentPath,
+		loadDashboard,
+		onEnrollmentLoaded: handleWorkspaceEnrollmentLoaded,
+		onError: handleWorkspaceError,
+		onLoadingComplete: handleWorkspaceLoadingComplete,
+		onUserLoaded: handleWorkspaceUserLoaded
+	});
 
 	const handleCourseUnlocked = useCallback(
 		(updatedEnrollment: CourseEnrollment) => {
@@ -2153,6 +2504,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		activeTab === 'overview' && Boolean(enrollment?.accessUnlockedAt && dashboard && !isDashboardLoading);
 	const shouldShowLessonRail = activeTab === 'lessons' && canOpenLearningTabs;
 	const shouldShowOverviewRail = activeTab === 'overview' || shouldShowLessonRail;
+	const workspaceGridColumns = getCourseWorkspaceGridColumns(shouldShowOverviewRail, isLearningRailCollapsed);
 
 	if (isLoading) {
 		return <ProfilePageSkeleton />;
@@ -2161,12 +2513,24 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	if (!enrollment) {
 		return (
 			<Container maxW="3xl" py={{ base: 12, md: 16 }}>
-				<Box border="1px solid" borderColor="border.default" borderRadius="card" bg="bg.card" p={{ base: 5, md: 6 }}>
+				<Box
+					border="1px solid"
+					borderColor={workspaceBoundaryColor}
+					borderRadius="card"
+					bg="bg.card"
+					p={{ base: 5, md: 6 }}
+				>
 					<Stack gap={4}>
 						<Heading size="lg">Course access unavailable</Heading>
 						<Text color="text.muted">{errorMessage}</Text>
 						<HStack gap={3} flexWrap="wrap">
-							<Button asChild borderRadius="full" bg="primary" color="text.inverse" _hover={{ bg: 'primaryHover' }}>
+							<Button
+								asChild
+								borderRadius="full"
+								bg="primary"
+								color={workspaceActiveTextColor}
+								_hover={{ bg: 'primaryHover' }}
+							>
 								<Link href={`/course/${courseId}`}>View course details</Link>
 							</Button>
 							<Button asChild borderRadius="full" variant="outline">
@@ -2192,7 +2556,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 					'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
 				}}
 				borderRight="1px solid"
-				borderColor="border.default"
+				borderColor={workspaceBoundaryColor}
 				zIndex={20}
 				transition="width 180ms ease"
 				_motionReduce={{ transition: 'none' }}
@@ -2235,13 +2599,16 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 					position="sticky"
 					top={0}
 					zIndex={10}
+					minH="72px"
 					borderBottom="1px solid"
-					borderColor="border.default"
+					borderColor={workspaceBoundaryColor}
 					bg="bg.card"
 					px={{ base: 4, md: 6 }}
-					py={3}
+					py={{ base: 3, lg: 0 }}
+					display="flex"
+					alignItems="center"
 				>
-					<HStack justify="space-between" gap={4} flexWrap="wrap">
+					<HStack w="full" justify="space-between" gap={4} flexWrap="wrap">
 						<HStack gap={3} minW={0}>
 							<Button
 								display={{ base: 'inline-flex', lg: 'none' }}
@@ -2253,18 +2620,14 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							>
 								<FiMenu />
 							</Button>
-							<Box
+							<Image
+								src={enrollment.course.thumbnailImage || enrollment.course.promoImage || shattakMarkUrl}
+								alt=""
 								boxSize="40px"
 								borderRadius="lg"
-								bg="primary"
-								color="text.inverse"
-								display="grid"
 								flexShrink={0}
-								fontWeight="bold"
-								placeItems="center"
-							>
-								S
-							</Box>
+								objectFit="cover"
+							/>
 							<Box minW={0}>
 								<Heading size="sm" lineClamp={1}>
 									{enrollment.course.title}
@@ -2281,9 +2644,11 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							<Badge borderRadius="full" px={3} py={1}>
 								{enrollment.progressPercent}% progress
 							</Badge>
-							<Badge colorPalette={enrollment.accessUnlockedAt ? 'green' : 'orange'} borderRadius="full" px={3} py={1}>
-								{enrollment.accessUnlockedAt ? 'Overview unlocked' : 'Overview locked'}
-							</Badge>
+							{!enrollment.accessUnlockedAt ? (
+								<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
+									Overview locked
+								</Badge>
+							) : null}
 							<ThemeToggle />
 							<Button asChild borderRadius="full" size="sm" variant="outline">
 								<Link href={`/course/${courseId}`}>Back to course</Link>
@@ -2293,20 +2658,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				</Box>
 
 				<Box px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
-					<Box
-						display="grid"
-						gridTemplateColumns={
-							shouldShowOverviewRail
-								? {
-										base: '1fr',
-										xl: isLearningRailCollapsed ? 'minmax(0, 1fr) 44px' : 'minmax(520px, 1fr) 340px',
-										'2xl': isLearningRailCollapsed ? 'minmax(0, 1fr) 44px' : 'minmax(680px, 1fr) 380px'
-									}
-								: '1fr'
-						}
-						gap={{ base: 4, xl: 5 }}
-						alignItems="start"
-					>
+					<Box display="grid" gridTemplateColumns={workspaceGridColumns} gap={{ base: 4, xl: 5 }} alignItems="start">
 						<Box minW={0}>
 							<CourseLearningMainContent
 								activeTab={activeTab}

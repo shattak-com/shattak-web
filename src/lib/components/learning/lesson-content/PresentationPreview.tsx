@@ -58,7 +58,7 @@ export const PresentationPreview = ({ url, title = 'Course presentation' }: Pres
 					loading="lazy"
 					allowFullScreen
 					referrerPolicy="strict-origin-when-cross-origin"
-					sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
+					sandbox="allow-forms allow-same-origin allow-scripts"
 					onLoad={() => setIsLoading(false)}
 					style={{ border: 0, height: '100%', width: '100%' }}
 				/>

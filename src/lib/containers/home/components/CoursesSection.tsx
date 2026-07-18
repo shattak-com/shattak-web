@@ -25,9 +25,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
 import { trackCourseCardClicked, trackCourseFilterChanged } from '~/lib/analytics/mixpanel';
+import type { LandingCourseCard } from '~/lib/api/courses';
 import Reveal from '~/lib/components/Reveal';
 import { courseCategories } from '~/lib/constants/landing';
-import type { LandingCourseCard } from '~/lib/firebase/courses';
 
 const formatLearners = (count: number) => {
 	if (count >= 1000) {
@@ -133,28 +133,30 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 				<Stack gap={6}>
 					<Box>
 						<Wrap gap={{ base: 3, md: 4 }} align="center" mb={{ base: 4, md: 6 }}>
-							{categories.map(category => (
-								<WrapItem key={category}>
-									<Button
-										size={{ base: 'xs', md: 'sm' }}
-										borderRadius="full"
-										bg={activeCategory === category ? 'primary' : 'bg.card'}
-										color={activeCategory === category ? 'text.inverse' : 'text.primary'}
-										border="2px solid"
-										borderColor="border.brand"
-										fontWeight="semibold"
-										fontSize={{ base: 'xs', md: 'sm' }}
-										px={{ base: 4, md: 6 }}
-										_hover={{
-											bg: activeCategory === category ? 'primaryHover' : 'bg.brand',
-											color: activeCategory === category ? 'text.inverse' : 'text.primary'
-										}}
-										onClick={() => handleCategoryChange(category)}
-									>
-										{category}
-									</Button>
-								</WrapItem>
-							))}
+							{categories
+								.filter(currentCourse => !currentCourse.includes('Private'))
+								.map(category => (
+									<WrapItem key={category}>
+										<Button
+											size={{ base: 'xs', md: 'sm' }}
+											borderRadius="full"
+											bg={activeCategory === category ? 'primary' : 'bg.card'}
+											color={activeCategory === category ? 'text.inverse' : 'text.primary'}
+											border="2px solid"
+											borderColor="border.brand"
+											fontWeight="semibold"
+											fontSize={{ base: 'xs', md: 'sm' }}
+											px={{ base: 4, md: 6 }}
+											_hover={{
+												bg: activeCategory === category ? 'primaryHover' : 'bg.brand',
+												color: activeCategory === category ? 'text.inverse' : 'text.primary'
+											}}
+											onClick={() => handleCategoryChange(category)}
+										>
+											{category}
+										</Button>
+									</WrapItem>
+								))}
 						</Wrap>
 					</Box>
 

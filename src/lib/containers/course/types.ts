@@ -121,7 +121,7 @@ export type CourseDetails = {
 	completion: CourseCompletion;
 	projects: CourseProject[];
 	faqs: CourseFaqItem[];
-	prerequisites: CourseSessionSection[];
+	lessons: CourseSessionSection[];
 	liveSessions: CourseSessionSection[];
 	postSessionMaterials: CourseSessionSection[];
 	requirements: string[];

@@ -1,13 +1,13 @@
 'use client';
 
-import { Box, Button, Container, Grid, Heading, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Box, Container, Grid, Heading, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { FiCalendar, FiStar, FiUsers } from 'react-icons/fi';
 
-import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
+import CourseEnrollAction from '~/lib/containers/course/components/CourseEnrollAction';
 import type { CourseDetails } from '~/lib/containers/course/types';
+import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type CourseHeroProps = {
@@ -24,26 +24,12 @@ const formatCount = (value: number) => {
 };
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
-const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
+const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
 const enrollGlow = keyframes`
   0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0), 0 0 0 rgba(78, 120, 255, 0); }
   50% { box-shadow: 0 0 14px rgba(255, 255, 255, 0.28), 0 0 28px rgba(78, 120, 255, 0.38); }
 `;
-const formatDuration = (hours: number, minutes: number) => {
-	const parts: string[] = [];
-	if (hours > 0) {
-		parts.push(`${hours} hr`);
-	}
-	if (minutes > 0) {
-		parts.push(`${minutes} min`);
-	}
-	return parts.join(' ') || '0 min';
-};
-
 const CourseHero = ({ course }: CourseHeroProps) => {
-	const paymentLink = course.paymentLink.trim();
-	const enrollHref = paymentLink || `/booking/${course.id}`;
-	const openExternal = isExternalLink(enrollHref);
 	const discountPercent =
 		course.originalPrice > course.price
 			? Math.floor(((course.originalPrice - course.price) / course.originalPrice) * 100)
@@ -51,12 +37,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 
 	const hasMoreThanThree = course.schedule.length > 3;
 	const scheduleItems = hasMoreThanThree ? course.schedule.slice(0, 4) : course.schedule.slice(0, 3);
-	const scheduleDisplayItems = buildScheduleDisplayItems(scheduleItems, course.durationHours, course.durationMinutes);
+	const scheduleDisplayItems = buildScheduleDisplayItems(scheduleItems, 0, 0);
+	const courseContentDurationMinutes = getCourseContentDurationMinutes(course);
 	const highlights = [
 		{
 			id: 'highlight-duration',
 			label: 'Duration',
-			value: formatDuration(course.durationHours, course.durationMinutes)
+			value: formatCourseDuration(courseContentDurationMinutes)
 		},
 		{
 			id: 'highlight-learners',
@@ -95,7 +82,7 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 				</Box>
 				<Stack gap={1} flex="1">
 					<Text fontSize="sm" color="text.secondary">
-						{item.label} � {item.day} � {item.durationLabel}
+						{item.label} {'\u00B7'} {item.day} {'\u00B7'} {item.durationLabel}
 					</Text>
 					<Text fontSize="sm" fontWeight="bold" color="text.primary">
 						{item.timeRange}
@@ -260,10 +247,10 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										</Text>
 										<HStack gap={3} align="baseline" mt={2}>
 											<Text fontSize="2xl" fontWeight="bold">
-												?{formatCurrency(course.price)}
+												{formatRupee(course.price)}
 											</Text>
 											<Text fontSize="sm" color="text.muted" textDecoration="line-through">
-												?{formatCurrency(course.originalPrice)}
+												{formatRupee(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -276,13 +263,13 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										<HStack justify="space-between">
 											<Text>Course Fee</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												?{formatCurrency(course.price)}
+												{formatRupee(course.price)}
 											</Text>
 										</HStack>
 										<HStack justify="space-between">
 											<Text>Worth of</Text>
 											<Text fontWeight="semibold" color="text.primary">
-												?{formatCurrency(course.originalPrice)}
+												{formatRupee(course.originalPrice)}
 											</Text>
 										</HStack>
 										{discountPercent > 0 ? (
@@ -298,38 +285,18 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 										<Text fontWeight="semibold" color="text.secondary">
 											Includes
 										</Text>
-										<Text>� Expert Designed Curriculum</Text>
-										<Text>� Doubt Clearing Session</Text>
-										<Text>� Forever Community Access</Text>
+										<Text>{'\u2022'} Expert Designed Curriculum</Text>
+										<Text>{'\u2022'} Doubt Clearing Session</Text>
+										<Text>{'\u2022'} Forever Community Access</Text>
 									</Stack>
-									<Button
-										asChild
-										size="sm"
-										borderRadius="full"
-										bg="text.primary"
-										color="text.inverse"
-										_hover={{ bg: 'text.primary', opacity: 0.9 }}
+									<Box
 										w="full"
 										mt="auto"
 										animation={`${enrollGlow} 2.8s ease-in-out infinite`}
 										_dark={{ animation: `${enrollGlow} 2.8s ease-in-out infinite` }}
 									>
-										<Link
-											href={enrollHref}
-											target={openExternal ? '_blank' : undefined}
-											rel={openExternal ? 'noopener noreferrer' : undefined}
-											onClick={() =>
-												trackEnrollClicked({
-													location: 'course_hero',
-													destination: enrollHref,
-													courseId: course.id,
-													courseTitle: course.title
-												})
-											}
-										>
-											Enroll Now
-										</Link>
-									</Button>
+										<CourseEnrollAction course={course} location="course_hero" size="sm" />
+									</Box>
 								</Stack>
 							</Box>
 						</Grid>

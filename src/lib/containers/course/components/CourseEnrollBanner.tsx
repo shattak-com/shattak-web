@@ -1,11 +1,11 @@
 'use client';
 
-import { Box, Button, Container, HStack, Stack, Text } from '@chakra-ui/react';
-import Link from 'next/link';
+import { Box, Container, HStack, Stack, Text } from '@chakra-ui/react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { trackEnrollClicked } from '~/lib/analytics/mixpanel';
+import CourseEnrollAction from '~/lib/containers/course/components/CourseEnrollAction';
 import type { CourseDetails } from '~/lib/containers/course/types';
+import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type CourseEnrollBannerProps = {
@@ -13,24 +13,10 @@ type CourseEnrollBannerProps = {
 };
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
-const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
-
-const formatDurationSummary = (hours: number, minutes: number) => {
-	const parts: string[] = [];
-	if (hours > 0) {
-		parts.push(`${hours}Hr`);
-	}
-	if (minutes > 0) {
-		parts.push(`${minutes}Min`);
-	}
-	return parts.join(' ') || 'TBD';
-};
+const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
 
 const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 	const [isVisible, setIsVisible] = useState(false);
-	const paymentLink = course.paymentLink.trim();
-	const enrollHref = paymentLink || `/booking/${course.id}`;
-	const openExternal = isExternalLink(enrollHref);
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -48,7 +34,7 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 			: 0;
 
 	const startingSession = useMemo(() => {
-		const items = buildScheduleDisplayItems(course.schedule.slice(0, 1), course.durationHours, course.durationMinutes);
+		const items = buildScheduleDisplayItems(course.schedule.slice(0, 1), 0, 0);
 		if (!items.length) {
 			return null;
 		}
@@ -56,6 +42,8 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 		const startTime = item.timeRange.split(' to ')[0] ?? item.timeRange;
 		return `${item.badge.day} ${item.badge.month} - ${startTime}`;
 	}, [course]);
+
+	const courseContentDuration = formatCourseDuration(getCourseContentDurationMinutes(course));
 
 	return (
 		<Box
@@ -92,11 +80,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 								<Box w="1px" h="40px" bg="border.default" />
 								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
-										Live Session
+										Duration
 									</Text>
-									<Text fontWeight="semibold">
-										{formatDurationSummary(course.durationHours, course.durationMinutes)}
-									</Text>
+									<Text fontWeight="semibold">{courseContentDuration}</Text>
 								</Stack>
 							</HStack>
 							<HStack gap={4} justify="flex-end" flex="1">
@@ -105,9 +91,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 										Get Life Time Access
 									</Text>
 									<HStack gap={2} align="baseline">
-										<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
+										<Text fontWeight="bold">{formatRupee(course.price)}</Text>
 										<Text fontSize="sm" color="text.muted" textDecoration="line-through">
-											INR {formatCurrency(course.originalPrice)}
+											{formatRupee(course.originalPrice)}
 										</Text>
 										{discountPercent > 0 ? (
 											<Text fontSize="xs" color="text.accent" fontWeight="semibold">
@@ -116,30 +102,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 										) : null}
 									</HStack>
 								</Stack>
-								<Button
-									asChild
-									size="sm"
-									borderRadius="full"
-									bg="text.primary"
-									color="text.inverse"
-									_hover={{ bg: 'text.primary', opacity: 0.9 }}
-								>
-									<Link
-										href={enrollHref}
-										target={openExternal ? '_blank' : undefined}
-										rel={openExternal ? 'noopener noreferrer' : undefined}
-										onClick={() =>
-											trackEnrollClicked({
-												location: 'course_sticky_banner',
-												destination: enrollHref,
-												courseId: course.id,
-												courseTitle: course.title
-											})
-										}
-									>
-										Enroll Now
-									</Link>
-								</Button>
+								<Box>
+									<CourseEnrollAction course={course} location="course_sticky_banner" size="sm" fullWidth={false} />
+								</Box>
 							</HStack>
 						</HStack>
 					</Box>
@@ -151,9 +116,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 									Get Life Time Access
 								</Text>
 								<HStack gap={2} align="baseline">
-									<Text fontWeight="bold">INR {formatCurrency(course.price)}</Text>
+									<Text fontWeight="bold">{formatRupee(course.price)}</Text>
 									<Text fontSize="xs" color="text.muted" textDecoration="line-through">
-										INR {formatCurrency(course.originalPrice)}
+										{formatRupee(course.originalPrice)}
 									</Text>
 									{discountPercent > 0 ? (
 										<Text fontSize="xs" color="text.accent" fontWeight="semibold">
@@ -162,30 +127,14 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 									) : null}
 								</HStack>
 							</Stack>
-							<Button
-								asChild
-								size="sm"
-								borderRadius="full"
-								bg="text.primary"
-								color="text.inverse"
-								_hover={{ bg: 'text.primary', opacity: 0.9 }}
-							>
-								<Link
-									href={enrollHref}
-									target={openExternal ? '_blank' : undefined}
-									rel={openExternal ? 'noopener noreferrer' : undefined}
-									onClick={() =>
-										trackEnrollClicked({
-											location: 'course_sticky_banner_mobile',
-											destination: enrollHref,
-											courseId: course.id,
-											courseTitle: course.title
-										})
-									}
-								>
-									Enroll Now
-								</Link>
-							</Button>
+							<Box>
+								<CourseEnrollAction
+									course={course}
+									location="course_sticky_banner_mobile"
+									size="sm"
+									fullWidth={false}
+								/>
+							</Box>
 						</HStack>
 					</Box>
 				</Box>

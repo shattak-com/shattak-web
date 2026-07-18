@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
+import { getCourseById } from '~/lib/api/courses';
 import CourseDetailsPage from '~/lib/containers/course';
 import CourseUnavailable from '~/lib/containers/course/components/CourseUnavailable';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
-import { getCourseById } from '~/lib/firebase/courses';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +16,7 @@ type CoursePageProps = {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 const formatDescription = (course: CourseDetails) =>
-	[course.summary, course.subtitle, course.about].map(value => value?.trim()).find(Boolean) ??
-	`Explore ${course.title} on Shattak.`;
+	[course.summary, course.about].map(value => value?.trim()).find(Boolean) ?? `Explore ${course.title} on Shattak.`;
 
 const formatIsoDuration = (hours: number, minutes: number) => {
 	const totalMinutes = hours * 60 + minutes;
@@ -31,7 +30,7 @@ const formatIsoDuration = (hours: number, minutes: number) => {
 	return `PT${hoursPart}${minutesPart}`;
 };
 
-const getCourse = cache(async (id: string) => getCourseById(id, { includeDrafts: true }));
+const getCourse = cache(async (id: string) => getCourseById(id));
 
 export const generateMetadata = async ({ params }: CoursePageProps): Promise<Metadata> => {
 	const { id: rawId } = await params;

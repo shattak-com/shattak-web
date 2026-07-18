@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
+import 'katex/dist/katex.min.css';
 
 import { Layout } from '~/lib/containers/layout';
 import { RootProviders } from '~/lib/providers/root';

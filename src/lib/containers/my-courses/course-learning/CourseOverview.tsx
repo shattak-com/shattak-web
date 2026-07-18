@@ -294,7 +294,11 @@ const CourseUnlockedOverviewTab = ({
 	learnerName,
 	onTabChange
 }: CourseUnlockedOverviewTabProps) => {
-	const streakTiles = getStreakTiles(dashboard.streak.currentStreak, dashboard.streak.lastActiveDate);
+	const streakTiles = getStreakTiles(
+		dashboard.streak.currentStreak,
+		dashboard.streak.lastActiveDate,
+		dashboard.streak.timeZone
+	);
 	const { course } = enrollment;
 
 	const handleProgressClick = () => {

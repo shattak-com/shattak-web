@@ -79,19 +79,27 @@ const streakDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: 'UTC'
 });
 
-const getStreakWindowEnd = (lastActiveDate: string | null) => {
-	const datePart = lastActiveDate?.slice(0, 10) ?? '';
-	if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-		const [year, month, day] = datePart.split('-').map(Number);
-		return new Date(Date.UTC(year, month - 1, day));
-	}
+const getCalendarDateInTimeZone = (date: Date, timeZone: string) => {
+	const dateParts = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).formatToParts(date);
+	const calendarParts = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
 
-	const now = new Date();
-	return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+	return new Date(Date.UTC(Number(calendarParts.year), Number(calendarParts.month) - 1, Number(calendarParts.day)));
 };
 
-export const getStreakTiles = (currentStreak: number, lastActiveDate: string | null) => {
-	const windowEnd = getStreakWindowEnd(lastActiveDate);
+const getStreakWindowEnd = (lastActiveDate: string | null, timeZone: string) => {
+	const lastActive = lastActiveDate ? new Date(lastActiveDate) : null;
+	const windowEnd = lastActive && !Number.isNaN(lastActive.getTime()) ? lastActive : new Date();
+
+	return getCalendarDateInTimeZone(windowEnd, timeZone);
+};
+
+export const getStreakTiles = (currentStreak: number, lastActiveDate: string | null, timeZone: string) => {
+	const windowEnd = getStreakWindowEnd(lastActiveDate, timeZone);
 	const activeTileCount = Math.min(Math.max(currentStreak, 0), 10);
 
 	return Array.from({ length: 10 }, (_, index) => {

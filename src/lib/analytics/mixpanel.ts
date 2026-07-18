@@ -608,6 +608,7 @@ type CourseDashboardEventName =
 	| 'course_focus_mode_entered'
 	| 'course_focus_mode_exited'
 	| 'course_fullscreen_toggled'
+	| 'course_pdf_viewer_toggled'
 	| 'course_certificate_earned';
 
 export const trackCourseDashboardEvent = (payload: {
@@ -626,6 +627,9 @@ export const trackCourseDashboardEvent = (payload: {
 	moduleId?: string;
 	moduleTitle?: string;
 	displayMode?: 'standard' | 'focus' | 'fullscreen';
+	expanded?: boolean;
+	interaction?: 'button' | 'escape';
+	resourceType?: 'pdf';
 	sourcePage?: string;
 }) =>
 	trackMixpanelEvent(payload.eventName, {
@@ -643,6 +647,9 @@ export const trackCourseDashboardEvent = (payload: {
 		module_id: payload.moduleId,
 		module_title: payload.moduleTitle,
 		display_mode: payload.displayMode,
+		expanded: payload.expanded,
+		interaction: payload.interaction,
+		resource_type: payload.resourceType,
 		source_page: payload.sourcePage,
 		timestamp: new Date().toISOString()
 	});

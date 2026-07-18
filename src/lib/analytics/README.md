@@ -68,6 +68,7 @@ Examples:
 - `course_focus_mode_entered`
 - `course_focus_mode_exited`
 - `course_fullscreen_toggled`
+- `course_pdf_viewer_toggled`
 
 All tracked events automatically include current page context:
 
@@ -164,6 +165,7 @@ Student lesson consumption is tracked from the course workspace only. These even
 - `course_focus_mode_entered`: fired when a learner hides the course navigation and progress rail to focus on lesson content.
 - `course_focus_mode_exited`: fired when a learner returns to the standard course workspace.
 - `course_fullscreen_toggled`: fired when a learner enters or exits browser fullscreen from focus mode.
+- `course_pdf_viewer_toggled`: fired when a learner expands or restores the inline PDF viewer.
 
 Lesson events can include:
 
@@ -178,6 +180,10 @@ Lesson events can include:
 - `#completion_percentage`
 - `#enrollment_status`
 - `#source_page`
+- `#display_mode`
+- `#expanded`
+- `#interaction`
+- `#resource_type`
 
 ## Verification Checklist
 

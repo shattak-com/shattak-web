@@ -61,6 +61,7 @@ Examples:
 - `course_progress_clicked`
 - `course_whatsapp_opened`
 - `course_certificate_earned`
+- `course_feedback_submitted`
 - `course_lesson_opened`
 - `course_lesson_next_clicked`
 - `course_lesson_completed`
@@ -136,6 +137,7 @@ Unlocked course workspace events use exact snake_case event names so product fun
 - `course_progress_clicked`
 - `course_whatsapp_opened`
 - `course_certificate_earned`
+- `course_feedback_submitted`
 
 These events should include the available course/user state without sending extra PII:
 

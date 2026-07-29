@@ -9,6 +9,7 @@ import type {
 	CourseLessonsState
 } from '~/lib/api/enrollments';
 
+import { CourseCertificateTab } from './certificate/CourseCertificateTab';
 import { courseNextSteps, workspaceBoundaryColor } from './constants';
 import { CourseLessonsTab, LessonProgressSidebar } from './CourseLessons';
 import { CourseNextStepsPanel, CourseOverviewContent, CourseUnlockedOverviewRail } from './CourseOverview';
@@ -162,6 +163,19 @@ export const CourseLearningMainContent = ({
 				onPreviousLesson={onLessonSelect}
 				onRetry={onLessonRetry}
 				onScrollBottomReached={onLessonBottomReached}
+			/>
+		);
+	}
+
+	if (activeTab === 'certificate') {
+		return (
+			<CourseCertificateTab
+				courseCompleted={Boolean(enrollment.completedAt) || (dashboard?.completion.percentage ?? 0) === 100}
+				courseId={courseId}
+				currentPath={`/my-courses/${courseId}`}
+				enrollment={enrollment}
+				isAdmin={canBypassProgression}
+				userId={currentUser?.id}
 			/>
 		);
 	}

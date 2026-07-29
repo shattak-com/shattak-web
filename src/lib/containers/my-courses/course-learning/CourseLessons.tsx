@@ -13,10 +13,13 @@ import {
 import type { CourseLessonsResult, CourseLessonsState } from '~/lib/api/enrollments';
 
 import { workspaceActiveTextColor, workspaceBoundaryColor, workspaceSelectedBoundaryColor } from './constants';
+import { CourseLessonMobileNavigator } from './CourseLessonMobileNavigator';
 import { LessonContentBlockView } from './LessonContentBlockView';
 import { getActiveLessonContext, getLessonStateLabel, getNextLessonRow, getPreviousUnlockedLessonRow } from './utils';
 
 type LessonProgressSidebarProps = {
+	embedded?: boolean;
+	isVisible?: boolean;
 	lessons: CourseLessonsState | null;
 	onLessonSelect: (subsectionId: string) => void;
 };
@@ -37,7 +40,12 @@ const getLessonProgressIcon = (subsection: CourseLessonsState['modules'][number]
 	return subsection.isLocked ? <FiLock /> : <FiPlayCircle />;
 };
 
-export const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgressSidebarProps) => {
+export const LessonProgressSidebar = ({
+	embedded = false,
+	isVisible = true,
+	lessons,
+	onLessonSelect
+}: LessonProgressSidebarProps) => {
 	const [expandedModuleIds, setExpandedModuleIds] = useState<string[]>([]);
 	const activeLessonRef = useRef<HTMLButtonElement | null>(null);
 	const moduleIds = lessons?.modules.map(courseModule => courseModule.id).join('|') ?? '';
@@ -66,7 +74,7 @@ export const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgres
 	}, [activeModuleId, lessons, moduleIds]);
 
 	useEffect(() => {
-		if (!activeModuleId || !expandedModuleIds.includes(activeModuleId)) {
+		if (!isVisible || !activeModuleId || !expandedModuleIds.includes(activeModuleId)) {
 			return undefined;
 		}
 
@@ -75,7 +83,7 @@ export const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgres
 		});
 
 		return () => window.cancelAnimationFrame(frame);
-	}, [activeModuleId, expandedModuleIds, lessons?.activeSubsectionId]);
+	}, [activeModuleId, expandedModuleIds, isVisible, lessons?.activeSubsectionId]);
 
 	if (!lessons) {
 		return (
@@ -97,11 +105,11 @@ export const LessonProgressSidebar = ({ lessons, onLessonSelect }: LessonProgres
 
 	return (
 		<Box
-			border="1px solid"
+			border={embedded ? 0 : '1px solid'}
 			borderColor={workspaceBoundaryColor}
-			borderRadius="card"
+			borderRadius={embedded ? 0 : 'card'}
 			bg="bg.card"
-			p={{ base: 4, md: 5 }}
+			p={embedded ? 0 : { base: 4, md: 5 }}
 		>
 			<Stack gap={4}>
 				<Box>
@@ -212,6 +220,7 @@ type CourseLessonsTabProps = {
 	lessonsResult: CourseLessonsResult | null;
 	lessonErrorMessage: string;
 	onCompleteLesson: () => void;
+	onLessonSelect: (subsectionId: string) => void;
 	onPreviousLesson: (subsectionId: string) => void;
 	onRetry: () => void;
 	onScrollBottomReached: () => void;
@@ -253,14 +262,16 @@ const LessonNavigationFooter = ({
 		borderRadius="card"
 		bg="bg.card"
 		boxShadow="sm"
-		p={{ base: 4, md: 5 }}
+		pb={{ base: 'calc(1rem + env(safe-area-inset-bottom))', md: 5 }}
+		px={{ base: 4, md: 5 }}
+		pt={{ base: 4, md: 5 }}
 	>
 		<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3} align={{ md: 'center' }}>
 			<Stack gap={2}>
 				<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 					Lesson navigation
 				</Text>
-				<HStack gap={2}>
+				<HStack gap={2} aria-live="polite">
 					<Box color={canComplete ? 'green.500' : 'text.muted'}>{canComplete ? <FiCheckCircle /> : <FiBookOpen />}</Box>
 					<Text color={canComplete ? 'text.primary' : 'text.muted'} fontSize="sm" fontWeight="semibold">
 						{canComplete ? 'Lesson ready to complete.' : 'Reach the end of this lesson to continue.'}
@@ -271,6 +282,7 @@ const LessonNavigationFooter = ({
 			<HStack gap={3} flexWrap="wrap" justify={{ base: 'stretch', md: 'flex-end' }}>
 				<Button
 					flex={{ base: 1, md: 'initial' }}
+					minH="44px"
 					borderRadius="full"
 					variant="outline"
 					disabled={!showPreviousLesson}
@@ -280,6 +292,7 @@ const LessonNavigationFooter = ({
 				</Button>
 				<Button
 					flex={{ base: 1, md: 'initial' }}
+					minH="44px"
 					borderRadius="full"
 					bg="primary"
 					color={workspaceActiveTextColor}
@@ -303,6 +316,7 @@ export const CourseLessonsTab = ({
 	lessonsResult,
 	lessonErrorMessage,
 	onCompleteLesson,
+	onLessonSelect,
 	onPreviousLesson,
 	onRetry,
 	onScrollBottomReached
@@ -418,14 +432,27 @@ export const CourseLessonsTab = ({
 
 	return (
 		<Stack gap={4}>
+			<Box display={{ base: 'block', xl: 'none' }} position="sticky" top="72px" zIndex={8} bg="bg.subtle" py={1}>
+				<CourseLessonMobileNavigator lessons={lessons} onLessonSelect={onLessonSelect}>
+					{(handleMobileLessonSelect, isMobileNavigatorOpen) => (
+						<LessonProgressSidebar
+							lessons={lessons}
+							onLessonSelect={handleMobileLessonSelect}
+							embedded
+							isVisible={isMobileNavigatorOpen}
+						/>
+					)}
+				</CourseLessonMobileNavigator>
+			</Box>
+
 			<Box
 				ref={lessonStartRef}
 				border="1px solid"
 				borderColor={workspaceBoundaryColor}
 				borderRadius="card"
 				bg="bg.card"
-				p={{ base: 5, md: 6 }}
-				scrollMarginTop="88px"
+				p={{ base: 4, md: 6 }}
+				scrollMarginTop={{ base: '148px', xl: '88px' }}
 			>
 				<Stack gap={3}>
 					<HStack gap={2} flexWrap="wrap">
@@ -457,11 +484,11 @@ export const CourseLessonsTab = ({
 			</Box>
 
 			<Box
-				border="1px solid"
+				border={{ base: '0', md: '1px solid' }}
 				borderColor={workspaceBoundaryColor}
-				borderRadius="card"
-				bg="bg.subtle"
-				p={{ base: 4, md: 5 }}
+				borderRadius={{ base: 0, md: 'card' }}
+				bg={{ base: 'transparent', md: 'bg.subtle' }}
+				p={{ base: 0, md: 5 }}
 			>
 				<Stack gap={5}>
 					{subsection.contentBlocks.length ? (

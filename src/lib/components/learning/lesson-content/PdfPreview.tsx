@@ -110,11 +110,11 @@ export const PdfPreview = ({ url, height, title = 'PDF lesson resource' }: PdfPr
 					isFullScreen
 						? undefined
 						: {
-								base: '68dvh',
+								base: 'min(68dvh, 560px)',
 								md: `clamp(620px, 72dvh, ${Math.max(previewHeight, 860)}px)`
 							}
 				}
-				minH={isFullScreen ? 0 : { base: '420px', md: '620px' }}
+				minH={isFullScreen ? 0 : { base: '360px', md: '620px' }}
 				bg="white"
 			>
 				<iframe

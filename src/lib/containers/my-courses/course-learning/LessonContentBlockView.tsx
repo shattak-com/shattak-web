@@ -23,7 +23,7 @@ const LessonResourceCard = ({
 
 	return (
 		<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" overflow="hidden">
-			<Stack gap={4} p={{ base: 4, md: 5 }}>
+			<Stack gap={{ base: 3, md: 4 }} p={{ base: 4, md: 5 }}>
 				<HStack gap={4} align="start">
 					<HStack gap={3} minW={0}>
 						<Box
@@ -59,7 +59,7 @@ const LessonResourceCard = ({
 };
 
 const TextLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => (
-	<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={{ base: 5, md: 7 }}>
+	<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={{ base: 4, md: 7 }}>
 		{block.title ? (
 			<Heading size="md" mb={4}>
 				{block.title}
@@ -108,12 +108,14 @@ const UploadedVideoLessonBlock = ({ block }: { block: CourseLessonContentBlock }
 						disablePictureInPicture
 						disableRemotePlayback
 						draggable={false}
+						playsInline
+						preload="metadata"
 						onContextMenu={event => event.preventDefault()}
 						src={safeUrl}
 						style={{
 							background: '#000',
 							borderRadius: 'var(--chakra-radii-lg)',
-							maxHeight: '520px',
+							maxHeight: 'min(70dvh, 520px)',
 							width: '100%'
 						}}
 					/>

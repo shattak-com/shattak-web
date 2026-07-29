@@ -177,7 +177,7 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 					}}
 				/>
 
-				<Box px={isFocusMode ? { base: 3, md: 5, xl: 8 } : { base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
+				<Box px={isFocusMode ? { base: 3, md: 5, xl: 8 } : { base: 3, md: 6 }} py={{ base: 3, md: 6 }}>
 					<Box display="grid" gridTemplateColumns={workspaceGridColumns} gap={{ base: 4, xl: 5 }} alignItems="start">
 						<Box minW={0} w="full" maxW={isFocusMode ? '960px' : undefined} mx={isFocusMode ? 'auto' : undefined}>
 							<CourseLearningMainContent

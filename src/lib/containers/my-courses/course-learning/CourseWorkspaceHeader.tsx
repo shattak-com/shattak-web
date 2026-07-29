@@ -1,7 +1,7 @@
 import { Badge, Box, Button, Heading, HStack, Image, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import type { RefObject } from 'react';
-import { FiMaximize2, FiMenu, FiMessageCircle, FiMinimize2 } from 'react-icons/fi';
+import { FiArrowLeft, FiMaximize2, FiMenu, FiMessageCircle, FiMinimize2 } from 'react-icons/fi';
 
 import type { CourseEnrollment } from '~/lib/api/enrollments';
 import ThemeToggle from '~/lib/components/ThemeToggle';
@@ -111,6 +111,7 @@ const FocusModeHeader = ({
 );
 
 const StandardWorkspaceHeader = ({
+	activeLessonTitle,
 	activeTab,
 	courseId,
 	enrollment,
@@ -120,6 +121,7 @@ const StandardWorkspaceHeader = ({
 	onOpenMobileNavigation
 }: Pick<
 	CourseWorkspaceHeaderProps,
+	| 'activeLessonTitle'
 	| 'activeTab'
 	| 'courseId'
 	| 'enrollment'
@@ -128,13 +130,15 @@ const StandardWorkspaceHeader = ({
 	| 'onEnterFocusMode'
 	| 'onOpenMobileNavigation'
 >) => (
-	<HStack w="full" justify="space-between" gap={4} flexWrap="wrap">
-		<HStack gap={3} minW={0}>
+	<HStack w="full" justify="space-between" gap={{ base: 2, md: 4 }}>
+		<HStack gap={{ base: 2, sm: 3 }} minW={0} flex={1}>
 			<Button
 				display={{ base: 'inline-flex', lg: 'none' }}
 				variant="outline"
 				size="sm"
 				borderRadius="full"
+				boxSize="44px"
+				minW="44px"
 				onClick={onOpenMobileNavigation}
 				aria-label="Open course navigation"
 			>
@@ -144,6 +148,7 @@ const StandardWorkspaceHeader = ({
 				src={enrollment.course.thumbnailImage || enrollment.course.promoImage || shattakMarkUrl}
 				alt=""
 				boxSize="40px"
+				display={{ base: 'none', sm: 'block' }}
 				borderRadius="lg"
 				flexShrink={0}
 				objectFit="cover"
@@ -152,20 +157,28 @@ const StandardWorkspaceHeader = ({
 				<Heading size="sm" lineClamp={1}>
 					{enrollment.course.title}
 				</Heading>
-				<Text color="text.muted" fontSize="xs">
+				<Text
+					display={{ base: activeTab === 'lessons' ? 'block' : 'none', sm: 'none' }}
+					color="text.muted"
+					fontSize="xs"
+					lineClamp={1}
+				>
+					{activeLessonTitle || 'Lessons'}
+				</Text>
+				<Text display={{ base: 'none', sm: 'block' }} color="text.muted" fontSize="xs">
 					Enrolled on {formatCourseDate(enrollment.enrolledAt)}
 				</Text>
 			</Box>
 		</HStack>
-		<HStack gap={2} flexWrap="wrap">
-			<Badge borderRadius="full" px={3} py={1}>
+		<HStack gap={{ base: 1, md: 2 }} flexShrink={0}>
+			<Badge display={{ base: 'none', lg: 'inline-flex' }} borderRadius="full" px={3} py={1}>
 				{enrollment.status}
 			</Badge>
-			<Badge borderRadius="full" px={3} py={1}>
+			<Badge display={{ base: 'none', lg: 'inline-flex' }} borderRadius="full" px={3} py={1}>
 				{enrollment.progressPercent}% progress
 			</Badge>
 			{!enrollment.accessUnlockedAt ? (
-				<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
+				<Badge display={{ base: 'none', lg: 'inline-flex' }} colorPalette="orange" borderRadius="full" px={3} py={1}>
 					Overview locked
 				</Badge>
 			) : null}
@@ -178,6 +191,9 @@ const StandardWorkspaceHeader = ({
 						onClick={onAskDoubt}
 						aria-label="Ask a doubt in the course community"
 						title="Ask a doubt in the course community"
+						boxSize={{ base: '44px', xl: 'auto' }}
+						minW={{ base: '44px', xl: 'auto' }}
+						px={{ base: 0, xl: 3 }}
 					>
 						<FiMessageCircle />
 						<Box as="span" display={{ base: 'none', xl: 'inline' }}>
@@ -193,6 +209,7 @@ const StandardWorkspaceHeader = ({
 						aria-label="Enter focus mode"
 						aria-pressed={false}
 						title="Hide course navigation and focus on this lesson"
+						display={{ base: 'none', md: 'inline-flex' }}
 					>
 						<FiMaximize2 />
 						<Box as="span" display={{ base: 'none', xl: 'inline' }}>
@@ -202,8 +219,11 @@ const StandardWorkspaceHeader = ({
 				</>
 			) : null}
 			<ThemeToggle />
-			<Button asChild borderRadius="full" size="sm" variant="outline">
-				<Link href={`/course/${courseId}`}>Back to course</Link>
+			<Button asChild display={{ base: 'none', md: 'inline-flex' }} borderRadius="full" size="sm" variant="outline">
+				<Link href={`/course/${courseId}`}>
+					<FiArrowLeft />
+					Back to course
+				</Link>
 			</Button>
 		</HStack>
 	</HStack>
@@ -251,6 +271,7 @@ export const CourseWorkspaceHeader = ({
 			/>
 		) : (
 			<StandardWorkspaceHeader
+				activeLessonTitle={activeLessonTitle}
 				activeTab={activeTab}
 				courseId={courseId}
 				enrollment={enrollment}

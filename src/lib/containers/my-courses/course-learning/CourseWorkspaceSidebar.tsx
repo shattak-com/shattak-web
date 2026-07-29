@@ -1,7 +1,7 @@
 import { Box, Button, HStack, Image, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import type { CourseEnrollment } from '~/lib/api/enrollments';
@@ -41,7 +41,16 @@ const CourseWorkspaceSidebarHeader = ({
 
 	if (onClose) {
 		sidebarControl = (
-			<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
+			<Button
+				autoFocus
+				variant="ghost"
+				size="sm"
+				borderRadius="full"
+				boxSize="44px"
+				minW="44px"
+				onClick={onClose}
+				aria-label="Close course navigation"
+			>
 				<FiX />
 			</Button>
 		);
@@ -91,18 +100,20 @@ type CourseWorkspaceNavigationProps = Pick<
 	'activeTab' | 'isCollapsed' | 'onClose' | 'onTabChange'
 > & {
 	canOpenLearningTabs: boolean;
+	courseHref: string;
 	courseTitle: string;
 };
 
 const CourseWorkspaceNavigation = ({
 	activeTab,
 	canOpenLearningTabs,
+	courseHref,
 	courseTitle,
 	isCollapsed = false,
 	onClose,
 	onTabChange
 }: CourseWorkspaceNavigationProps) => (
-	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5}>
+	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5} overflowY="auto" overscrollBehavior="contain">
 		<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
 			<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 				Course dashboard
@@ -111,6 +122,21 @@ const CourseWorkspaceNavigation = ({
 				{courseTitle}
 			</Text>
 		</Box>
+
+		<Button
+			asChild
+			justifyContent={isCollapsed ? 'center' : 'flex-start'}
+			borderRadius="lg"
+			variant="ghost"
+			minH="48px"
+			px={isCollapsed ? 0 : 4}
+			title={isCollapsed ? 'Back to course' : undefined}
+		>
+			<Link href={courseHref} onClick={onClose}>
+				<FiArrowLeft />
+				{!isCollapsed ? 'Back to course' : null}
+			</Link>
+		</Button>
 
 		{courseTabs.map(tab => {
 			const Icon = tab.icon;
@@ -233,6 +259,7 @@ export const CourseWorkspaceSidebar = ({
 			<CourseWorkspaceNavigation
 				activeTab={activeTab}
 				canOpenLearningTabs={canOpenLearningTabs}
+				courseHref={`/course/${enrollment.course.slug}`}
 				courseTitle={enrollment.course.title}
 				isCollapsed={isCollapsed}
 				onClose={onClose}

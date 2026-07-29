@@ -160,6 +160,7 @@ export const CourseLearningMainContent = ({
 				lessonsResult={lessonsResult}
 				lessonErrorMessage={lessonErrorMessage}
 				onCompleteLesson={onLessonComplete}
+				onLessonSelect={onLessonSelect}
 				onPreviousLesson={onLessonSelect}
 				onRetry={onLessonRetry}
 				onScrollBottomReached={onLessonBottomReached}
@@ -236,6 +237,7 @@ export const CourseLearningRail = ({
 
 		return (
 			<Stack
+				display={{ base: 'none', xl: 'flex' }}
 				align="center"
 				gap={3}
 				justifySelf="end"
@@ -279,7 +281,7 @@ export const CourseLearningRail = ({
 	}
 
 	return (
-		<Stack gap={2} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+		<Stack display={{ base: 'none', xl: 'flex' }} gap={2} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
 			<HStack justify="space-between" px={2}>
 				<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 					Course panel

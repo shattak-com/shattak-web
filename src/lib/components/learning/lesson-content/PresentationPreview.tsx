@@ -51,7 +51,12 @@ export const PresentationPreview = ({ url, title = 'Course presentation' }: Pres
 				) : null}
 			</Flex>
 
-			<Box position="relative" h={{ base: '62vh', md: '680px' }} minH={{ base: '420px', md: '560px' }} bg="white">
+			<Box
+				position="relative"
+				h={{ base: 'min(64dvh, 560px)', md: '680px' }}
+				minH={{ base: '360px', md: '560px' }}
+				bg="white"
+			>
 				<iframe
 					src={viewerUrl}
 					title={title}

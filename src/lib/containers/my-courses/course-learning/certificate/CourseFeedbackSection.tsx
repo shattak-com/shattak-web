@@ -312,7 +312,8 @@ export const CourseFeedbackSection = ({
 
 						<Button
 							type="submit"
-							alignSelf={{ base: 'stretch', sm: 'flex-start' }}
+							alignSelf="flex-end"
+							minH="44px"
 							borderRadius="full"
 							bg="primary"
 							color="text.inverse"

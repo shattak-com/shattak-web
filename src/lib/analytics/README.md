@@ -52,6 +52,9 @@ Examples:
 - `Course - Hero - Free Course Enrollment Successful`
 - `Course - Hero - Go To Course Clicked`
 - `Profile - Enrolled Courses - Enrolled Courses Section Viewed`
+- `Profile - Enrolled Courses - View All Courses Clicked`
+- `My Courses - Enrolled Courses - All Enrolled Courses Viewed`
+- `My Courses - Enrolled Courses - Go To Course Clicked`
 - `Admin - Admin Enrollments - Course Enrollment Counts Viewed`
 - `Admin - Admin Enrollments - Course Enrollment Details Viewed`
 - `course_whatsapp_join_verified`

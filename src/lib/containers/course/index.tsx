@@ -21,7 +21,8 @@ type CourseDetailsPageProps = {
 const CourseDetailsPage = ({ course }: CourseDetailsPageProps) => (
 	<>
 		<CourseHero course={course} />
-		<CourseOverview course={course} />
+		{/* TODO: Add CourseOverview component back in when we are ready to post content for this section */}
+		{/* <CourseOverview course={course} /> */}
 		<CourseOutcomes outcomes={course.outcomes} />
 		<CourseCurriculum
 			lessons={course.lessons}

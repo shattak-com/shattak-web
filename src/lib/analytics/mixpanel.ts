@@ -396,9 +396,6 @@ export const trackOnboardingEvent = (payload: {
 	eventName: string;
 	nextStep?: string;
 	redirectPath?: string;
-	canSkipMobile?: boolean;
-	mobileSkipCount?: number;
-	mobileSkipLimit?: number;
 	hasMobileNumber?: boolean;
 	hasCollege?: boolean;
 	hasDepartment?: boolean;
@@ -415,9 +412,6 @@ export const trackOnboardingEvent = (payload: {
 		{
 			next_step: payload.nextStep,
 			redirect_path: payload.redirectPath,
-			can_skip_mobile: payload.canSkipMobile,
-			mobile_skip_count: payload.mobileSkipCount,
-			mobile_skip_limit: payload.mobileSkipLimit,
 			has_mobile_number: payload.hasMobileNumber,
 			has_college: payload.hasCollege,
 			has_department: payload.hasDepartment,

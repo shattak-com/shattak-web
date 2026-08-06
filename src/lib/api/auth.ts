@@ -35,8 +35,6 @@ export type AdminManagedUserProfile = {
 	mobileNumberE164: string | null;
 	mobileCountryCode: string | null;
 	mobileNumberVerified: boolean;
-	mobileSkipCount: number;
-	mobileSkipLimit: number;
 	college: string | null;
 	department: string | null;
 	passoutYear: string | null;

@@ -44,7 +44,7 @@ Examples:
 - `Course - App - Client Error Captured`
 - `Login - Student Login - Google Login Succeeded`
 - `Home - Google One Tap - Google Login Succeeded`
-- `Onboarding - Mobile Onboarding - Mobile Number Skipped`
+- `Onboarding - Mobile Onboarding - Mobile Number Submitted`
 - `Onboarding - Education Onboarding - Education Profile Submitted`
 - `Profile - Learning Profile - Learning Profile Update Succeeded`
 - `Course - Hero - Free Course Enroll Button Clicked`

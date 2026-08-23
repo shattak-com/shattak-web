@@ -41,7 +41,7 @@ const getPublishedCourseSlugs = async () => {
 const NextSitemapConfig = {
 	siteUrl: SITE_URL,
 	generateRobotsTxt: true,
-	exclude: ['/booking', '/booking/*', '/manifest.webmanifest'],
+	exclude: ['/booking', '/booking/*', '/manifest.webmanifest', '/roadmap', '/[contentSlug]'],
 	transform: async (config, path) => ({
 		loc: path,
 		changefreq: path === '/' ? 'daily' : 'weekly',
@@ -60,7 +60,25 @@ const NextSitemapConfig = {
 			dynamicPaths.push(entry);
 		};
 
-		const staticPaths = ['/', '/about'];
+		const staticPaths = [
+			'/',
+			'/about',
+			'/how-it-works',
+			'/manifesto',
+			'/become-a-mentor',
+			'/careers',
+			'/contact',
+			'/terms',
+			'/privacy-policy',
+			'/cookie-policy',
+			'/refund-policy',
+			'/faq',
+			'/blog',
+			'/career-guides',
+			'/skill-guides',
+			'/interview-preparation',
+			'/community'
+		];
 		for (const path of staticPaths) {
 			const entry = await config.transform(config, path);
 			addUniqueEntry(entry);

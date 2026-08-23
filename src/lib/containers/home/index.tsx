@@ -7,6 +7,7 @@ import { testimonials } from '~/lib/constants/landing';
 import CoursesSection from '~/lib/containers/home/components/CoursesSection';
 import Features from '~/lib/containers/home/components/Features';
 import Hero from '~/lib/containers/home/components/Hero';
+import HowItWorks from '~/lib/containers/home/components/HowItWorks';
 import InstructorCTA from '~/lib/containers/home/components/InstructorCTA';
 
 const HomePage = async () => {
@@ -49,6 +50,7 @@ const HomePage = async () => {
 			<Header />
 			<main>
 				<Hero />
+				<HowItWorks />
 				<CoursesSection courses={landingCourses} />
 				<WhatsAppBanner />
 				<Features />

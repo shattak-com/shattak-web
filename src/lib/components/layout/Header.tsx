@@ -4,13 +4,11 @@ import { Box, Button, Container, Flex, HStack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+import { trackCtaClicked } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, type AuthenticatedUser } from '~/lib/api/auth';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
 import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 import ThemeToggle from '~/lib/components/ThemeToggle';
-
-const instructorFormUrl = 'https://forms.gle/yQVwU7FJ9Q5rDHTq7';
 
 const getFirstName = (user: AuthenticatedUser) => {
 	const source = user.name.trim() || user.email.trim();
@@ -80,21 +78,20 @@ const Header = () => {
 	}, []);
 
 	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
-	const instructorLink = (context: 'desktop' | 'mobile') => (
+	const roadmapLink = (context: 'desktop' | 'mobile') => (
 		<Link
-			href={instructorFormUrl}
-			target="_blank"
-			rel="noopener noreferrer"
+			href="/roadmap"
 			onClick={() =>
-				trackInstructorCtaClicked({
+				trackCtaClicked({
+					label: 'Roadmap',
 					location: context === 'desktop' ? 'header_primary' : 'mobile_header',
-					destination: instructorFormUrl,
+					destination: '/roadmap',
 					context
 				})
 			}
 		>
 			<Text fontSize="sm" fontWeight="medium" color="text.secondary" whiteSpace="nowrap">
-				Become an Instructor
+				Roadmap
 			</Text>
 		</Link>
 	);
@@ -193,14 +190,14 @@ const Header = () => {
 						</Text>
 					</Link>
 					<HStack display={{ base: 'flex', md: 'none' }} gap={3}>
-						<Box display={{ base: 'none', sm: 'block' }}>{instructorLink('mobile')}</Box>
+						<Box display={{ base: 'none', sm: 'block' }}>{roadmapLink('mobile')}</Box>
 						<Flex w="88px" justify="flex-end" align="center" flexShrink={0}>
 							{mobileAuthAction}
 						</Flex>
 						<ThemeToggle />
 					</HStack>
 					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
-						{instructorLink('desktop')}
+						{roadmapLink('desktop')}
 						<Flex w="100px" justify="flex-end" align="center" flexShrink={0}>
 							{desktopAuthAction}
 						</Flex>

@@ -9,6 +9,16 @@ export const formatEnrollmentDateTime = (value: string | null) =>
 			}).format(new Date(value))
 		: 'Not available';
 
+export const formatCoursePublishedDate = (value: string | null) =>
+	value
+		? new Intl.DateTimeFormat('en-IN', {
+				day: '2-digit',
+				month: 'short',
+				year: 'numeric',
+				timeZone: 'Asia/Kolkata'
+			}).format(new Date(value))
+		: 'Not published';
+
 export const formatCoursePrice = (value: number) => (value <= 0 ? 'Free' : `₹${value.toLocaleString('en-IN')}`);
 
 export const getEnrollmentUserName = (name: string, email: string) => name.trim() || email;

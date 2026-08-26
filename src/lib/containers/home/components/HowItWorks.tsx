@@ -65,7 +65,7 @@ const HowItWorks = () => (
 							<Stack gap={4} h="100%">
 								<HStack justify="space-between" align="center">
 									<Box
-										bg="bg.brand"
+										bg="bg.subtle"
 										color="icon.brand"
 										borderRadius="tile"
 										boxSize="44px"
@@ -75,8 +75,20 @@ const HowItWorks = () => (
 									>
 										<Icon as={step.icon} boxSize={5} aria-hidden="true" />
 									</Box>
-									<Text color="text.brand" fontSize="sm" fontWeight="bold" aria-hidden="true">
-										{String(index + 1).padStart(2, '0')}
+									<Text
+										as="span"
+										color="text.muted"
+										bg="bg.subtle"
+										border="1px solid"
+										borderColor="border.default"
+										borderRadius="full"
+										px={3}
+										py={1}
+										fontSize="xs"
+										fontWeight="semibold"
+										aria-label={`Step ${index + 1} of ${steps.length}`}
+									>
+										Step {index + 1}
 									</Text>
 								</HStack>
 

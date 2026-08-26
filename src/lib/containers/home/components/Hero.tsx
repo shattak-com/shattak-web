@@ -10,6 +10,7 @@ import {
 	Stack,
 	Text as ChakraText
 } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import type { MotionProps, MotionStyle } from 'framer-motion';
 import Link from 'next/link';
@@ -23,11 +24,21 @@ import {
 	SiAirbnb,
 	SiAmazon,
 	SiAtlassian,
+	SiFlipkart,
 	SiGoogle,
+	SiInfosys,
 	SiLinkedin,
+	SiMahindra,
 	SiMeta,
 	SiNetflix,
+	SiPaytm,
+	SiPhonepe,
+	SiRazorpay,
 	SiSalesforce,
+	SiSwiggy,
+	SiTcs,
+	SiWipro,
+	SiZoho,
 	SiZomato
 } from 'react-icons/si';
 
@@ -68,6 +79,16 @@ const mentorBrands: MentorBrand[] = [
 	{ name: 'Google', icon: SiGoogle, color: '#4285F4' },
 	{ name: 'Microsoft', icon: BiLogoMicrosoft, color: '#00A4EF' },
 	{ name: 'Zomato', icon: SiZomato, color: '#E23744' },
+	{ name: 'TCS', icon: SiTcs, color: '#486AAE' },
+	{ name: 'Infosys', icon: SiInfosys, color: '#007CC3' },
+	{ name: 'Wipro', icon: SiWipro, color: '#341F65' },
+	{ name: 'Razorpay', icon: SiRazorpay, color: '#2B56F5' },
+	{ name: 'PhonePe', icon: SiPhonepe, color: '#5F259F' },
+	{ name: 'Flipkart', icon: SiFlipkart, color: '#2874F0' },
+	{ name: 'Zoho', icon: SiZoho, color: '#E42527' },
+	{ name: 'Swiggy', icon: SiSwiggy, color: '#FC8019' },
+	{ name: 'Paytm', icon: SiPaytm, color: '#00BAF2' },
+	{ name: 'Mahindra', icon: SiMahindra, color: '#E31837' },
 	{ name: 'Adobe', icon: SiAdobe, color: '#FF0000' },
 	{ name: 'Airbnb', icon: SiAirbnb, color: '#FF5A5F' },
 	{ name: 'Atlassian', icon: SiAtlassian, color: '#1868DB' },
@@ -76,6 +97,105 @@ const mentorBrands: MentorBrand[] = [
 	{ name: 'Netflix', icon: SiNetflix, color: '#E50914' },
 	{ name: 'Salesforce', icon: SiSalesforce, color: '#00A1E0' }
 ];
+
+const mentorBrandScroll = keyframes`
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+
+	to {
+		transform: translate3d(-50%, 0, 0);
+	}
+`;
+
+type MentorBrandMarqueeProps = {
+	prefersReducedMotion: boolean | null;
+};
+
+const MentorBrandMarquee = ({ prefersReducedMotion }: MentorBrandMarqueeProps) => {
+	const canAnimateBrands = prefersReducedMotion !== true;
+
+	return (
+		<Stack
+			direction={{ base: 'column', md: 'row' }}
+			align={{ base: 'stretch', md: 'center' }}
+			gap={{ base: 4, md: 8 }}
+			mt={{ base: 10, lg: 12 }}
+			p={{ base: 4, md: 5 }}
+			bg="bg.glass"
+			border="1px solid"
+			borderColor="border.default"
+			borderRadius="panel"
+			boxShadow="soft"
+			backdropFilter="blur(10px)"
+			overflow="hidden"
+		>
+			<HStack
+				gap={3}
+				flexShrink={0}
+				justify={{ base: 'flex-start', md: 'flex-start' }}
+				pb={{ base: 3, md: 0 }}
+				borderBottomWidth={{ base: '1px', md: '0' }}
+				borderColor="border.default"
+			>
+				<Box bg="bg.brand" color="text.brand" borderRadius="full" p={2.5} lineHeight="1">
+					<ChakraIcon as={FiUsers} boxSize={5} aria-hidden="true" />
+				</Box>
+				<Stack gap={0}>
+					<Text fontSize="xs" color="text.muted">
+						Mentors from
+					</Text>
+					<Text fontSize="sm" fontWeight="bold" color="text.primary">
+						Top companies
+					</Text>
+				</Stack>
+			</HStack>
+
+			<Box
+				minW={0}
+				flex="1"
+				overflowX={canAnimateBrands ? 'hidden' : 'auto'}
+				className={canAnimateBrands ? undefined : 'hide-scrollbar'}
+				css={{
+					maskImage: canAnimateBrands
+						? 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+						: 'none',
+					WebkitMaskImage: canAnimateBrands
+						? 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+						: 'none'
+				}}
+				aria-label="Companies represented by Shattak mentors"
+			>
+				<Box
+					display="flex"
+					alignItems="center"
+					w="max-content"
+					animation={canAnimateBrands ? `${mentorBrandScroll} 34s linear infinite` : undefined}
+					willChange={canAnimateBrands ? 'transform' : undefined}
+				>
+					{[0, 1].map(copyIndex => (
+						<HStack
+							key={copyIndex}
+							gap={{ base: 7, md: 10 }}
+							pr={{ base: 7, md: 10 }}
+							flexShrink={0}
+							aria-hidden={copyIndex > 0 ? 'true' : undefined}
+						>
+							{mentorBrands.map(brand => (
+								<HStack key={brand.name} gap={{ base: 2, md: 2.5 }} minW="max-content">
+									<ChakraIcon as={brand.icon} boxSize={{ base: 6, md: 7 }} color={brand.color} aria-hidden="true" />
+									<Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="text.secondary">
+										{brand.name}
+									</Text>
+								</HStack>
+							))}
+						</HStack>
+					))}
+				</Box>
+			</Box>
+		</Stack>
+	);
+};
 
 const Hero = () => {
 	const prefersReducedMotion = useReducedMotion();
@@ -144,89 +264,6 @@ const Hero = () => {
 			}}
 		/>
 	);
-
-	const MentorBrandMarquee = () => {
-		const canAnimateBrands = prefersReducedMotion === false;
-		const copies = canAnimateBrands ? [0, 1] : [0];
-
-		return (
-			<Stack
-				direction={{ base: 'column', md: 'row' }}
-				align={{ base: 'stretch', md: 'center' }}
-				gap={{ base: 5, md: 8 }}
-				mt={{ base: 10, lg: 12 }}
-				p={{ base: 4, md: 5 }}
-				bg="bg.glass"
-				border="1px solid"
-				borderColor="border.default"
-				borderRadius="panel"
-				boxShadow="soft"
-				backdropFilter="blur(10px)"
-			>
-				<HStack gap={3} flexShrink={0} justify={{ base: 'center', md: 'flex-start' }}>
-					<Box bg="bg.brand" color="text.brand" borderRadius="full" p={2.5} lineHeight="1">
-						<ChakraIcon as={FiUsers} boxSize={5} aria-hidden="true" />
-					</Box>
-					<Stack gap={0}>
-						<Text fontSize="xs" color="text.muted">
-							Mentors from
-						</Text>
-						<Text fontSize="sm" fontWeight="bold" color="text.primary">
-							Top companies
-						</Text>
-					</Stack>
-				</HStack>
-
-				<Box
-					minW={0}
-					flex="1"
-					overflowX={canAnimateBrands ? 'hidden' : 'auto'}
-					className={canAnimateBrands ? undefined : 'hide-scrollbar'}
-					css={{
-						maskImage: canAnimateBrands
-							? 'linear-gradient(to right, transparent, black 6%, black 94%, transparent)'
-							: 'none',
-						WebkitMaskImage: canAnimateBrands
-							? 'linear-gradient(to right, transparent, black 6%, black 94%, transparent)'
-							: 'none'
-					}}
-					aria-label="Companies represented by Shattak mentors"
-				>
-					<Box
-						as={motion.div}
-						display="flex"
-						alignItems="center"
-						w="max-content"
-						animate={canAnimateBrands ? { x: ['0%', '-50%'] } : undefined}
-						transition={{
-							duration: 36,
-							repeat: Infinity,
-							ease: 'linear'
-						}}
-					>
-						{copies.map(copyIndex => (
-							<HStack
-								key={copyIndex}
-								gap={{ base: 6, md: 10 }}
-								pr={{ base: 6, md: 10 }}
-								flexShrink={0}
-								aria-hidden={copyIndex > 0 ? 'true' : undefined}
-							>
-								{mentorBrands.map(brand => (
-									<HStack key={brand.name} gap={2.5} minW="max-content">
-										<ChakraIcon as={brand.icon} boxSize={{ base: 6, md: 7 }} color={brand.color} aria-hidden="true" />
-										<Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="text.secondary">
-											{brand.name}
-										</Text>
-									</HStack>
-								))}
-							</HStack>
-						))}
-					</Box>
-				</Box>
-			</Stack>
-		);
-	};
 
 	return (
 		<Box
@@ -389,16 +426,21 @@ const Hero = () => {
 						>
 							<Button
 								asChild
-								size={{ base: 'xs', md: 'md' }}
+								size="md"
+								h={{ base: '44px', md: '48px' }}
+								w={{ base: '112px', md: '188px' }}
+								flexShrink={0}
+								boxSizing="border-box"
 								bg="var(--chakra-gradients-brand-sunset)"
 								color="text.inverse"
 								_hover={{ transform: 'translateY(-3px)', boxShadow: 'primaryHover' }}
 								borderRadius="full"
-								px={{ base: 4, md: 7 }}
+								border="2px solid transparent"
+								px={{ base: 3, md: 7 }}
 								fontSize={{ base: 'xs', md: 'sm' }}
 								whiteSpace="nowrap"
 								transition="all 0.3s ease"
-								boxShadow="primary"
+								boxShadow="none"
 								fontWeight="semibold"
 							>
 								<Link
@@ -417,12 +459,16 @@ const Hero = () => {
 							</Button>
 							<Button
 								asChild
-								size={{ base: 'xs', md: 'md' }}
+								size="md"
+								h={{ base: '44px', md: '48px' }}
+								w={{ base: '112px', md: '188px' }}
+								flexShrink={0}
+								boxSizing="border-box"
 								borderRadius="full"
-								px={{ base: 4, md: 7 }}
+								px={{ base: 3, md: 7 }}
 								bg="bg.card"
 								border="2px solid"
-								borderColor="border.default"
+								borderColor="border.brand"
 								color="text.primary"
 								_hover={{
 									bg: 'bg.subtle',
@@ -433,7 +479,7 @@ const Hero = () => {
 								fontSize={{ base: 'xs', md: 'sm' }}
 								whiteSpace="nowrap"
 								transition="all 0.3s ease"
-								boxShadow="neutral"
+								boxShadow="none"
 								fontWeight="semibold"
 							>
 								<Link
@@ -554,7 +600,7 @@ const Hero = () => {
 						</Box>
 					</Box>
 				</Stack>
-				<MentorBrandMarquee />
+				<MentorBrandMarquee prefersReducedMotion={prefersReducedMotion} />
 			</Container>
 		</Box>
 	);

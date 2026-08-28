@@ -2,15 +2,18 @@ import { z } from 'zod';
 
 const textRecordSchema = z.object({
 	id: z.string(),
-	label: z.string().max(120),
-	value: z.string().max(240)
+	label: z.string(),
+	value: z.string()
 });
 
 export const courseEditorSchema = z.object({
 	slug: z
 		.union([
 			z.literal(''),
-			z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and hyphens only.')
+			z
+				.string()
+				.max(160, 'Keep the slug under 160 characters.')
+				.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and hyphens only.')
 		])
 		.optional(),
 	title: z.string().trim().min(1, 'Course title is required.').max(180),
@@ -28,22 +31,22 @@ export const courseEditorSchema = z.object({
 	thumbnailImage: z.string().max(1200),
 	promoImage: z.string().max(1200),
 	promoImageBrand: z.string().max(1200),
-	paymentLink: z.string().max(1200),
+	paymentLink: z.string(),
 	whatsappGroupUrl: z.string().max(1200),
 	accessCode: z.string().max(120),
 	status: z.enum(['DRAFT', 'PUBLISHED']),
 	about: z.string().max(20000),
 	liveUrl: z.string().max(1200),
 	requirementsText: z.string(),
-	completionCertificateImage: z.string().max(1200),
+	completionCertificateImage: z.string(),
 	completionBenefitsText: z.string(),
 	highlights: z.array(textRecordSchema),
 	schedule: z.array(
 		z.object({
 			id: z.string(),
-			label: z.string().max(160),
-			time: z.string().max(160),
-			duration: z.string().max(80)
+			label: z.string(),
+			time: z.string(),
+			duration: z.string()
 		})
 	),
 	projectGallery: z.array(

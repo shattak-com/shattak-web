@@ -380,6 +380,7 @@ export const ToolsEditor = ({ control, register, errors }: CourseEditorSectionPr
 	);
 };
 
+// TODO: Restore this editor when completion content is no longer hard-coded.
 export const CompletionEditor = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={3}>
 		<Text fontSize="sm" fontWeight="semibold">

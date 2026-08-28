@@ -1,14 +1,17 @@
 import { getPublishedLandingCourseCards, type LandingCourseCard } from '~/lib/api/courses';
+import FaqSection from '~/lib/components/FaqSection';
 import Footer from '~/lib/components/layout/Footer';
 import Header from '~/lib/components/layout/Header';
 import Testimonials from '~/lib/components/Testimonials';
 import WhatsAppBanner from '~/lib/components/WhatsAppBanner';
 import { testimonials } from '~/lib/constants/landing';
+import { platformFaqs } from '~/lib/constants/platform-faqs';
 import CoursesSection from '~/lib/containers/home/components/CoursesSection';
 import Features from '~/lib/containers/home/components/Features';
 import Hero from '~/lib/containers/home/components/Hero';
 import HowItWorks from '~/lib/containers/home/components/HowItWorks';
 import InstructorCTA from '~/lib/containers/home/components/InstructorCTA';
+import { createFaqPageStructuredData } from '~/lib/utils/faqs';
 
 const HomePage = async () => {
 	const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -20,6 +23,7 @@ const HomePage = async () => {
 	}
 	const featuredCourse = landingCourses[0];
 	const jsonLdType = 'application/ld+json';
+	const faqJsonLd = createFaqPageStructuredData(platformFaqs);
 
 	const organizationJsonLd = {
 		'@context': 'https://schema.org',
@@ -46,6 +50,7 @@ const HomePage = async () => {
 		<>
 			<script type={jsonLdType}>{JSON.stringify(organizationJsonLd)}</script>
 			<script type={jsonLdType}>{JSON.stringify(courseJsonLd)}</script>
+			{faqJsonLd ? <script type={jsonLdType}>{JSON.stringify(faqJsonLd)}</script> : null}
 
 			<Header />
 			<main>
@@ -56,6 +61,7 @@ const HomePage = async () => {
 				<Features />
 				<InstructorCTA />
 				<Testimonials items={testimonials} />
+				<FaqSection id="home-faqs" faqs={platformFaqs} />
 			</main>
 			<Footer />
 		</>

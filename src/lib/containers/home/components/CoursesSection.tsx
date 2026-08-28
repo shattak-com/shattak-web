@@ -199,7 +199,6 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 											position="absolute"
 											inset="0"
 											zIndex={1}
-											target="_blank"
 											onClick={() =>
 												trackCourseCardClicked({
 													location: 'home_courses_grid',
@@ -346,8 +345,6 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 												>
 													<Link
 														href={courseHref}
-														target="_blank"
-														rel="noopener noreferrer"
 														onClick={() =>
 															trackCourseCardClicked({
 																location: 'home_courses_button',

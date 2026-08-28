@@ -12,7 +12,10 @@ export const FormField = ({
 	register,
 	errors,
 	type = 'text',
-	placeholder
+	placeholder,
+	helperText,
+	onValueChange,
+	step
 }: {
 	label: string;
 	name: Path<CourseEditorFormValues>;
@@ -20,19 +23,42 @@ export const FormField = ({
 	errors: FieldErrors<CourseEditorFormValues>;
 	type?: string;
 	placeholder?: string;
+	helperText?: string;
+	onValueChange?: (value: string) => void;
+	step?: number | string;
 }) => {
 	const error = getFieldError(errors, name);
-	const registration = type === 'number' ? register(name, { valueAsNumber: true }) : register(name);
+	const handleChange = onValueChange
+		? {
+				onChange: (event: { target: { value: unknown } }) => onValueChange(String(event.target.value))
+			}
+		: {};
+	const registration =
+		type === 'number' ? register(name, { valueAsNumber: true, ...handleChange }) : register(name, handleChange);
+	const descriptionId = `${String(name).replace(/\W+/g, '-')}-${error ? 'error' : 'helper'}`;
 
 	return (
 		<Box>
 			<Text fontSize="xs" color="text.muted" mb={1}>
 				{label}
 			</Text>
-			<Input {...registration} type={type} placeholder={placeholder} h="40px" />
+			<Input
+				{...registration}
+				type={type}
+				placeholder={placeholder}
+				step={step}
+				h="40px"
+				aria-invalid={Boolean(error)}
+				aria-describedby={error || helperText ? descriptionId : undefined}
+			/>
 			{error ? (
-				<Text mt={1} fontSize="xs" color="red.500">
+				<Text id={descriptionId} mt={1} fontSize="xs" color="red.500">
 					{error}
+				</Text>
+			) : null}
+			{!error && helperText ? (
+				<Text id={descriptionId} mt={1} fontSize="xs" color="text.muted">
+					{helperText}
 				</Text>
 			) : null}
 		</Box>

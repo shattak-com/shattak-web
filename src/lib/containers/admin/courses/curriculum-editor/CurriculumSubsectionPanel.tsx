@@ -1,10 +1,10 @@
 import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { useState } from 'react';
-import { FiEdit3 } from 'react-icons/fi';
+import { FiEdit3, FiPlus, FiUpload } from 'react-icons/fi';
 
 import type { AdminCurriculumModule, AdminCurriculumSubsection } from '~/lib/api/admin-curriculum';
 
-import { contentBlockTypeOptions } from './constants';
+import { contentBlockTypeOptions, uploadBlockTypes } from './constants';
 import { CurriculumContentBlockEditor } from './CurriculumContentBlockEditor';
 import { FeedbackBox, FieldLabel } from './FormControls';
 import type {
@@ -303,7 +303,7 @@ export const CurriculumSubsectionPanel = ({
 							{subsectionIndex !== null && selectedSubsection ? (
 								<Box border="1px solid" borderColor="gray.500" borderRadius="xl" p={{ base: 4, md: 5 }}>
 									<Stack gap={5}>
-										<HStack justify="space-between" gap={3} flexWrap="wrap">
+										<Stack gap={3} align="stretch">
 											<Box>
 												<HStack gap={2} flexWrap="wrap">
 													<Badge colorPalette="gray">Subsection {subsectionIndex + 1}</Badge>
@@ -313,7 +313,7 @@ export const CurriculumSubsectionPanel = ({
 													Public preview fields plus enrolled-only content blocks.
 												</Text>
 											</Box>
-											<HStack gap={2} flexWrap="wrap" justify="flex-end">
+											<HStack gap={2} flexWrap="wrap" justify="flex-start">
 												{contentBlockTypeOptions.map(option => (
 													<Button
 														key={option.value}
@@ -327,12 +327,14 @@ export const CurriculumSubsectionPanel = ({
 																contentBlocks: [...currentSubsection.contentBlocks, createContentBlock(option.value)]
 															}))
 														}
+														gap={1.5}
 													>
-														Add {option.label}
+														{uploadBlockTypes.has(option.value) ? <FiUpload aria-hidden /> : <FiPlus aria-hidden />}
+														{option.label}
 													</Button>
 												))}
 											</HStack>
-										</HStack>
+										</Stack>
 
 										<SimpleGrid columns={{ base: 1, md: 2, '2xl': 4 }} gap={3}>
 											<Box>

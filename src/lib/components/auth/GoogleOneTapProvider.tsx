@@ -129,7 +129,7 @@ const GoogleOneTapProvider = () => {
 		};
 	}, [pathname, router, scriptReady]);
 
-	if (!googleClientId) {
+	if (!googleClientId || shouldSuppressOneTap(pathname)) {
 		return null;
 	}
 

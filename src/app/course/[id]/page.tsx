@@ -9,7 +9,8 @@ import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 import { createFaqPageStructuredData, mergeFaqs } from '~/lib/utils/faqs';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+export const dynamic = 'force-static';
 
 type CoursePageProps = {
 	params: Promise<{ id: string }>;

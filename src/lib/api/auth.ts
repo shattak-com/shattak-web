@@ -31,23 +31,76 @@ export type AdminInvitation = {
 	updatedAt: string;
 };
 
-export const loginWithGoogleCredential = (credential: string) =>
-	postJson<AuthResult>('/auth/google', {
+let userBootstrapResult: AuthResult | null = null;
+let adminBootstrapResult: AuthResult | null = null;
+let currentUserRequest: Promise<AuthResult> | null = null;
+let currentAdminRequest: Promise<AuthResult> | null = null;
+
+const consumeBootstrapResult = (context: 'user' | 'admin') => {
+	const result = context === 'admin' ? adminBootstrapResult : userBootstrapResult;
+
+	if (context === 'admin') {
+		adminBootstrapResult = null;
+	} else {
+		userBootstrapResult = null;
+	}
+
+	return result;
+};
+
+export const loginWithGoogleCredential = async (credential: string) => {
+	const result = await postJson<AuthResult>('/auth/google', {
 		credential
 	});
+	userBootstrapResult = result;
+	return result;
+};
 
-export const loginAdminWithGoogleCredential = (credential: string) =>
-	postJson<AuthResult>('/admin/auth/google', {
+export const loginAdminWithGoogleCredential = async (credential: string) => {
+	const result = await postJson<AuthResult>('/admin/auth/google', {
 		credential
 	});
+	adminBootstrapResult = result;
+	return result;
+};
 
-export const logout = () => postJson<null>('/auth/logout');
+export const logout = () => {
+	userBootstrapResult = null;
+	currentUserRequest = null;
+	return postJson<null>('/auth/logout');
+};
 
-export const logoutAdmin = () => postJson<null>('/admin/auth/logout');
+export const logoutAdmin = () => {
+	adminBootstrapResult = null;
+	currentAdminRequest = null;
+	return postJson<null>('/admin/auth/logout');
+};
 
-export const getCurrentUser = () => getJson<AuthResult>('/me');
+export const getCurrentUser = () => {
+	const bootstrapResult = consumeBootstrapResult('user');
+	if (bootstrapResult) {
+		return Promise.resolve(bootstrapResult);
+	}
 
-export const getCurrentAdmin = () => getJson<AuthResult>('/admin/me');
+	currentUserRequest ??= getJson<AuthResult>('/me').finally(() => {
+		currentUserRequest = null;
+	});
+
+	return currentUserRequest;
+};
+
+export const getCurrentAdmin = () => {
+	const bootstrapResult = consumeBootstrapResult('admin');
+	if (bootstrapResult) {
+		return Promise.resolve(bootstrapResult);
+	}
+
+	currentAdminRequest ??= getJson<AuthResult>('/admin/me').finally(() => {
+		currentAdminRequest = null;
+	});
+
+	return currentAdminRequest;
+};
 
 export const listAdminInvitations = () => getJson<{ invitations: AdminInvitation[] }>('/admin/invitations');
 

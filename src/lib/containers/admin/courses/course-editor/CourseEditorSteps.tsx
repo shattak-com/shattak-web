@@ -1,10 +1,9 @@
 import { Box, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
 import { Controller, useWatch } from 'react-hook-form';
 
 import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
-import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import { courseCategories } from '~/lib/constants/course-categories';
-import CourseCurriculumEditor from '~/lib/containers/admin/courses/CourseCurriculumEditor';
 
 import {
 	AudienceEditor,
@@ -22,6 +21,9 @@ import { courseLevelOptions, courseModeOptions, courseStatusOptions } from './co
 import { FormField, ImageField, SelectField, TextareaField } from './FormControls';
 import type { CourseEditorSectionProps, CourseEditorStepFieldsProps } from './types';
 import { getFieldError } from './utils';
+
+const QrCodePreview = dynamic(() => import('~/lib/components/forms/QrCodePreview'));
+const CourseCurriculumEditor = dynamic(() => import('~/lib/containers/admin/courses/CourseCurriculumEditor'));
 
 const BasicsStep = ({
 	control,

@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 
 import type { AdminUserFilterOptions, AdminUserListParams } from '~/lib/api/admin-users';
 
-export type AdminUserFilterValues = Required<AdminUserListParams>;
+export type AdminUserFilterValues = Required<Omit<AdminUserListParams, 'page' | 'pageSize'>>;
 
 type AdminUserFiltersProps = {
 	appliedFilterCount: number;

@@ -20,7 +20,7 @@ import {
 } from '@chakra-ui/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
@@ -81,15 +81,15 @@ const LogoImage = ({ src, alt, boxSize, borderRadius = 'full' }: LogoImageProps)
 const CoursesSection = ({ courses }: CoursesSectionProps) => {
 	const categories = courseCategories as readonly string[];
 	const pathname = usePathname();
-	const searchParams = useSearchParams();
 	const defaultCategory = categories[0] ?? '';
 	const headingRef = useRef<HTMLHeadingElement | null>(null);
 	const [activeCategory, setActiveCategory] = useState(defaultCategory);
 
 	useEffect(() => {
-		const selectedCategory = getCategoryFromQuery(searchParams.get(CATEGORY_QUERY_KEY), categories);
+		const query = typeof window === 'undefined' ? '' : window.location.search;
+		const selectedCategory = getCategoryFromQuery(new URLSearchParams(query).get(CATEGORY_QUERY_KEY), categories);
 		setActiveCategory(selectedCategory ?? defaultCategory);
-	}, [categories, defaultCategory, searchParams]);
+	}, [categories, defaultCategory]);
 
 	const filteredItems = useMemo(() => {
 		if (!activeCategory) {
@@ -106,7 +106,7 @@ const CoursesSection = ({ courses }: CoursesSectionProps) => {
 		});
 
 		setActiveCategory(category);
-		const nextParams = new URLSearchParams(searchParams.toString());
+		const nextParams = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
 		const categorySlug = slugifyCategory(category);
 		const defaultCategorySlug = slugifyCategory(defaultCategory);
 

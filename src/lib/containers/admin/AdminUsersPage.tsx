@@ -9,6 +9,7 @@ import {
 	listAdminUsers,
 	type AdminManagedUser,
 	type AdminUserFilterOptions,
+	type AdminUserPagination,
 	type AdminUserStats
 } from '~/lib/api/admin-users';
 import AdminMetricsGrid from '~/lib/containers/admin/components/AdminMetricsGrid';
@@ -30,6 +31,16 @@ const emptyFilterOptions: AdminUserFilterOptions = {
 	departments: [],
 	passoutYears: [],
 	interests: []
+};
+
+const adminUserPageSize = 25;
+const defaultPagination: AdminUserPagination = {
+	page: 1,
+	pageSize: adminUserPageSize,
+	total: 0,
+	totalPages: 1,
+	hasNextPage: false,
+	hasPreviousPage: false
 };
 
 const formatDate = (value: string | null) => {
@@ -73,25 +84,28 @@ export const AdminUsersContent = () => {
 	const [appliedFilters, setAppliedFilters] = useState<AdminUserFilterValues>(createDefaultFilters);
 	const [filterOptions, setFilterOptions] = useState<AdminUserFilterOptions>(emptyFilterOptions);
 	const [stats, setStats] = useState<AdminUserStats | null>(null);
+	const [pagination, setPagination] = useState<AdminUserPagination>(defaultPagination);
 	const [isLoading, setIsLoading] = useState(true);
 	const [deletingUserId, setDeletingUserId] = useState('');
 	const [userPendingDeletionId, setUserPendingDeletionId] = useState('');
 	const [message, setMessage] = useState('');
 	const adminRoles = useMemo(() => adminUser.roles, [adminUser.roles]);
 
-	const loadUsers = useCallback(async (nextFilters: AdminUserFilterValues) => {
+	const loadUsers = useCallback(async (nextFilters: AdminUserFilterValues, nextPage = 1) => {
 		setIsLoading(true);
 		setMessage('');
 
 		try {
-			const result = await listAdminUsers(nextFilters);
+			const result = await listAdminUsers({ ...nextFilters, page: nextPage, pageSize: adminUserPageSize });
 			setUsers(result.users);
 			setStats(result.stats);
 			setFilterOptions(result.filterOptions);
+			setPagination(result.pagination);
 		} catch {
 			setMessage('Unable to load users.');
 			setUsers([]);
 			setStats(null);
+			setPagination(defaultPagination);
 		} finally {
 			setIsLoading(false);
 		}
@@ -107,7 +121,7 @@ export const AdminUsersContent = () => {
 
 		try {
 			await deleteAdminUser(user.id);
-			await loadUsers(appliedFilters);
+			await loadUsers(appliedFilters, pagination.page);
 			setMessage('User deleted.');
 			setUserPendingDeletionId('');
 		} catch {
@@ -121,14 +135,14 @@ export const AdminUsersContent = () => {
 		const nextFilters = { ...filters, q: filters.q.trim() };
 		setAppliedFilters(nextFilters);
 		setUserPendingDeletionId('');
-		loadUsers(nextFilters).catch(() => undefined);
+		loadUsers(nextFilters, 1).catch(() => undefined);
 	};
 	const resetFilters = () => {
 		const defaults = createDefaultFilters();
 		setFilters(defaults);
 		setAppliedFilters(defaults);
 		setUserPendingDeletionId('');
-		loadUsers(defaults).catch(() => undefined);
+		loadUsers(defaults, 1).catch(() => undefined);
 	};
 	const appliedFilterCount = useMemo(
 		() =>
@@ -364,6 +378,30 @@ export const AdminUsersContent = () => {
 					</Table.Root>
 				)}
 			</Box>
+
+			<HStack justify="space-between" gap={3} flexWrap="wrap">
+				<Text fontSize="sm" color="text.muted">
+					Page {pagination.page} of {pagination.totalPages} · {pagination.total} users
+				</Text>
+				<HStack gap={2}>
+					<Button
+						variant="outline"
+						borderRadius="full"
+						disabled={isLoading || !pagination.hasPreviousPage}
+						onClick={() => loadUsers(appliedFilters, Math.max(1, pagination.page - 1)).catch(() => undefined)}
+					>
+						Previous
+					</Button>
+					<Button
+						variant="outline"
+						borderRadius="full"
+						disabled={isLoading || !pagination.hasNextPage}
+						onClick={() => loadUsers(appliedFilters, pagination.page + 1).catch(() => undefined)}
+					>
+						Next
+					</Button>
+				</HStack>
+			</HStack>
 		</Stack>
 	);
 };

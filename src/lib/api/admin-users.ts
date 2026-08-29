@@ -66,19 +66,33 @@ export type AdminUserListParams = {
 	passoutYear?: string;
 	interest?: string;
 	joinedOrder?: 'asc' | 'desc';
+	page?: number;
+	pageSize?: number;
+};
+
+export type AdminUserPagination = {
+	page: number;
+	pageSize: number;
+	total: number;
+	totalPages: number;
+	hasNextPage: boolean;
+	hasPreviousPage: boolean;
 };
 
 export type AdminUserListResult = {
 	users: AdminManagedUser[];
 	stats: AdminUserStats;
 	filterOptions: AdminUserFilterOptions;
+	pagination: AdminUserPagination;
 };
 
 export const listAdminUsers = (params: AdminUserListParams = {}) => {
 	const searchParams = new URLSearchParams();
 
 	Object.entries(params).forEach(([key, value]) => {
-		if (value?.trim()) {
+		if (typeof value === 'number') {
+			searchParams.set(key, String(value));
+		} else if (value?.trim()) {
 			searchParams.set(key, value.trim());
 		}
 	});

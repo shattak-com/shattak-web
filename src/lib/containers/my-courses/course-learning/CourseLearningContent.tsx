@@ -1,4 +1,5 @@
 import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
 import { FiBookOpen, FiCheckCircle, FiChevronLeft, FiChevronRight, FiLock, FiTrendingUp } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
@@ -9,11 +10,32 @@ import type {
 	CourseLessonsState
 } from '~/lib/api/enrollments';
 
-import { CourseCertificateTab } from './certificate/CourseCertificateTab';
 import { courseNextSteps, workspaceBoundaryColor } from './constants';
-import { CourseLessonsTab, LessonProgressSidebar } from './CourseLessons';
 import { CourseNextStepsPanel, CourseOverviewContent, CourseUnlockedOverviewRail } from './CourseOverview';
 import type { CourseTabId } from './types';
+
+const CourseLessonsTab = dynamic(() => import('./CourseLessons').then(module => module.CourseLessonsTab), {
+	loading: () => (
+		<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={6}>
+			<Text color="text.muted">Loading lesson workspace...</Text>
+		</Box>
+	)
+});
+
+const LessonProgressSidebar = dynamic(() => import('./CourseLessons').then(module => module.LessonProgressSidebar), {
+	loading: () => <Text color="text.muted">Loading lesson progress...</Text>
+});
+
+const CourseCertificateTab = dynamic(
+	() => import('./certificate/CourseCertificateTab').then(module => module.CourseCertificateTab),
+	{
+		loading: () => (
+			<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={6}>
+				<Text color="text.muted">Loading certificate section...</Text>
+			</Box>
+		)
+	}
+);
 
 const CoursePlaceholderTab = ({ label }: { label: string }) => (
 	<Box

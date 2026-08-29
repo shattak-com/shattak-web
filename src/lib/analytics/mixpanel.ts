@@ -1,6 +1,8 @@
-import mixpanel from 'mixpanel-browser';
+import type { OverridedMixpanel } from 'mixpanel-browser';
 
 let isMixpanelInitialized = false;
+let mixpanelClient: OverridedMixpanel | null = null;
+let mixpanelInitialization: Promise<boolean> | null = null;
 let hasAnonymousProfileSynced = false;
 const pendingEvents: Array<{ eventName: string; properties: MixpanelProperties }> = [];
 
@@ -70,6 +72,14 @@ const isTrackingEnabled = () =>
 	Boolean(MIXPANEL_TOKEN) &&
 	MIXPANEL_ENABLED !== 'false' &&
 	(!isLocalhost() || MIXPANEL_TRACK_LOCALHOST);
+
+const getMixpanel = () => {
+	if (!mixpanelClient) {
+		throw new Error('Mixpanel has not been initialized');
+	}
+
+	return mixpanelClient;
+};
 
 const cleanProperties = (properties: MixpanelProperties = {}) =>
 	Object.entries(properties).reduce<MixpanelProperties>((acc, [key, value]) => {
@@ -174,7 +184,7 @@ const flushPendingEvents = () => {
 	const queuedEvents = [...pendingEvents];
 	pendingEvents.length = 0;
 	queuedEvents.forEach(item => {
-		mixpanel.track(item.eventName, item.properties);
+		getMixpanel().track(item.eventName, item.properties);
 	});
 };
 
@@ -226,11 +236,11 @@ const registerSuperProperties = (attribution: FirstTouchAttribution | null) => {
 		return;
 	}
 
-	mixpanel.register(formatCustomProperties({ ...attribution }));
+	getMixpanel().register(formatCustomProperties({ ...attribution }));
 };
 
 const getSessionReplayControls = () => {
-	const sessionReplay = mixpanel as unknown as {
+	const sessionReplay = getMixpanel() as unknown as {
 		start_session_recording?: () => void;
 	};
 
@@ -244,13 +254,13 @@ const syncAnonymousProfile = () => {
 		return;
 	}
 
-	const distinctId = mixpanel.get_distinct_id();
+	const distinctId = getMixpanel().get_distinct_id();
 	if (!distinctId) {
 		return;
 	}
 
-	mixpanel.identify(distinctId);
-	mixpanel.people.set_once({
+	getMixpanel().identify(distinctId);
+	getMixpanel().people.set_once({
 		...formatCustomProperties({
 			first_seen_at: new Date().toISOString(),
 			visitor_type: 'anonymous',
@@ -262,13 +272,16 @@ const syncAnonymousProfile = () => {
 	hasAnonymousProfileSynced = true;
 };
 
-export const initMixpanel = () => {
+export const initMixpanel = async () => {
 	if (!isTrackingEnabled()) {
 		return false;
 	}
 
 	if (isMixpanelInitialized) {
 		return true;
+	}
+	if (mixpanelInitialization) {
+		return mixpanelInitialization;
 	}
 
 	const config = {
@@ -278,13 +291,24 @@ export const initMixpanel = () => {
 		...(MIXPANEL_API_HOST ? { api_host: MIXPANEL_API_HOST } : {})
 	};
 
-	mixpanel.init(MIXPANEL_TOKEN, config);
-	isMixpanelInitialized = true;
-	registerSuperProperties(captureFirstTouchAttribution());
-	getSessionReplayControls().start();
-	flushPendingEvents();
+	mixpanelInitialization = import('mixpanel-browser')
+		.then(({ default: mixpanel }) => {
+			mixpanelClient = mixpanel;
+			mixpanel.init(MIXPANEL_TOKEN, config);
+			isMixpanelInitialized = true;
+			registerSuperProperties(captureFirstTouchAttribution());
+			getSessionReplayControls().start();
+			flushPendingEvents();
+			return true;
+		})
+		.catch(() => false)
+		.finally(() => {
+			if (!isMixpanelInitialized) {
+				mixpanelInitialization = null;
+			}
+		});
 
-	return true;
+	return mixpanelInitialization;
 };
 
 export const ensureMixpanelSessionReplay = () => {
@@ -320,8 +344,8 @@ export const identifyAuthenticatedMixpanelUser = (payload: {
 		return;
 	}
 
-	mixpanel.identify(payload.userId);
-	mixpanel.people.set(
+	getMixpanel().identify(payload.userId);
+	getMixpanel().people.set(
 		formatCustomProperties({
 			$email: payload.email,
 			$name: payload.name,
@@ -339,7 +363,7 @@ export const resetMixpanelIdentity = () => {
 		return;
 	}
 
-	mixpanel.reset();
+	getMixpanel().reset();
 	hasAnonymousProfileSynced = false;
 	syncAnonymousProfile();
 };
@@ -361,7 +385,7 @@ export const trackMixpanelEvent = (eventName: string, properties?: Record<string
 		return;
 	}
 
-	mixpanel.track(eventName, payload);
+	getMixpanel().track(eventName, payload);
 };
 
 export const trackAuthEvent = (payload: {

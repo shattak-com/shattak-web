@@ -17,7 +17,7 @@ import {
 	workspaceBoundaryColor,
 	workspaceSelectedBoundaryColor
 } from './constants';
-import { CourseDashboardSkeleton } from './CourseLessons';
+import CourseDashboardSkeleton from './CourseDashboardSkeleton';
 import type { CourseTabId } from './types';
 import { getStreakTiles } from './utils';
 

@@ -1,7 +1,7 @@
 import { Box, Button, HStack, Image, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import type { CourseEnrollment } from '~/lib/api/enrollments';
@@ -110,6 +110,16 @@ const CourseWorkspaceNavigation = ({
 	onTabChange
 }: CourseWorkspaceNavigationProps) => (
 	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5} overflowY="auto" overscrollBehavior="contain">
+		{onClose ? (
+			<Button asChild justifyContent="flex-start" borderRadius="lg" variant="ghost" minH="48px" px={4}>
+				<Link href="/my-courses/" onClick={onClose}>
+					<FiArrowLeft />
+					<Text as="span" fontWeight="semibold">
+						Back to Course
+					</Text>
+				</Link>
+			</Button>
+		) : null}
 		{courseTabs.map(tab => {
 			const Icon = tab.icon;
 			const isActive = activeTab === tab.id;

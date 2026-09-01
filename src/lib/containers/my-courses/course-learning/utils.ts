@@ -98,20 +98,35 @@ const getStreakWindowEnd = (lastActiveDate: string | null, timeZone: string) => 
 	return getCalendarDateInTimeZone(windowEnd, timeZone);
 };
 
-export const getStreakTiles = (currentStreak: number, lastActiveDate: string | null, timeZone: string) => {
-	const windowEnd = getStreakWindowEnd(lastActiveDate, timeZone);
-	const activeTileCount = Math.min(Math.max(currentStreak, 0), 10);
+const getUtcDateKey = (date: Date) =>
+	`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 
-	return Array.from({ length: 10 }, (_, index) => {
-		const date = new Date(windowEnd);
-		date.setUTCDate(windowEnd.getUTCDate() - (9 - index));
+export const getStreakTiles = (
+	currentStreak: number,
+	lastActiveDate: string | null,
+	timeZone: string,
+	targetDays: number,
+	cycleDays: number
+) => {
+	const cycleLength = Math.max(1, cycleDays);
+	const normalizedStreak = Math.min(Math.max(currentStreak, 1), cycleLength);
+	const cycleStart = getStreakWindowEnd(lastActiveDate, timeZone);
+	cycleStart.setUTCDate(cycleStart.getUTCDate() - (normalizedStreak - 1));
+
+	return Array.from({ length: cycleLength }, (_, index) => {
+		const date = new Date(cycleStart);
+		const dayNumber = index + 1;
+		date.setUTCDate(cycleStart.getUTCDate() + index);
 
 		return {
-			dateKey: date.toISOString().slice(0, 10),
-			dayLabel: streakWeekdayFormatter.format(date),
+			dateKey: getUtcDateKey(date),
+			dayNumber,
+			dayLabel: `Day ${dayNumber}`,
+			weekdayLabel: streakWeekdayFormatter.format(date),
 			dateLabel: streakDateFormatter.format(date),
-			isActive: index >= 10 - activeTileCount,
-			isLatest: index === 9
+			isCompleted: dayNumber < normalizedStreak,
+			isCurrent: dayNumber === normalizedStreak,
+			isBuffer: dayNumber > targetDays
 		};
 	});
 };

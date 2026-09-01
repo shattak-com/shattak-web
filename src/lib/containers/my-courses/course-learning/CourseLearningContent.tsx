@@ -166,6 +166,7 @@ export const CourseLearningMainContent = ({
 				isDashboardLoading={isDashboardLoading}
 				learnerName={learnerName}
 				onDashboardRetry={onDashboardRetry}
+				onLessonSelect={onLessonSelect}
 				onTabChange={onTabChange}
 				onUnlocked={onCourseUnlocked}
 			/>

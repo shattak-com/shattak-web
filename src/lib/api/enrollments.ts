@@ -61,6 +61,9 @@ export type CourseLearningDashboard = {
 		streakUpdated: boolean;
 		lastActiveDate: string | null;
 		timeZone: string;
+		targetDays: number;
+		bufferDays: number;
+		cycleDays: number;
 		message: string;
 	};
 	completion: {
@@ -83,6 +86,18 @@ export type CourseLearningDashboard = {
 		moduleTitle: string | null;
 		subsectionId: string | null;
 		subsectionTitle: string | null;
+		module: {
+			id: string;
+			title: string;
+			completedSubsections: number;
+			totalSubsections: number;
+			subsections: Array<{
+				id: string;
+				title: string;
+				isCompleted: boolean;
+				isCurrent: boolean;
+			}>;
+		} | null;
 	};
 	community: {
 		whatsappGroupUrl: string;

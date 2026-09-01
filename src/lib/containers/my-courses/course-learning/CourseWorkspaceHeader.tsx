@@ -110,7 +110,6 @@ const FocusModeHeader = ({
 );
 
 const StandardWorkspaceHeader = ({
-	activeLessonTitle,
 	activeTab,
 	enrollment,
 	focusModeButtonRef,
@@ -119,13 +118,7 @@ const StandardWorkspaceHeader = ({
 	onOpenMobileNavigation
 }: Pick<
 	CourseWorkspaceHeaderProps,
-	| 'activeLessonTitle'
-	| 'activeTab'
-	| 'enrollment'
-	| 'focusModeButtonRef'
-	| 'onAskDoubt'
-	| 'onEnterFocusMode'
-	| 'onOpenMobileNavigation'
+	'activeTab' | 'enrollment' | 'focusModeButtonRef' | 'onAskDoubt' | 'onEnterFocusMode' | 'onOpenMobileNavigation'
 >) => (
 	<HStack w="full" justify="space-between" gap={{ base: 2, md: 4 }}>
 		<HStack gap={{ base: 2, sm: 3 }} minW={0} flex={1}>
@@ -154,14 +147,6 @@ const StandardWorkspaceHeader = ({
 				<Heading size="sm" lineClamp={1}>
 					{enrollment.course.title}
 				</Heading>
-				<Text
-					display={{ base: activeTab === 'lessons' ? 'block' : 'none', sm: 'none' }}
-					color="text.muted"
-					fontSize="xs"
-					lineClamp={1}
-				>
-					{activeLessonTitle || 'Lessons'}
-				</Text>
 				<Text display={{ base: 'none', sm: 'block' }} color="text.muted" fontSize="xs">
 					Enrolled on {formatCourseDate(enrollment.enrolledAt)}
 				</Text>
@@ -269,7 +254,6 @@ export const CourseWorkspaceHeader = ({
 			/>
 		) : (
 			<StandardWorkspaceHeader
-				activeLessonTitle={activeLessonTitle}
 				activeTab={activeTab}
 				enrollment={enrollment}
 				focusModeButtonRef={focusModeButtonRef}

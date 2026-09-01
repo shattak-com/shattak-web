@@ -8,30 +8,30 @@ import { useState } from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
 import {
 	FiBookOpen,
+	FiCalendar,
+	FiCheck,
 	FiCheckCircle,
+	FiChevronRight,
+	FiCode,
 	FiExternalLink,
 	FiLock,
 	FiMessageCircle,
+	FiPlayCircle,
 	FiShield,
-	FiTrendingUp,
-	FiUsers
+	FiUsers,
+	FiZap
 } from 'react-icons/fi';
 
 import { trackCourseDashboardEvent, trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import { ApiRequestError } from '~/lib/api/client';
 import { unlockCourseAccess, type CourseEnrollment, type CourseLearningDashboard } from '~/lib/api/enrollments';
+import ShineButton from '~/lib/components/actions/ShineButton';
 import UserAvatar from '~/lib/components/auth/UserAvatar';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import ExperienceVideo from '~/lib/components/media/ExperienceVideo';
 
-import {
-	courseNextSteps,
-	shattakMarkUrl,
-	workspaceActiveTextColor,
-	workspaceBoundaryColor,
-	workspaceSelectedBoundaryColor
-} from './constants';
+import { courseNextSteps, shattakMarkUrl, workspaceActiveTextColor, workspaceBoundaryColor } from './constants';
 import CourseDashboardSkeleton from './CourseDashboardSkeleton';
 import type { CourseTabId } from './types';
 import { getStreakTiles } from './utils';
@@ -324,218 +324,6 @@ export const CourseUnlockedOverviewRail = ({
 	</Stack>
 );
 
-type CourseUnlockedOverviewTabProps = {
-	dashboard: CourseLearningDashboard;
-	enrollment: CourseEnrollment;
-	courseId: string;
-	currentUser: AuthenticatedUser | null;
-	learnerName: string;
-	onTabChange: (tabId: CourseTabId) => void;
-};
-
-const CourseUnlockedOverviewTab = ({
-	dashboard,
-	enrollment,
-	courseId,
-	currentUser,
-	learnerName,
-	onTabChange
-}: CourseUnlockedOverviewTabProps) => {
-	const streakTiles = getStreakTiles(
-		dashboard.streak.currentStreak,
-		dashboard.streak.lastActiveDate,
-		dashboard.streak.timeZone
-	);
-	const { course } = enrollment;
-
-	const handleProgressClick = () => {
-		trackCourseDashboardEvent({
-			eventName: 'course_progress_clicked',
-			courseId,
-			courseTitle: course.title,
-			userId: currentUser?.id,
-			destination: dashboard.learningProgress.destination,
-			completionPercentage: dashboard.completion.percentage,
-			enrollmentStatus: enrollment.status,
-			sourcePage: `/my-courses/${courseId}`
-		});
-		onTabChange(dashboard.learningProgress.tabId);
-	};
-
-	return (
-		<Stack gap={4}>
-			<Box
-				border="1px solid"
-				borderColor={workspaceBoundaryColor}
-				borderRadius="card"
-				bg="bg.card"
-				p={{ base: 5, md: 7 }}
-			>
-				<Stack gap={4}>
-					<HStack gap={2}>
-						<Box color="green.500">
-							<FiCheckCircle />
-						</Box>
-						<Text color="green.600" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-							Course workspace ready
-						</Text>
-					</HStack>
-					<Heading size={{ base: 'xl', md: '2xl' }}>
-						Welcome to the Course{learnerName ? `, ${learnerName}` : ''}.
-					</Heading>
-					<Text color="text.primary" fontSize={{ base: 'lg', md: 'xl' }} fontWeight="medium">
-						You&apos;ve taken the first step - now let&apos;s make it count.
-					</Text>
-					<Text color="text.muted" fontSize="md" lineHeight="tall" maxW="3xl">
-						Use this dashboard to keep your course rhythm, jump to the next learning action, and stay connected with
-						your mentors and peers.
-					</Text>
-				</Stack>
-			</Box>
-
-			<Box
-				border="1px solid"
-				borderColor={workspaceBoundaryColor}
-				borderRadius="card"
-				bg="bg.card"
-				p={{ base: 5, md: 6 }}
-			>
-				<Stack gap={5}>
-					<HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
-						<Box maxW="3xl">
-							<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-								Your next learning action
-							</Text>
-							<Heading mt={2} size={{ base: 'lg', md: 'xl' }}>
-								{dashboard.learningProgress.title}
-							</Heading>
-							<Text mt={2} color="text.muted" fontSize="md" lineHeight="tall">
-								{dashboard.learningProgress.subtitle}
-							</Text>
-						</Box>
-						<Button
-							borderRadius="full"
-							bg="primary"
-							color={workspaceActiveTextColor}
-							_hover={{ bg: 'primaryHover' }}
-							onClick={handleProgressClick}
-						>
-							{dashboard.learningProgress.buttonLabel}
-						</Button>
-					</HStack>
-					<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor={workspaceBoundaryColor} p={4}>
-						<Text color="text.muted" fontSize="sm">
-							{dashboard.completion.completedSubsections} of {dashboard.completion.totalSubsections} learning units
-							completed. Assignment status: {dashboard.completion.assignmentStatus.replace('_', ' ').toLowerCase()}.
-						</Text>
-					</Box>
-				</Stack>
-			</Box>
-
-			{!dashboard.streak.hidden ? (
-				<Box
-					border="1px solid"
-					borderColor={workspaceBoundaryColor}
-					borderRadius="card"
-					bg="bg.card"
-					p={{ base: 5, md: 6 }}
-				>
-					<Stack gap={4}>
-						<HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
-							<Box>
-								<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-									Learning streak
-								</Text>
-								<Heading mt={1} size="lg">
-									{dashboard.streak.currentStreak} {dashboard.streak.currentStreak === 1 ? 'day' : 'days'} streak
-								</Heading>
-								<Text mt={1} color="text.muted" fontSize="xs">
-									Rolling ten-day activity window
-								</Text>
-							</Box>
-							<Box color="primary" fontSize="3xl">
-								<FiTrendingUp />
-							</Box>
-						</HStack>
-
-						<Box display="grid" gridTemplateColumns={{ base: 'repeat(5, 1fr)', md: 'repeat(10, 1fr)' }} gap={2}>
-							{streakTiles.map(tile => (
-								<Stack
-									key={tile.dateKey}
-									align="center"
-									gap={1}
-									border="1px solid"
-									borderColor={tile.isActive ? workspaceSelectedBoundaryColor : workspaceBoundaryColor}
-									borderRadius="lg"
-									bg={tile.isActive ? 'bg.accent' : 'bg.subtle'}
-									px={2}
-									py={3}
-									position="relative"
-								>
-									<Text color={tile.isActive ? 'primary' : 'text.muted'} fontSize="xs" fontWeight="bold">
-										{tile.dayLabel}
-									</Text>
-									<Text color="text.muted" fontSize="2xs" whiteSpace="nowrap">
-										{tile.dateLabel}
-									</Text>
-									<Box boxSize="10px" borderRadius="full" bg={tile.isActive ? 'primary' : 'border.default'} />
-									{tile.isLatest ? (
-										<Box
-											position="absolute"
-											insetX={2}
-											bottom={0}
-											h="2px"
-											borderRadius="full"
-											bg="primary"
-											aria-hidden="true"
-										/>
-									) : null}
-								</Stack>
-							))}
-						</Box>
-
-						<Box borderRadius="lg" bg="bg.subtle" border="1px solid" borderColor={workspaceBoundaryColor} px={4} py={3}>
-							<Text color="text.muted" fontSize="sm">
-								{dashboard.streak.message}
-							</Text>
-						</Box>
-					</Stack>
-				</Box>
-			) : null}
-		</Stack>
-	);
-};
-
-type CourseOverviewTabProps = {
-	enrollment: CourseEnrollment;
-	courseId: string;
-	currentUser: AuthenticatedUser | null;
-	onUnlocked: (enrollment: CourseEnrollment) => void;
-};
-
-const communityButtonPulse = keyframes`
-	0%, 100% {
-		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28);
-		transform: translateY(0);
-	}
-	50% {
-		box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-		transform: translateY(-1px);
-	}
-`;
-
-const communityBenefits = [
-	{ icon: FiUsers, label: 'Mentor guidance' },
-	{ icon: FiMessageCircle, label: 'Peer support' },
-	{ icon: FiBookOpen, label: 'Course updates' }
-];
-
-const communityJoinSteps = [
-	{ title: 'Join the official WhatsApp community', detail: 'Open the course group using the link above.' },
-	{ title: 'Get the confirmation code', detail: 'Find it in the group description or pinned message.' },
-	{ title: 'Confirm your access', detail: 'Enter the code below and click “I have joined”.' }
-];
-
 const CourseWelcomeVideo = ({
 	courseTitle,
 	promoImage,
@@ -570,6 +358,420 @@ const CourseWelcomeVideo = ({
 	);
 };
 
+type StreakTile = ReturnType<typeof getStreakTiles>[number];
+
+const CourseStreakTile = ({ tile }: { tile: StreakTile }) => {
+	let background = 'bg.subtle';
+	let iconBackground = 'transparent';
+	let iconColor = tile.isBuffer ? 'primary' : 'text.muted';
+	let tileColor = 'text.primary';
+	let dateColor = 'text.muted';
+
+	if (tile.isCurrent) {
+		background = 'bg.brand';
+		iconBackground = 'primary';
+		iconColor = workspaceActiveTextColor;
+	}
+
+	if (tile.isCompleted) {
+		background = 'primary';
+		iconBackground = 'whiteAlpha.900';
+		iconColor = 'primary';
+		tileColor = workspaceActiveTextColor;
+		dateColor = 'whiteAlpha.900';
+	}
+
+	return (
+		<Stack
+			align="center"
+			gap={2}
+			border="1px solid"
+			borderColor={tile.isCurrent || tile.isBuffer ? 'primary' : workspaceBoundaryColor}
+			borderRadius="lg"
+			bg={background}
+			color={tileColor}
+			px={2}
+			py={4}
+		>
+			<Box boxSize="26px" borderRadius="full" bg={iconBackground} color={iconColor} display="grid" placeItems="center">
+				{tile.isCompleted ? <FiCheck /> : <FiCalendar />}
+			</Box>
+			<Text fontSize="sm" fontWeight="bold">
+				{tile.dayLabel}
+			</Text>
+			<Text color={dateColor} fontSize="2xs" textAlign="center" whiteSpace="nowrap">
+				{tile.weekdayLabel}
+				<br />
+				{tile.dateLabel}
+			</Text>
+		</Stack>
+	);
+};
+
+type LearningModuleSubsection = NonNullable<
+	CourseLearningDashboard['learningProgress']['module']
+>['subsections'][number];
+
+const CourseLearningActionRow = ({
+	index,
+	onOpen,
+	subsection
+}: {
+	index: number;
+	onOpen: (subsectionId: string, subsectionTitle: string) => void;
+	subsection: LearningModuleSubsection;
+}) => {
+	let statusBackground = 'bg.muted';
+	let statusColor = 'text.muted';
+	let statusIcon: ReactNode = <FiPlayCircle />;
+	let statusLabel = 'Ready';
+
+	if (subsection.isCurrent) {
+		statusBackground = 'orange.100';
+		statusColor = 'orange.700';
+		statusLabel = 'Continue learning';
+	}
+
+	if (subsection.isCompleted) {
+		statusBackground = 'green.100';
+		statusColor = 'green.700';
+		statusIcon = <FiCheckCircle />;
+		statusLabel = 'Completed';
+	}
+
+	return (
+		<Button
+			variant="ghost"
+			h="auto"
+			minH="54px"
+			borderRadius={0}
+			borderTop={index === 0 ? 'none' : '1px solid'}
+			borderColor={workspaceBoundaryColor}
+			bg={subsection.isCurrent ? 'bg.accent' : 'transparent'}
+			px={{ base: 4, md: 6 }}
+			py={3}
+			justifyContent="stretch"
+			textAlign="left"
+			_hover={{ bg: subsection.isCurrent ? 'bg.accent' : 'bg.subtle' }}
+			onClick={() => onOpen(subsection.id, subsection.title)}
+		>
+			<Box
+				display="grid"
+				gridTemplateColumns="auto minmax(0, 1fr) auto auto"
+				alignItems="center"
+				gap={{ base: 2, md: 4 }}
+				w="full"
+			>
+				<Box
+					boxSize="28px"
+					borderRadius="full"
+					bg="bg.brand"
+					color="primary"
+					display="grid"
+					fontSize="xs"
+					fontWeight="bold"
+					placeItems="center"
+				>
+					{index + 1}
+				</Box>
+				<Text fontSize="sm" fontWeight={subsection.isCurrent ? 'semibold' : 'medium'} whiteSpace="normal">
+					{subsection.title}
+				</Text>
+				<HStack
+					borderRadius="full"
+					bg={statusBackground}
+					color={statusColor}
+					px={3}
+					py={1}
+					gap={1.5}
+					fontSize="xs"
+					display={{ base: 'none', sm: 'flex' }}
+				>
+					{statusIcon}
+					<Text>{statusLabel}</Text>
+				</HStack>
+				<Box color={subsection.isCurrent ? 'primary' : 'text.muted'}>
+					<FiChevronRight />
+				</Box>
+			</Box>
+		</Button>
+	);
+};
+
+type CourseUnlockedOverviewTabProps = {
+	dashboard: CourseLearningDashboard;
+	enrollment: CourseEnrollment;
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	learnerName: string;
+	onLessonSelect: (subsectionId: string) => void;
+	onTabChange: (tabId: CourseTabId) => void;
+};
+
+const CourseUnlockedOverviewTab = ({
+	dashboard,
+	enrollment,
+	courseId,
+	currentUser,
+	learnerName,
+	onLessonSelect,
+	onTabChange
+}: CourseUnlockedOverviewTabProps) => {
+	const streakTiles = getStreakTiles(
+		dashboard.streak.currentStreak,
+		dashboard.streak.lastActiveDate,
+		dashboard.streak.timeZone,
+		dashboard.streak.targetDays,
+		dashboard.streak.cycleDays
+	);
+	const { course } = enrollment;
+	const learningModule = dashboard.learningProgress.module;
+	const moduleProgress = learningModule?.totalSubsections
+		? Math.round((learningModule.completedSubsections / learningModule.totalSubsections) * 100)
+		: 0;
+	const progressButtonLabel =
+		dashboard.learningProgress.destination === 'lesson' ? 'Continue learning' : dashboard.learningProgress.buttonLabel;
+
+	const trackProgressClick = (lesson?: { id: string; title: string }) => {
+		trackCourseDashboardEvent({
+			eventName: 'course_progress_clicked',
+			courseId,
+			courseTitle: course.title,
+			userId: currentUser?.id,
+			destination: dashboard.learningProgress.destination,
+			lessonId: lesson?.id ?? dashboard.learningProgress.subsectionId ?? undefined,
+			lessonTitle: lesson?.title ?? dashboard.learningProgress.subsectionTitle ?? undefined,
+			moduleId: dashboard.learningProgress.moduleId ?? undefined,
+			moduleTitle: dashboard.learningProgress.moduleTitle ?? undefined,
+			completionPercentage: dashboard.completion.percentage,
+			enrollmentStatus: enrollment.status,
+			sourcePage: `/my-courses/${courseId}`
+		});
+	};
+
+	const openLesson = (subsectionId: string, subsectionTitle: string) => {
+		trackProgressClick({ id: subsectionId, title: subsectionTitle });
+		onLessonSelect(subsectionId);
+		onTabChange('lessons');
+	};
+
+	const handleProgressClick = () => {
+		trackProgressClick();
+		if (dashboard.learningProgress.destination === 'lesson' && dashboard.learningProgress.subsectionId) {
+			onLessonSelect(dashboard.learningProgress.subsectionId);
+		}
+		onTabChange(dashboard.learningProgress.tabId);
+	};
+
+	return (
+		<Stack gap={4}>
+			{!dashboard.streak.hidden ? (
+				<Box
+					border="1px solid"
+					borderColor={workspaceBoundaryColor}
+					borderRadius="card"
+					bg="bg.card"
+					p={{ base: 5, md: 6 }}
+				>
+					<Stack gap={5}>
+						<HStack justify="space-between" align="center" gap={4} flexWrap="wrap">
+							<HStack gap={4}>
+								<Box
+									boxSize={{ base: '48px', md: '58px' }}
+									borderRadius="xl"
+									bg="bg.brand"
+									color="primary"
+									display="grid"
+									fontSize={{ base: '2xl', md: '3xl' }}
+									placeItems="center"
+								>
+									<span aria-hidden="true">🔥</span>
+								</Box>
+								<Box>
+									<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+										Learning stream
+									</Text>
+									<Heading mt={1} size={{ base: 'lg', md: 'xl' }}>
+										{dashboard.streak.currentStreak} Day Streak
+									</Heading>
+									<Text mt={1} color="text.muted" fontSize="sm">
+										Welcome back{learnerName ? `, ${learnerName}` : ''}. Keep your learning rhythm moving.
+									</Text>
+								</Box>
+							</HStack>
+							<HStack
+								border="1px solid"
+								borderColor={workspaceBoundaryColor}
+								borderRadius="full"
+								bg="bg.subtle"
+								px={4}
+								py={2}
+								color="text.muted"
+								fontSize="sm"
+							>
+								<Box color="primary">
+									<FiZap />
+								</Box>
+								<Text>Consistency today, mastery tomorrow.</Text>
+							</HStack>
+						</HStack>
+
+						<Box overflowX="auto" pb={2} overscrollBehaviorX="contain">
+							<Box
+								display="grid"
+								gridTemplateColumns={`repeat(${dashboard.streak.cycleDays}, minmax(84px, 1fr))`}
+								gap={2}
+								minW="max-content"
+							>
+								{streakTiles.map(tile => (
+									<CourseStreakTile key={tile.dateKey} tile={tile} />
+								))}
+							</Box>
+						</Box>
+
+						<HStack borderRadius="lg" bg="bg.brand" px={4} py={3} gap={3} align="start">
+							<Box color="primary" mt={0.5}>
+								<FiCalendar />
+							</Box>
+							<Text color="text.muted" fontSize="sm">
+								This course follows a{' '}
+								<Text as="span" color="text.primary" fontWeight="bold">
+									{dashboard.streak.targetDays}-day learning plan
+								</Text>{' '}
+								with {dashboard.streak.bufferDays} buffer days. If unfinished after Day {dashboard.streak.cycleDays},
+								your next visit starts a fresh cycle at Day 1. {dashboard.streak.message}
+							</Text>
+						</HStack>
+					</Stack>
+				</Box>
+			) : null}
+
+			<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" overflow="hidden">
+				<Stack gap={0}>
+					<HStack justify="space-between" align="center" gap={4} flexWrap="wrap" p={{ base: 5, md: 6 }}>
+						<HStack align="start" gap={4} minW={0}>
+							<Box
+								boxSize="46px"
+								borderRadius="xl"
+								bg="bg.brand"
+								color="primary"
+								display="grid"
+								flexShrink={0}
+								fontSize="xl"
+								placeItems="center"
+							>
+								<FiZap />
+							</Box>
+							<Box minW={0}>
+								<Heading size={{ base: 'lg', md: 'xl' }}>Your next learning action</Heading>
+								<Text mt={1} color="text.muted" fontSize="sm">
+									Keep going—you&apos;re building real skills step by step.
+								</Text>
+							</Box>
+						</HStack>
+						<ShineButton
+							borderRadius="full"
+							bg="primary"
+							color={workspaceActiveTextColor}
+							px={6}
+							_hover={{ bg: 'primaryHover' }}
+							onClick={handleProgressClick}
+						>
+							{progressButtonLabel}
+							<FiChevronRight />
+						</ShineButton>
+					</HStack>
+
+					{learningModule ? (
+						<Box borderTop="1px solid" borderColor={workspaceBoundaryColor}>
+							<HStack justify="space-between" gap={4} bg="bg.brand" px={{ base: 4, md: 6 }} py={4} flexWrap="wrap">
+								<HStack gap={3} minW={0}>
+									<Box color="primary" fontSize="xl">
+										<FiCode />
+									</Box>
+									<Text fontWeight="bold" lineClamp={1}>
+										{learningModule.title}
+									</Text>
+								</HStack>
+								<HStack gap={3} minW={{ base: 'full', sm: '280px' }}>
+									<Text color="text.muted" fontSize="xs" whiteSpace="nowrap">
+										<Text as="span" color="primary" fontWeight="bold">
+											{learningModule.completedSubsections}
+										</Text>{' '}
+										/ {learningModule.totalSubsections} completed
+									</Text>
+									<Box flex={1} h="8px" borderRadius="full" bg="bg.muted" overflow="hidden">
+										<Box
+											h="full"
+											w={`${moduleProgress}%`}
+											borderRadius="full"
+											bg="primary"
+											transition="width 180ms ease"
+										/>
+									</Box>
+								</HStack>
+							</HStack>
+
+							<Stack gap={0}>
+								{learningModule.subsections.map((subsection, index) => (
+									<CourseLearningActionRow
+										key={subsection.id}
+										index={index}
+										onOpen={openLesson}
+										subsection={subsection}
+									/>
+								))}
+							</Stack>
+						</Box>
+					) : (
+						<Box borderTop="1px solid" borderColor={workspaceBoundaryColor} bg="bg.subtle" p={5}>
+							<Text color="text.muted" fontSize="sm">
+								{dashboard.learningProgress.subtitle}
+							</Text>
+						</Box>
+					)}
+				</Stack>
+			</Box>
+
+			<CourseWelcomeVideo
+				courseTitle={course.title}
+				promoImage={course.promoImage}
+				thumbnailImage={course.thumbnailImage}
+			/>
+		</Stack>
+	);
+};
+
+type CourseOverviewTabProps = {
+	enrollment: CourseEnrollment;
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	onUnlocked: (enrollment: CourseEnrollment) => void;
+};
+
+const communityButtonPulse = keyframes`
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28);
+		transform: translateY(0);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+		transform: translateY(-1px);
+	}
+`;
+
+const communityBenefits = [
+	{ icon: FiUsers, label: 'Mentor guidance' },
+	{ icon: FiMessageCircle, label: 'Peer support' },
+	{ icon: FiBookOpen, label: 'Course updates' }
+];
+
+const communityJoinSteps = [
+	{ title: 'Join the official WhatsApp community', detail: 'Open the course group using the link above.' },
+	{ title: 'Get the confirmation code', detail: 'Find it in the group description or pinned message.' },
+	{ title: 'Confirm your access', detail: 'Enter the code below and click “I have joined”.' }
+];
+
 const CourseMentorImages = ({ instructors }: { instructors: CourseEnrollment['course']['instructors'] }) => {
 	const mentors = instructors.filter(instructor => instructor.photo.trim()).slice(0, 3);
 
@@ -578,8 +780,8 @@ const CourseMentorImages = ({ instructors }: { instructors: CourseEnrollment['co
 	}
 
 	return (
-		<HStack gap={3} flexShrink={0}>
-			<Box textAlign="right">
+		<HStack gap={{ base: 2, md: 3 }} flexShrink={0}>
+			<Box display={{ base: 'none', md: 'block' }} textAlign="right">
 				<Text fontSize="xs" fontWeight="semibold">
 					Meet your course mentors
 				</Text>
@@ -605,6 +807,39 @@ const CourseMentorImages = ({ instructors }: { instructors: CourseEnrollment['co
 		</HStack>
 	);
 };
+
+const CourseWelcomeMessage = ({ mobileOnly = false }: { mobileOnly?: boolean }) => (
+	<Box
+		display={mobileOnly ? { base: 'block', md: 'none' } : { base: 'none', md: 'block' }}
+		border="1px solid"
+		borderColor={workspaceBoundaryColor}
+		borderRadius="card"
+		bg="bg.card"
+		p={{ base: 5, md: 5, xl: 6 }}
+	>
+		<Stack gap={3} h="full">
+			<Heading size={{ base: 'md', md: 'lg', xl: 'xl' }} lineHeight="short">
+				Welcome to Shattak
+			</Heading>
+			<Text color="text.primary" fontSize={{ base: 'sm', md: 'md' }} fontWeight="semibold">
+				You&apos;ve taken the first step. Now, let&apos;s make it count.
+			</Text>
+			<Stack gap={2} color="text.muted" fontSize="sm" lineHeight="tall">
+				<Text>We&apos;re excited to have you with us and wish you the best on your learning journey.</Text>
+				<Text>Use this workspace as your course hub and follow the learning path at your own pace.</Text>
+				<Text>
+					Start by joining the WhatsApp community to connect with mentors and peers, get updates, clear doubts, and stay
+					on track.
+				</Text>
+			</Stack>
+			<Box mt="auto" borderRadius="full" bg="text.primary" color="text.inverse" px={4} py={2.5} w="fit-content">
+				<Text fontSize="sm" fontWeight="bold">
+					Let&apos;s learn, build, and grow together
+				</Text>
+			</Box>
+		</Stack>
+	</Box>
+);
 
 const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: CourseOverviewTabProps) => {
 	const [accessCode, setAccessCode] = useState('');
@@ -685,14 +920,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 
 	return (
 		<Stack gap={4}>
-			<Box
-				display={{ base: 'none', md: 'block' }}
-				borderRadius="card"
-				bg="primary"
-				color={workspaceActiveTextColor}
-				px={{ base: 4, md: 5 }}
-				py={3}
-			>
+			<Box borderRadius="card" bg="primary" color={workspaceActiveTextColor} px={{ base: 4, md: 5 }} py={3}>
 				<HStack gap={3}>
 					<FiCheckCircle />
 					<Text fontSize="sm" fontWeight="semibold">
@@ -708,36 +936,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 					thumbnailImage={course.thumbnailImage}
 				/>
 
-				<Box
-					display={{ base: 'none', md: 'block' }}
-					border="1px solid"
-					borderColor={workspaceBoundaryColor}
-					borderRadius="card"
-					bg="bg.card"
-					p={{ md: 5, xl: 6 }}
-				>
-					<Stack gap={3} h="full">
-						<Heading size={{ md: 'lg', xl: 'xl' }} lineHeight="short">
-							Welcome to Shattak
-						</Heading>
-						<Text color="text.primary" fontWeight="semibold">
-							You&apos;ve taken the first step. Now, let&apos;s make it count.
-						</Text>
-						<Stack gap={2} color="text.muted" fontSize="sm" lineHeight="tall">
-							<Text>We&apos;re excited to have you with us and wish you the best on your learning journey.</Text>
-							<Text>Use this workspace as your course hub and follow the learning path at your own pace.</Text>
-							<Text>
-								Start by joining the WhatsApp community to connect with mentors and peers, get updates, clear doubts,
-								and stay on track.
-							</Text>
-						</Stack>
-						<Box mt="auto" borderRadius="full" bg="text.primary" color="text.inverse" px={4} py={2.5} w="fit-content">
-							<Text fontSize="sm" fontWeight="bold">
-								Let&apos;s learn, build, and grow together
-							</Text>
-						</Box>
-					</Stack>
-				</Box>
+				<CourseWelcomeMessage />
 			</Box>
 
 			<Box
@@ -838,7 +1037,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 							))}
 						</SimpleGrid>
 
-						<Stack display={{ base: 'none', md: 'flex' }} gap={3}>
+						<Stack gap={3}>
 							{communityJoinSteps.map((step, index) => (
 								<HStack key={step.title} align="start" gap={3}>
 									<Box
@@ -914,7 +1113,6 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 						) : null}
 
 						<HStack
-							display={{ base: 'none', md: 'flex' }}
 							border="1px solid"
 							borderColor={workspaceBoundaryColor}
 							borderRadius="lg"
@@ -954,6 +1152,12 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 					</Stack>
 				</Box>
 			</Box>
+
+			<CourseWelcomeMessage mobileOnly />
+
+			<Box display={{ base: 'block', xl: 'none' }}>
+				<CourseNextStepsPanel />
+			</Box>
 		</Stack>
 	);
 };
@@ -967,6 +1171,7 @@ type CourseOverviewContentProps = {
 	isDashboardLoading: boolean;
 	learnerName: string;
 	onDashboardRetry: () => void;
+	onLessonSelect: (subsectionId: string) => void;
 	onTabChange: (tabId: CourseTabId) => void;
 	onUnlocked: (enrollment: CourseEnrollment) => void;
 };
@@ -980,6 +1185,7 @@ export const CourseOverviewContent = ({
 	isDashboardLoading,
 	learnerName,
 	onDashboardRetry,
+	onLessonSelect,
 	onTabChange,
 	onUnlocked
 }: CourseOverviewContentProps) => {
@@ -995,6 +1201,7 @@ export const CourseOverviewContent = ({
 				courseId={courseId}
 				currentUser={currentUser}
 				learnerName={learnerName}
+				onLessonSelect={onLessonSelect}
 				onTabChange={onTabChange}
 			/>
 		);

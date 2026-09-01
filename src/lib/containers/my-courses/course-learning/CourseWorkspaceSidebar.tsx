@@ -1,7 +1,7 @@
 import { Box, Button, HStack, Image, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import type { CourseEnrollment } from '~/lib/api/enrollments';
@@ -100,44 +100,16 @@ type CourseWorkspaceNavigationProps = Pick<
 	'activeTab' | 'isCollapsed' | 'onClose' | 'onTabChange'
 > & {
 	canOpenLearningTabs: boolean;
-	courseHref: string;
-	courseTitle: string;
 };
 
 const CourseWorkspaceNavigation = ({
 	activeTab,
 	canOpenLearningTabs,
-	courseHref,
-	courseTitle,
 	isCollapsed = false,
 	onClose,
 	onTabChange
 }: CourseWorkspaceNavigationProps) => (
 	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5} overflowY="auto" overscrollBehavior="contain">
-		<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
-			<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-				Course dashboard
-			</Text>
-			<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
-				{courseTitle}
-			</Text>
-		</Box>
-
-		<Button
-			asChild
-			justifyContent={isCollapsed ? 'center' : 'flex-start'}
-			borderRadius="lg"
-			variant="ghost"
-			minH="48px"
-			px={isCollapsed ? 0 : 4}
-			title={isCollapsed ? 'Back to course' : undefined}
-		>
-			<Link href={courseHref} onClick={onClose}>
-				<FiArrowLeft />
-				{!isCollapsed ? 'Back to course' : null}
-			</Link>
-		</Button>
-
 		{courseTabs.map(tab => {
 			const Icon = tab.icon;
 			const isActive = activeTab === tab.id;
@@ -259,8 +231,6 @@ export const CourseWorkspaceSidebar = ({
 			<CourseWorkspaceNavigation
 				activeTab={activeTab}
 				canOpenLearningTabs={canOpenLearningTabs}
-				courseHref={`/course/${enrollment.course.slug}`}
-				courseTitle={enrollment.course.title}
 				isCollapsed={isCollapsed}
 				onClose={onClose}
 				onTabChange={onTabChange}

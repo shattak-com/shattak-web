@@ -161,7 +161,6 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				<CourseWorkspaceHeader
 					activeLessonTitle={activeLessonContext?.subsection.title}
 					activeTab={activeTab}
-					courseId={courseId}
 					enrollment={enrollment}
 					exitFocusModeButtonRef={exitFocusModeButtonRef}
 					focusModeButtonRef={focusModeButtonRef}

@@ -1,18 +1,33 @@
 'use client';
 
-import { Box, Button, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
+import { AspectRatio, Box, Button, Heading, HStack, Image, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { FiCheckCircle, FiExternalLink, FiMessageCircle, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
+import {
+	FiBookOpen,
+	FiCheckCircle,
+	FiExternalLink,
+	FiLock,
+	FiMessageCircle,
+	FiShield,
+	FiTrendingUp,
+	FiUsers
+} from 'react-icons/fi';
 
 import { trackCourseDashboardEvent, trackEnrollmentEvent } from '~/lib/analytics/mixpanel';
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import { ApiRequestError } from '~/lib/api/client';
 import { unlockCourseAccess, type CourseEnrollment, type CourseLearningDashboard } from '~/lib/api/enrollments';
+import UserAvatar from '~/lib/components/auth/UserAvatar';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
+import ExperienceVideo from '~/lib/components/media/ExperienceVideo';
 
 import {
 	courseNextSteps,
+	shattakMarkUrl,
 	workspaceActiveTextColor,
 	workspaceBoundaryColor,
 	workspaceSelectedBoundaryColor
@@ -33,16 +48,48 @@ export const CourseNextStepsPanel = () => (
 				</Heading>
 			</Box>
 			<Stack gap={4}>
-				{courseNextSteps.map((step, index) => (
-					<HStack key={step} align="start" gap={3}>
-						<Box color="primary" pt={0.5}>
-							<FiCheckCircle />
-						</Box>
-						<Text color="text.muted" fontSize="sm" lineHeight="tall">
-							{index + 1}. {step}
-						</Text>
-					</HStack>
-				))}
+				{courseNextSteps.map((step, index) => {
+					const isComplete = index === 0;
+					const isCurrent = index === 1;
+					let indicator: ReactNode = <FiLock />;
+					let indicatorBg = 'bg.muted';
+					let indicatorColor = 'text.muted';
+
+					if (isComplete) {
+						indicator = <FiCheckCircle />;
+						indicatorBg = 'text.muted';
+						indicatorColor = 'text.inverse';
+					} else if (isCurrent) {
+						indicator = index + 1;
+						indicatorBg = 'primary';
+						indicatorColor = 'text.inverse';
+					}
+
+					return (
+						<HStack key={step} align="center" gap={3}>
+							<Box
+								boxSize="24px"
+								borderRadius="full"
+								bg={indicatorBg}
+								color={indicatorColor}
+								display="grid"
+								flexShrink={0}
+								fontSize="xs"
+								placeItems="center"
+							>
+								{indicator}
+							</Box>
+							<Text
+								color={isCurrent ? 'text.primary' : 'text.muted'}
+								fontSize="sm"
+								fontWeight={isCurrent ? 'semibold' : 'normal'}
+								lineHeight="tall"
+							>
+								{index + 1}. {step}
+							</Text>
+						</HStack>
+					);
+				})}
 			</Stack>
 		</Stack>
 	</Box>
@@ -463,11 +510,103 @@ type CourseOverviewTabProps = {
 	enrollment: CourseEnrollment;
 	courseId: string;
 	currentUser: AuthenticatedUser | null;
-	learnerName: string;
 	onUnlocked: (enrollment: CourseEnrollment) => void;
 };
 
-const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onUnlocked }: CourseOverviewTabProps) => {
+const communityButtonPulse = keyframes`
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28);
+		transform: translateY(0);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+		transform: translateY(-1px);
+	}
+`;
+
+const communityBenefits = [
+	{ icon: FiUsers, label: 'Mentor guidance' },
+	{ icon: FiMessageCircle, label: 'Peer support' },
+	{ icon: FiBookOpen, label: 'Course updates' }
+];
+
+const communityJoinSteps = [
+	{ title: 'Join the official WhatsApp community', detail: 'Open the course group using the link above.' },
+	{ title: 'Get the confirmation code', detail: 'Find it in the group description or pinned message.' },
+	{ title: 'Confirm your access', detail: 'Enter the code below and click “I have joined”.' }
+];
+
+const CourseWelcomeVideo = ({
+	courseTitle,
+	promoImage,
+	thumbnailImage
+}: {
+	courseTitle: string;
+	promoImage: string;
+	thumbnailImage: string;
+}) => {
+	const videoUrl = process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() ?? '';
+	const fallbackImage = promoImage || thumbnailImage || shattakMarkUrl;
+
+	return (
+		<Box
+			border="1px solid"
+			borderColor={workspaceBoundaryColor}
+			borderRadius="panel"
+			bg="black"
+			overflow="hidden"
+			boxShadow="soft"
+		>
+			<ExperienceVideo
+				videoUrl={videoUrl}
+				title="Welcome to Shattak video"
+				fallback={
+					<AspectRatio ratio={16 / 9} bg="bg.subtle">
+						<Image src={fallbackImage} alt={`${courseTitle} course preview`} objectFit="cover" w="full" h="full" />
+					</AspectRatio>
+				}
+			/>
+		</Box>
+	);
+};
+
+const CourseMentorImages = ({ instructors }: { instructors: CourseEnrollment['course']['instructors'] }) => {
+	const mentors = instructors.filter(instructor => instructor.photo.trim()).slice(0, 3);
+
+	if (!mentors.length) {
+		return null;
+	}
+
+	return (
+		<HStack gap={3} flexShrink={0}>
+			<Box textAlign="right">
+				<Text fontSize="xs" fontWeight="semibold">
+					Meet your course mentors
+				</Text>
+				<Text color="text.muted" fontSize="2xs">
+					Guidance from the people teaching this course
+				</Text>
+			</Box>
+			<HStack gap={0} aria-label="Course mentors">
+				{mentors.map((mentor, index) => (
+					<Box
+						key={mentor.id}
+						ml={index === 0 ? 0 : '-10px'}
+						title={[mentor.name, mentor.role].filter(Boolean).join(' — ')}
+					>
+						<UserAvatar
+							user={{ avatarUrl: mentor.photo, email: '', name: mentor.name }}
+							label={mentor.name}
+							size="42px"
+						/>
+					</Box>
+				))}
+			</HStack>
+		</HStack>
+	);
+};
+
+const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: CourseOverviewTabProps) => {
 	const [accessCode, setAccessCode] = useState('');
 	const [message, setMessage] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -546,7 +685,14 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 
 	return (
 		<Stack gap={4}>
-			<Box borderRadius="card" bg="primary" color={workspaceActiveTextColor} px={{ base: 4, md: 5 }} py={3}>
+			<Box
+				display={{ base: 'none', md: 'block' }}
+				borderRadius="card"
+				bg="primary"
+				color={workspaceActiveTextColor}
+				px={{ base: 4, md: 5 }}
+				py={3}
+			>
 				<HStack gap={3}>
 					<FiCheckCircle />
 					<Text fontSize="sm" fontWeight="semibold">
@@ -555,36 +701,43 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 				</HStack>
 			</Box>
 
-			<Box
-				border="1px solid"
-				borderColor={workspaceBoundaryColor}
-				borderRadius="card"
-				bg="bg.card"
-				p={{ base: 5, md: 7 }}
-			>
-				<Stack gap={4}>
-					<Heading size={{ base: 'xl', md: '2xl' }} lineHeight="short">
-						Welcome to the Course{learnerName ? `, ${learnerName}` : ''}.
-					</Heading>
-					<Text color="text.primary" fontSize={{ base: 'lg', md: 'xl' }} fontWeight="medium">
-						You&apos;ve taken the first step - now let&apos;s make it count.
-					</Text>
-					<Stack gap={2} color="text.muted" fontSize="md" lineHeight="tall" maxW="3xl">
-						<Text>
-							We wish you all the best on your journey. Use this workspace as your course hub while you move through the
-							learning path.
+			<Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 320px), 1fr))" gap={4}>
+				<CourseWelcomeVideo
+					courseTitle={course.title}
+					promoImage={course.promoImage}
+					thumbnailImage={course.thumbnailImage}
+				/>
+
+				<Box
+					display={{ base: 'none', md: 'block' }}
+					border="1px solid"
+					borderColor={workspaceBoundaryColor}
+					borderRadius="card"
+					bg="bg.card"
+					p={{ md: 5, xl: 6 }}
+				>
+					<Stack gap={3} h="full">
+						<Heading size={{ md: 'lg', xl: 'xl' }} lineHeight="short">
+							Welcome to Shattak
+						</Heading>
+						<Text color="text.primary" fontWeight="semibold">
+							You&apos;ve taken the first step. Now, let&apos;s make it count.
 						</Text>
-						<Text>
-							Start by joining the WhatsApp community. Your mentors and peers are already there to share updates, answer
-							questions, and help you stay on track.
-						</Text>
+						<Stack gap={2} color="text.muted" fontSize="sm" lineHeight="tall">
+							<Text>We&apos;re excited to have you with us and wish you the best on your learning journey.</Text>
+							<Text>Use this workspace as your course hub and follow the learning path at your own pace.</Text>
+							<Text>
+								Start by joining the WhatsApp community to connect with mentors and peers, get updates, clear doubts,
+								and stay on track.
+							</Text>
+						</Stack>
+						<Box mt="auto" borderRadius="full" bg="text.primary" color="text.inverse" px={4} py={2.5} w="fit-content">
+							<Text fontSize="sm" fontWeight="bold">
+								Let&apos;s learn, build, and grow together
+							</Text>
+						</Box>
 					</Stack>
-					<Box borderRadius="lg" bg="text.primary" color="text.inverse" px={4} py={3} w="fit-content">
-						<Text fontSize="sm" fontWeight="bold">
-							Join community + confirm code + prepare your course workspace
-						</Text>
-					</Box>
-				</Stack>
+				</Box>
 			</Box>
 
 			<Box
@@ -595,77 +748,142 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 				overflow="hidden"
 				boxShadow="soft"
 			>
-				<Box display="grid" gridTemplateColumns={{ base: '1fr', xl: 'minmax(0, 1fr) 320px' }}>
-					<Stack gap={4} p={{ base: 5, md: 6 }}>
-						<HStack align="start" gap={4}>
+				<Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(min(100%, 440px), 1fr))">
+					<Stack gap={{ base: 4, md: 6 }} p={{ base: 5, md: 7 }} minW={0}>
+						<Box display="grid" gridTemplateColumns={{ base: '1fr', md: '56px minmax(0, 1fr)' }} gap={4}>
 							<Box
 								boxSize="56px"
 								borderRadius="xl"
 								bg="primary"
 								color={workspaceActiveTextColor}
-								display="grid"
-								flexShrink={0}
+								display={{ base: 'none', md: 'grid' }}
 								fontSize="2xl"
 								placeItems="center"
 							>
 								<FiMessageCircle />
 							</Box>
-							<Box>
-								<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-									Community access
-								</Text>
-								<Heading mt={1} size="md">
-									{isUnlocked ? 'Your WhatsApp access is confirmed' : 'Join the community before you begin'}
-								</Heading>
-								<Text mt={2} color="text.muted" fontSize="sm" lineHeight="tall">
-									{isUnlocked
-										? 'Your access has been confirmed. The remaining course sections will be connected in the next phase.'
-										: 'Scan the QR code or open the link, join the official group, and enter the access code shared there.'}
-								</Text>
-							</Box>
-						</HStack>
 
-						<HStack gap={3} flexWrap="wrap">
-							{hasInviteLink ? (
-								<Button
-									asChild
-									borderRadius="full"
-									bg="primary"
-									color={workspaceActiveTextColor}
-									_hover={{ bg: 'primaryHover' }}
+							<Stack gap={4} minW={0}>
+								<Box>
+									<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+										Community access
+									</Text>
+									<Heading mt={1} size="md">
+										{isUnlocked ? 'Your WhatsApp access is confirmed' : 'Join the community before you begin'}
+									</Heading>
+									<Text mt={2} color="text.muted" fontSize="sm" lineHeight="tall" maxW="2xl">
+										{isUnlocked
+											? 'Your community access is confirmed. You can revisit the group whenever you need course updates or support.'
+											: 'Connect with mentors and peers, get course updates, clear doubts, and stay motivated throughout your learning journey.'}
+									</Text>
+								</Box>
+
+								<Box>
+									{hasInviteLink ? (
+										<Button
+											asChild
+											borderRadius="full"
+											bg="green.500"
+											color="white"
+											animation={`${communityButtonPulse} 2.4s ease-in-out infinite`}
+											_hover={{ bg: 'green.600', transform: 'translateY(-1px)' }}
+											_motionReduce={{ animation: 'none', _hover: { transform: 'none' } }}
+										>
+											<Link
+												href={course.whatsappGroupUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												onClick={() =>
+													trackCourseDashboardEvent({
+														eventName: 'course_whatsapp_opened',
+														courseId,
+														courseTitle: course.title,
+														userId: currentUser?.id,
+														destination: 'community',
+														enrollmentStatus: enrollment.status,
+														sourcePage: `/my-courses/${courseId}`
+													})
+												}
+											>
+												<FaWhatsapp /> Join WhatsApp Group <FiExternalLink />
+											</Link>
+										</Button>
+									) : (
+										<Text color="red.500" fontSize="sm">
+											The WhatsApp group link is not configured for this course yet.
+										</Text>
+									)}
+								</Box>
+							</Stack>
+						</Box>
+
+						<SimpleGrid display={{ base: 'none', md: 'grid' }} columns={3} gap={3}>
+							{communityBenefits.map(({ icon: Icon, label }) => (
+								<HStack
+									key={label}
+									border="1px solid"
+									borderColor={workspaceBoundaryColor}
+									borderRadius="lg"
+									bg="bg.subtle"
+									p={3}
+									gap={2}
 								>
-									<Link href={course.whatsappGroupUrl} target="_blank" rel="noopener noreferrer">
-										Join WhatsApp Group <FiExternalLink />
-									</Link>
-								</Button>
-							) : (
-								<Text color="red.500" fontSize="sm">
-									The WhatsApp group link is not configured for this course yet.
-								</Text>
-							)}
-						</HStack>
+									<Box color="primary" flexShrink={0}>
+										<Icon />
+									</Box>
+									<Text fontSize="xs" fontWeight="semibold">
+										{label}
+									</Text>
+								</HStack>
+							))}
+						</SimpleGrid>
 
-						<Stack gap={2} color="text.muted" fontSize="sm" lineHeight="tall">
-							<Text>1. Join the official WhatsApp community.</Text>
-							<Text>2. Get the confirmation code from the group description or pinned message.</Text>
-							<Text>3. Enter the code here and click &quot;I have joined&quot;.</Text>
+						<Stack display={{ base: 'none', md: 'flex' }} gap={3}>
+							{communityJoinSteps.map((step, index) => (
+								<HStack key={step.title} align="start" gap={3}>
+									<Box
+										boxSize="24px"
+										borderRadius="full"
+										bg="bg.brand"
+										color="primary"
+										display="grid"
+										flexShrink={0}
+										fontSize="xs"
+										fontWeight="bold"
+										placeItems="center"
+									>
+										{index + 1}
+									</Box>
+									<Box minW={0}>
+										<Text fontSize="sm" fontWeight="semibold">
+											{step.title}
+										</Text>
+										<Text color="text.muted" fontSize="xs">
+											{step.detail}
+										</Text>
+									</Box>
+								</HStack>
+							))}
 						</Stack>
 
 						<Box
 							display="grid"
-							gridTemplateColumns={{ base: '1fr', md: 'minmax(260px, 420px) 180px' }}
+							gridTemplateColumns={{ base: '1fr', sm: 'minmax(0, 1fr) auto' }}
 							gap={3}
 							alignItems="end"
-							maxW="680px"
+							maxW="720px"
 						>
 							<Stack gap={2}>
-								<Text fontSize="sm" fontWeight="bold" color="text.primary">
+								<Text id="course-access-code-label" fontSize="sm" fontWeight="bold" color="text.primary">
 									Access code
 								</Text>
 								<Input
+									id="course-access-code"
+									aria-labelledby="course-access-code-label"
 									value={accessCode}
 									onChange={event => setAccessCode(event.currentTarget.value)}
 									placeholder="Enter code from WhatsApp group"
+									autoComplete="off"
 									disabled={isUnlocked}
 									bg="bg.card"
 									h="46px"
@@ -677,6 +895,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 								bg="primary"
 								color={workspaceActiveTextColor}
 								h="46px"
+								minW={{ sm: '168px' }}
 								_hover={{ bg: 'primaryHover' }}
 								loading={isSubmitting}
 								disabled={isUnlocked || !accessCode.trim()}
@@ -693,18 +912,45 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, learnerName, onU
 								{message}
 							</Text>
 						) : null}
+
+						<HStack
+							display={{ base: 'none', md: 'flex' }}
+							border="1px solid"
+							borderColor={workspaceBoundaryColor}
+							borderRadius="lg"
+							bg="bg.subtle"
+							px={4}
+							py={3}
+							gap={4}
+							justify="space-between"
+							align="center"
+							flexWrap="wrap"
+						>
+							<HStack gap={3} minW={0}>
+								<Box color="primary" fontSize="lg">
+									<FiShield />
+								</Box>
+								<Box minW={0}>
+									<Text color="primary" fontSize="xs" fontWeight="bold">
+										A supportive community for your success
+									</Text>
+									<Text color="text.muted" fontSize="xs">
+										We&apos;re here to help you learn, grow, and achieve your goals together.
+									</Text>
+								</Box>
+							</HStack>
+							<CourseMentorImages instructors={course.instructors ?? []} />
+						</HStack>
 					</Stack>
 
-					<Stack
-						gap={3}
-						align="center"
-						justify="center"
-						bg="bg.subtle"
-						borderLeft={{ xl: '1px solid' }}
-						borderColor={workspaceBoundaryColor}
-						p={{ base: 5, md: 6 }}
-					>
-						<QrCodePreview value={course.whatsappGroupUrl} label="WhatsApp group QR" size={220} />
+					<Stack display={{ base: 'none', lg: 'flex' }} gap={3} align="center" justify="center" bg="bg.card" p={7}>
+						<Box textAlign="center">
+							<Text fontWeight="bold">WhatsApp Group QR</Text>
+							<Text mt={1} color="text.muted" fontSize="xs">
+								Scan with WhatsApp Camera or Google Lens
+							</Text>
+						</Box>
+						<QrCodePreview value={course.whatsappGroupUrl} label="WhatsApp group QR" size={210} />
 					</Stack>
 				</Box>
 			</Box>
@@ -782,12 +1028,6 @@ export const CourseOverviewContent = ({
 	}
 
 	return (
-		<CourseOverviewTab
-			enrollment={enrollment}
-			courseId={courseId}
-			currentUser={currentUser}
-			learnerName={learnerName}
-			onUnlocked={onUnlocked}
-		/>
+		<CourseOverviewTab enrollment={enrollment} courseId={courseId} currentUser={currentUser} onUnlocked={onUnlocked} />
 	);
 };

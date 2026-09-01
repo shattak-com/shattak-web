@@ -21,6 +21,12 @@ export type EnrolledCourse = {
 	summary: string;
 	thumbnailImage: string;
 	promoImage: string;
+	instructors: Array<{
+		id: string;
+		name: string;
+		role: string;
+		photo: string;
+	}>;
 	whatsappGroupUrl: string;
 	price: number;
 	level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';

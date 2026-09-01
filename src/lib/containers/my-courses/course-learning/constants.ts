@@ -18,11 +18,12 @@ export const workspaceActiveTextColor = 'ink.900';
 export const shattakMarkUrl = '/assets/shattak-logo.jpg';
 
 export const courseNextSteps = [
-	'Join the WhatsApp community.',
-	'Access your course materials.',
-	'Complete all study materials.',
-	'Unlock and watch the live session.',
-	'Complete your first assignment.',
-	'Give us feedback.',
-	'Get your certificate.'
+	'Enroll in the course',
+	'Join the WhatsApp community',
+	'Access your course materials',
+	'Complete all study materials',
+	'Watch session recordings',
+	'Access and complete assignments',
+	'Earn your course certificate',
+	'Pay after certification'
 ];

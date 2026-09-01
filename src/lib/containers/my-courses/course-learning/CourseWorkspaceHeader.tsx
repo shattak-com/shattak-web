@@ -13,7 +13,6 @@ import { formatCourseDate } from './utils';
 type CourseWorkspaceHeaderProps = {
 	activeLessonTitle?: string;
 	activeTab: CourseTabId;
-	courseId: string;
 	enrollment: CourseEnrollment;
 	exitFocusModeButtonRef: RefObject<HTMLButtonElement | null>;
 	focusModeButtonRef: RefObject<HTMLButtonElement | null>;
@@ -113,7 +112,6 @@ const FocusModeHeader = ({
 const StandardWorkspaceHeader = ({
 	activeLessonTitle,
 	activeTab,
-	courseId,
 	enrollment,
 	focusModeButtonRef,
 	onAskDoubt,
@@ -123,7 +121,6 @@ const StandardWorkspaceHeader = ({
 	CourseWorkspaceHeaderProps,
 	| 'activeLessonTitle'
 	| 'activeTab'
-	| 'courseId'
 	| 'enrollment'
 	| 'focusModeButtonRef'
 	| 'onAskDoubt'
@@ -172,16 +169,8 @@ const StandardWorkspaceHeader = ({
 		</HStack>
 		<HStack gap={{ base: 1, md: 2 }} flexShrink={0}>
 			<Badge display={{ base: 'none', lg: 'inline-flex' }} borderRadius="full" px={3} py={1}>
-				{enrollment.status}
-			</Badge>
-			<Badge display={{ base: 'none', lg: 'inline-flex' }} borderRadius="full" px={3} py={1}>
 				{enrollment.progressPercent}% progress
 			</Badge>
-			{!enrollment.accessUnlockedAt ? (
-				<Badge display={{ base: 'none', lg: 'inline-flex' }} colorPalette="orange" borderRadius="full" px={3} py={1}>
-					Overview locked
-				</Badge>
-			) : null}
 			{activeTab === 'lessons' ? (
 				<>
 					<Button
@@ -219,10 +208,20 @@ const StandardWorkspaceHeader = ({
 				</>
 			) : null}
 			<ThemeToggle />
-			<Button asChild display={{ base: 'none', md: 'inline-flex' }} borderRadius="full" size="sm" variant="outline">
-				<Link href={`/course/${courseId}`}>
+			<Button
+				asChild
+				borderRadius="full"
+				size="sm"
+				variant="outline"
+				boxSize={{ base: '44px', md: 'auto' }}
+				minW={{ base: '44px', md: 'auto' }}
+				px={{ base: 0, md: 3 }}
+			>
+				<Link href="/my-courses/" aria-label="Back to all courses">
 					<FiArrowLeft />
-					Back to course
+					<Box as="span" display={{ base: 'none', md: 'inline' }}>
+						Back to all courses
+					</Box>
 				</Link>
 			</Button>
 		</HStack>
@@ -232,7 +231,6 @@ const StandardWorkspaceHeader = ({
 export const CourseWorkspaceHeader = ({
 	activeLessonTitle,
 	activeTab,
-	courseId,
 	enrollment,
 	exitFocusModeButtonRef,
 	focusModeButtonRef,
@@ -273,7 +271,6 @@ export const CourseWorkspaceHeader = ({
 			<StandardWorkspaceHeader
 				activeLessonTitle={activeLessonTitle}
 				activeTab={activeTab}
-				courseId={courseId}
 				enrollment={enrollment}
 				focusModeButtonRef={focusModeButtonRef}
 				onAskDoubt={onAskDoubt}

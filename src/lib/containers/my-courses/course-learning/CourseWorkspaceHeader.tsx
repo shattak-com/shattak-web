@@ -1,124 +1,33 @@
 import { Badge, Box, Button, Heading, HStack, Image, Text } from '@chakra-ui/react';
 import Link from 'next/link';
-import type { RefObject } from 'react';
 import { FiArrowLeft, FiMaximize2, FiMenu, FiMessageCircle, FiMinimize2 } from 'react-icons/fi';
 
 import type { CourseEnrollment } from '~/lib/api/enrollments';
 import ThemeToggle from '~/lib/components/ThemeToggle';
 
-import { shattakMarkUrl, workspaceActiveTextColor, workspaceBoundaryColor } from './constants';
+import { shattakMarkUrl, workspaceBoundaryColor } from './constants';
 import type { CourseTabId } from './types';
 import { formatCourseDate } from './utils';
 
 type CourseWorkspaceHeaderProps = {
-	activeLessonTitle?: string;
 	activeTab: CourseTabId;
 	enrollment: CourseEnrollment;
-	exitFocusModeButtonRef: RefObject<HTMLButtonElement | null>;
-	focusModeButtonRef: RefObject<HTMLButtonElement | null>;
-	isBrowserFullscreen: boolean;
-	isBrowserFullscreenSupported: boolean;
-	isFocusMode: boolean;
+	isContentExpanded: boolean;
 	onAskDoubt: () => void;
-	onEnterFocusMode: () => void;
-	onExitFocusMode: () => void;
 	onOpenMobileNavigation: () => void;
-	onToggleBrowserFullscreen: () => void;
+	onToggleContentWidth: () => void;
 };
-
-const FocusModeHeader = ({
-	activeLessonTitle,
-	enrollment,
-	exitFocusModeButtonRef,
-	isBrowserFullscreen,
-	isBrowserFullscreenSupported,
-	onAskDoubt,
-	onExitFocusMode,
-	onToggleBrowserFullscreen
-}: Pick<
-	CourseWorkspaceHeaderProps,
-	| 'activeLessonTitle'
-	| 'enrollment'
-	| 'exitFocusModeButtonRef'
-	| 'isBrowserFullscreen'
-	| 'isBrowserFullscreenSupported'
-	| 'onAskDoubt'
-	| 'onExitFocusMode'
-	| 'onToggleBrowserFullscreen'
->) => (
-	<HStack w="full" justify="space-between" gap={4}>
-		<Box minW={0}>
-			<Text color="text.muted" fontSize="xs" fontWeight="semibold" lineClamp={1}>
-				{enrollment.course.title}
-			</Text>
-			<Heading size="sm" lineClamp={1}>
-				{activeLessonTitle || 'Lessons'}
-			</Heading>
-		</Box>
-
-		<HStack gap={2} flexShrink={0}>
-			<Badge display={{ base: 'none', sm: 'inline-flex' }} borderRadius="full" px={3} py={1}>
-				{enrollment.progressPercent}% progress
-			</Badge>
-			<Button
-				borderRadius="full"
-				size="sm"
-				variant="outline"
-				onClick={onAskDoubt}
-				aria-label="Ask a doubt in the course community"
-				title="Ask a doubt in the course community"
-			>
-				<FiMessageCircle />
-				<Box as="span" display={{ base: 'none', md: 'inline' }}>
-					Ask doubt
-				</Box>
-			</Button>
-			{isBrowserFullscreenSupported ? (
-				<Button
-					borderRadius="full"
-					size="sm"
-					variant="outline"
-					onClick={onToggleBrowserFullscreen}
-					aria-label={isBrowserFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
-					title={isBrowserFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
-				>
-					{isBrowserFullscreen ? <FiMinimize2 /> : <FiMaximize2 />}
-					<Box as="span" display={{ base: 'none', lg: 'inline' }}>
-						{isBrowserFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-					</Box>
-				</Button>
-			) : null}
-			<ThemeToggle />
-			<Button
-				ref={exitFocusModeButtonRef}
-				borderRadius="full"
-				size="sm"
-				bg="primary"
-				color={workspaceActiveTextColor}
-				_hover={{ bg: 'primaryHover' }}
-				onClick={onExitFocusMode}
-				aria-label="Exit focus mode"
-				aria-pressed
-			>
-				<FiMinimize2 />
-				<Box as="span" display={{ base: 'none', sm: 'inline' }}>
-					Exit focus
-				</Box>
-			</Button>
-		</HStack>
-	</HStack>
-);
 
 const StandardWorkspaceHeader = ({
 	activeTab,
 	enrollment,
-	focusModeButtonRef,
+	isContentExpanded,
 	onAskDoubt,
-	onEnterFocusMode,
-	onOpenMobileNavigation
+	onOpenMobileNavigation,
+	onToggleContentWidth
 }: Pick<
 	CourseWorkspaceHeaderProps,
-	'activeTab' | 'enrollment' | 'focusModeButtonRef' | 'onAskDoubt' | 'onEnterFocusMode' | 'onOpenMobileNavigation'
+	'activeTab' | 'enrollment' | 'isContentExpanded' | 'onAskDoubt' | 'onOpenMobileNavigation' | 'onToggleContentWidth'
 >) => (
 	<HStack w="full" justify="space-between" gap={{ base: 2, md: 4 }}>
 		<HStack gap={{ base: 2, sm: 3 }} minW={0} flex={1}>
@@ -175,19 +84,18 @@ const StandardWorkspaceHeader = ({
 						</Box>
 					</Button>
 					<Button
-						ref={focusModeButtonRef}
 						borderRadius="full"
 						size="sm"
 						variant="outline"
-						onClick={onEnterFocusMode}
-						aria-label="Enter focus mode"
-						aria-pressed={false}
-						title="Hide course navigation and focus on this lesson"
+						onClick={onToggleContentWidth}
+						aria-label={isContentExpanded ? 'Collapse lesson content width' : 'Expand lesson content width'}
+						aria-pressed={isContentExpanded}
+						title={isContentExpanded ? 'Return to the narrower reading width' : 'Use the full available content width'}
 						display={{ base: 'none', md: 'inline-flex' }}
 					>
-						<FiMaximize2 />
+						{isContentExpanded ? <FiMinimize2 /> : <FiMaximize2 />}
 						<Box as="span" display={{ base: 'none', xl: 'inline' }}>
-							Focus mode
+							{isContentExpanded ? 'Collapse' : 'Expand'}
 						</Box>
 					</Button>
 				</>
@@ -214,19 +122,12 @@ const StandardWorkspaceHeader = ({
 );
 
 export const CourseWorkspaceHeader = ({
-	activeLessonTitle,
 	activeTab,
 	enrollment,
-	exitFocusModeButtonRef,
-	focusModeButtonRef,
-	isBrowserFullscreen,
-	isBrowserFullscreenSupported,
-	isFocusMode,
+	isContentExpanded,
 	onAskDoubt,
-	onEnterFocusMode,
-	onExitFocusMode,
 	onOpenMobileNavigation,
-	onToggleBrowserFullscreen
+	onToggleContentWidth
 }: CourseWorkspaceHeaderProps) => (
 	<Box
 		position="sticky"
@@ -241,26 +142,13 @@ export const CourseWorkspaceHeader = ({
 		display="flex"
 		alignItems="center"
 	>
-		{isFocusMode ? (
-			<FocusModeHeader
-				activeLessonTitle={activeLessonTitle}
-				enrollment={enrollment}
-				exitFocusModeButtonRef={exitFocusModeButtonRef}
-				isBrowserFullscreen={isBrowserFullscreen}
-				isBrowserFullscreenSupported={isBrowserFullscreenSupported}
-				onAskDoubt={onAskDoubt}
-				onExitFocusMode={onExitFocusMode}
-				onToggleBrowserFullscreen={onToggleBrowserFullscreen}
-			/>
-		) : (
-			<StandardWorkspaceHeader
-				activeTab={activeTab}
-				enrollment={enrollment}
-				focusModeButtonRef={focusModeButtonRef}
-				onAskDoubt={onAskDoubt}
-				onEnterFocusMode={onEnterFocusMode}
-				onOpenMobileNavigation={onOpenMobileNavigation}
-			/>
-		)}
+		<StandardWorkspaceHeader
+			activeTab={activeTab}
+			enrollment={enrollment}
+			isContentExpanded={isContentExpanded}
+			onAskDoubt={onAskDoubt}
+			onOpenMobileNavigation={onOpenMobileNavigation}
+			onToggleContentWidth={onToggleContentWidth}
+		/>
 	</Box>
 );

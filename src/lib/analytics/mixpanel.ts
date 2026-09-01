@@ -623,9 +623,7 @@ type CourseDashboardEventName =
 	| 'course_lesson_next_clicked'
 	| 'course_lesson_completed'
 	| 'course_doubt_clicked'
-	| 'course_focus_mode_entered'
-	| 'course_focus_mode_exited'
-	| 'course_fullscreen_toggled'
+	| 'course_content_width_toggled'
 	| 'course_pdf_viewer_toggled'
 	| 'course_feedback_submitted'
 	| 'course_certificate_earned';

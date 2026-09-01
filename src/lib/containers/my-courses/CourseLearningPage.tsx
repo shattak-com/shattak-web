@@ -13,9 +13,8 @@ import { CourseWorkspaceSidebar } from './course-learning/CourseWorkspaceSidebar
 import type { CourseLearningPageProps } from './course-learning/types';
 import { useCourseLearningPage } from './course-learning/useCourseLearningPage';
 
-const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
+const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps) => {
 	const {
-		activeLessonContext,
 		activeTab,
 		activeTabLabel,
 		canBypassProgression,
@@ -24,23 +23,17 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		dashboardErrorMessage,
 		enrollment,
 		errorMessage,
-		exitFocusModeButtonRef,
-		focusModeButtonRef,
 		handleAskDoubt,
 		handleCompleteLesson,
 		handleCourseUnlocked,
-		handleEnterFocusMode,
-		handleExitFocusMode,
 		handleLessonBottomReached,
 		handleLessonSelect,
 		handleTabChange,
-		handleToggleBrowserFullscreen,
+		handleToggleContentWidth,
 		hasReachedLessonBottom,
-		isBrowserFullscreen,
-		isBrowserFullscreenSupported,
 		isCompletingLesson,
+		isContentExpanded,
 		isDashboardLoading,
-		isFocusMode,
 		isLearningRailCollapsed,
 		isLessonsLoading,
 		isLoading,
@@ -57,9 +50,8 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 		shouldShowLessonRail,
 		shouldShowOverviewRail,
 		shouldShowUnlockedOverviewRail,
-		workspaceGridColumns,
-		workspaceRootRef
-	} = useCourseLearningPage(courseId);
+		workspaceGridColumns
+	} = useCourseLearningPage(courseId, initialRoute);
 
 	if (isLoading) {
 		return <ProfilePageSkeleton />;
@@ -99,20 +91,10 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 	}
 
 	return (
-		<Box
-			ref={workspaceRootRef}
-			bg="bg.subtle"
-			minH="100vh"
-			w="full"
-			css={{
-				'&:fullscreen': {
-					overflowY: 'auto'
-				}
-			}}
-		>
+		<Box bg="bg.subtle" minH="100vh" w="full">
 			<Box
 				as="aside"
-				display={isFocusMode ? 'none' : { base: 'none', lg: 'block' }}
+				display={{ base: 'none', lg: 'block' }}
 				position="fixed"
 				insetY={0}
 				left={0}
@@ -140,45 +122,39 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 				activeTab={activeTab}
 				currentUser={currentUser}
 				enrollment={enrollment}
-				isOpen={isMobileNavOpen && !isFocusMode}
+				isOpen={isMobileNavOpen}
 				onClose={() => setIsMobileNavOpen(false)}
 				onTabChange={handleTabChange}
 			/>
 
 			<Box
-				ml={
-					isFocusMode
-						? 0
-						: {
-								lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
-								'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
-							}
-				}
+				ml={{
+					lg: isWorkspaceSidebarCollapsed ? '88px' : '280px',
+					'2xl': isWorkspaceSidebarCollapsed ? '88px' : '300px'
+				}}
 				minH="100vh"
 				transition="margin-left 180ms ease"
 				_motionReduce={{ transition: 'none' }}
 			>
 				<CourseWorkspaceHeader
-					activeLessonTitle={activeLessonContext?.subsection.title}
 					activeTab={activeTab}
 					enrollment={enrollment}
-					exitFocusModeButtonRef={exitFocusModeButtonRef}
-					focusModeButtonRef={focusModeButtonRef}
-					isBrowserFullscreen={isBrowserFullscreen}
-					isBrowserFullscreenSupported={isBrowserFullscreenSupported}
-					isFocusMode={isFocusMode}
+					isContentExpanded={isContentExpanded}
 					onAskDoubt={handleAskDoubt}
-					onEnterFocusMode={handleEnterFocusMode}
-					onExitFocusMode={handleExitFocusMode}
 					onOpenMobileNavigation={() => setIsMobileNavOpen(true)}
-					onToggleBrowserFullscreen={() => {
-						handleToggleBrowserFullscreen().catch(() => undefined);
-					}}
+					onToggleContentWidth={handleToggleContentWidth}
 				/>
 
-				<Box px={isFocusMode ? { base: 3, md: 5, xl: 8 } : { base: 3, md: 6 }} py={{ base: 3, md: 6 }}>
+				<Box px={{ base: 3, md: 6 }} py={{ base: 3, md: 6 }}>
 					<Box display="grid" gridTemplateColumns={workspaceGridColumns} gap={{ base: 4, xl: 5 }} alignItems="start">
-						<Box minW={0} w="full" maxW={isFocusMode ? '960px' : undefined} mx={isFocusMode ? 'auto' : undefined}>
+						<Box
+							minW={0}
+							w="full"
+							maxW={activeTab === 'lessons' && !isContentExpanded ? '760px' : undefined}
+							mx="auto"
+							transition="max-width 180ms ease"
+							_motionReduce={{ transition: 'none' }}
+						>
 							<CourseLearningMainContent
 								activeTab={activeTab}
 								activeTabLabel={activeTabLabel}
@@ -211,21 +187,19 @@ const CourseLearningPage = ({ courseId }: CourseLearningPageProps) => {
 							/>
 						</Box>
 
-						{!isFocusMode ? (
-							<CourseLearningRail
-								courseId={courseId}
-								currentUser={currentUser}
-								dashboard={dashboard}
-								enrollment={enrollment}
-								isVisible={shouldShowOverviewRail}
-								isCollapsed={isLearningRailCollapsed}
-								lessons={lessonsResult?.lessons ?? null}
-								onLessonSelect={handleLessonSelect}
-								onToggleCollapse={() => setIsLearningRailCollapsed(value => !value)}
-								showLessonRail={shouldShowLessonRail}
-								showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
-							/>
-						) : null}
+						<CourseLearningRail
+							courseId={courseId}
+							currentUser={currentUser}
+							dashboard={dashboard}
+							enrollment={enrollment}
+							isVisible={shouldShowOverviewRail}
+							isCollapsed={isLearningRailCollapsed}
+							lessons={lessonsResult?.lessons ?? null}
+							onLessonSelect={handleLessonSelect}
+							onToggleCollapse={() => setIsLearningRailCollapsed(value => !value)}
+							showLessonRail={shouldShowLessonRail}
+							showUnlockedOverviewRail={shouldShowUnlockedOverviewRail}
+						/>
 					</Box>
 				</Box>
 			</Box>

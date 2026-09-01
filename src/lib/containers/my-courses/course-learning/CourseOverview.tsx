@@ -282,7 +282,7 @@ const CourseCommunityShortcutCard = ({
 									courseId,
 									courseTitle: course.title,
 									userId: currentUser?.id,
-									sourcePage: `/my-courses/${courseId}`
+									sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 								})
 							}
 						>
@@ -545,20 +545,20 @@ const CourseUnlockedOverviewTab = ({
 			moduleTitle: dashboard.learningProgress.moduleTitle ?? undefined,
 			completionPercentage: dashboard.completion.percentage,
 			enrollmentStatus: enrollment.status,
-			sourcePage: `/my-courses/${courseId}`
+			sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 		});
 	};
 
 	const openLesson = (subsectionId: string, subsectionTitle: string) => {
 		trackProgressClick({ id: subsectionId, title: subsectionTitle });
 		onLessonSelect(subsectionId);
-		onTabChange('lessons');
 	};
 
 	const handleProgressClick = () => {
 		trackProgressClick();
 		if (dashboard.learningProgress.destination === 'lesson' && dashboard.learningProgress.subsectionId) {
 			onLessonSelect(dashboard.learningProgress.subsectionId);
+			return;
 		}
 		onTabChange(dashboard.learningProgress.tabId);
 	};
@@ -870,7 +870,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 			courseId,
 			courseTitle: course.title,
 			enrollmentStatus: enrollment.status,
-			sourcePage: `/my-courses/${courseId}`
+			sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 		});
 
 		try {
@@ -884,7 +884,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 				courseTitle: course.title,
 				userId: currentUser?.id,
 				enrollmentStatus: result.enrollment.status,
-				sourcePage: `/my-courses/${courseId}`
+				sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 			});
 			trackCourseDashboardEvent({
 				eventName: 'course_overview_unlocked',
@@ -892,7 +892,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 				courseTitle: course.title,
 				userId: currentUser?.id,
 				enrollmentStatus: result.enrollment.status,
-				sourcePage: `/my-courses/${courseId}`
+				sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 			});
 			trackEnrollmentEvent({
 				location: 'course_learning',
@@ -900,7 +900,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 				courseId,
 				courseTitle: course.title,
 				enrollmentStatus: result.enrollment.status,
-				sourcePage: `/my-courses/${courseId}`
+				sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 			});
 		} catch (error) {
 			setMessage(getUnlockErrorMessage(error));
@@ -910,7 +910,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 				courseId,
 				courseTitle: course.title,
 				enrollmentStatus: enrollment.status,
-				sourcePage: `/my-courses/${courseId}`,
+				sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`,
 				errorType: error instanceof ApiRequestError ? error.code : 'unknown_error'
 			});
 		} finally {
@@ -1000,7 +1000,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 														userId: currentUser?.id,
 														destination: 'community',
 														enrollmentStatus: enrollment.status,
-														sourcePage: `/my-courses/${courseId}`
+														sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
 													})
 												}
 											>

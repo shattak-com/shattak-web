@@ -196,7 +196,7 @@ export const CourseLearningMainContent = ({
 			<CourseCertificateTab
 				courseCompleted={Boolean(enrollment.completedAt) || (dashboard?.completion.percentage ?? 0) === 100}
 				courseId={courseId}
-				currentPath={`/my-courses/${courseId}`}
+				currentPath={`/my-courses/${encodeURIComponent(courseId)}/certificate`}
 				enrollment={enrollment}
 				isAdmin={canBypassProgression}
 				userId={currentUser?.id}

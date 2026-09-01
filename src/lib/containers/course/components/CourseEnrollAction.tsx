@@ -21,7 +21,7 @@ type CourseEnrollButtonProps = Pick<CourseEnrollActionProps, 'size' | 'fullWidth
 
 const isExternalLink = (value: string) => /^https?:\/\//i.test(value);
 
-const getLearningPath = (courseId: string) => `/my-courses/${encodeURIComponent(courseId)}`;
+const getLearningPath = (courseId: string) => `/my-courses/${encodeURIComponent(courseId)}/overview`;
 
 const getButtonStyles = (fullWidth: boolean | undefined) => ({
 	borderRadius: 'full',

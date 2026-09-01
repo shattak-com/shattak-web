@@ -1,4 +1,4 @@
-import CourseLearningPage from '~/lib/containers/my-courses/CourseLearningPage';
+import { redirect } from 'next/navigation';
 
 type MyCoursePageProps = {
 	params: Promise<{
@@ -9,7 +9,7 @@ type MyCoursePageProps = {
 const MyCoursePage = async ({ params }: MyCoursePageProps) => {
 	const { id } = await params;
 
-	return <CourseLearningPage courseId={id} />;
+	redirect(`/my-courses/${encodeURIComponent(id)}/overview`);
 };
 
 export default MyCoursePage;

@@ -25,7 +25,7 @@ const formatEnrollmentDate = (value: string) =>
 
 export const EnrolledCourseCard = ({ enrollment, sourcePage }: EnrolledCourseCardProps) => {
 	const courseImage = enrollment.course.promoImage || enrollment.course.thumbnailImage;
-	const learningPath = `/my-courses/${encodeURIComponent(enrollment.course.slug)}`;
+	const learningPath = `/my-courses/${encodeURIComponent(enrollment.course.slug)}/overview`;
 	const statusStyle = enrollmentStatusStyles[enrollment.status];
 
 	return (

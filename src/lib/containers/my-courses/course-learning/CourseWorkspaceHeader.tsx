@@ -1,13 +1,12 @@
-import { Badge, Box, Button, Heading, HStack, Image, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, HStack } from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiArrowLeft, FiMaximize2, FiMenu, FiMessageCircle, FiMinimize2 } from 'react-icons/fi';
 
 import type { CourseEnrollment } from '~/lib/api/enrollments';
 import ThemeToggle from '~/lib/components/ThemeToggle';
 
-import { shattakMarkUrl, workspaceBoundaryColor } from './constants';
+import { workspaceBoundaryColor } from './constants';
 import type { CourseTabId } from './types';
-import { formatCourseDate } from './utils';
 
 type CourseWorkspaceHeaderProps = {
 	activeTab: CourseTabId;
@@ -30,38 +29,19 @@ const StandardWorkspaceHeader = ({
 	'activeTab' | 'enrollment' | 'isContentExpanded' | 'onAskDoubt' | 'onOpenMobileNavigation' | 'onToggleContentWidth'
 >) => (
 	<HStack w="full" justify="space-between" gap={{ base: 2, md: 4 }}>
-		<HStack gap={{ base: 2, sm: 3 }} minW={0} flex={1}>
-			<Button
-				display={{ base: 'inline-flex', lg: 'none' }}
-				variant="outline"
-				size="sm"
-				borderRadius="full"
-				boxSize="44px"
-				minW="44px"
-				onClick={onOpenMobileNavigation}
-				aria-label="Open course navigation"
-			>
-				<FiMenu />
-			</Button>
-			<Image
-				src={enrollment.course.thumbnailImage || enrollment.course.promoImage || shattakMarkUrl}
-				alt=""
-				boxSize="40px"
-				display={{ base: 'none', sm: 'block' }}
-				borderRadius="lg"
-				flexShrink={0}
-				objectFit="cover"
-			/>
-			<Box minW={0}>
-				<Heading size="sm" lineClamp={1}>
-					{enrollment.course.title}
-				</Heading>
-				<Text display={{ base: 'none', sm: 'block' }} color="text.muted" fontSize="xs">
-					Enrolled on {formatCourseDate(enrollment.enrolledAt)}
-				</Text>
-			</Box>
-		</HStack>
-		<HStack gap={{ base: 1, md: 2 }} flexShrink={0}>
+		<Button
+			display={{ base: 'inline-flex', lg: 'none' }}
+			variant="outline"
+			size="sm"
+			borderRadius="full"
+			boxSize="44px"
+			minW="44px"
+			onClick={onOpenMobileNavigation}
+			aria-label="Open course navigation"
+		>
+			<FiMenu />
+		</Button>
+		<HStack gap={{ base: 1, md: 2 }} flexShrink={0} ml="auto">
 			<Badge display={{ base: 'none', lg: 'inline-flex' }} borderRadius="full" px={3} py={1}>
 				{enrollment.progressPercent}% progress
 			</Badge>

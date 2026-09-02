@@ -57,40 +57,44 @@ export const CourseLessonMobileNavigator = ({
 	return (
 		<>
 			<Button
-				display={{ base: 'flex', xl: 'none' }}
 				variant="outline"
-				h="auto"
-				minH="56px"
-				w="full"
+				h="44px"
+				minW={{ base: '72px', sm: '144px' }}
 				justifyContent="space-between"
 				borderColor={workspaceBoundaryColor}
-				borderRadius="xl"
+				borderRadius="full"
 				bg="bg.card"
-				px={4}
-				py={2.5}
+				px={3}
 				textAlign="left"
 				onClick={handleOpen}
 				aria-label={`Open lesson navigator. ${activeLesson?.title || 'Current lesson'}, ${lessons.lessonProgressPercentage}% complete`}
 			>
-				<HStack gap={3} minW={0}>
-					<Box color="primary" fontSize="lg" flexShrink={0} aria-hidden="true">
+				<HStack gap={2} minW={0}>
+					<Box color="primary" fontSize="md" flexShrink={0} aria-hidden="true">
 						<FiBookOpen />
 					</Box>
 					<Box minW={0}>
-						<Text color="text.muted" fontSize="xs" fontWeight="semibold">
+						<Text
+							display={{ base: 'none', sm: 'block' }}
+							color="text.primary"
+							fontSize="xs"
+							fontWeight="semibold"
+							whiteSpace="nowrap"
+						>
 							Lesson {Math.max(activeLessonIndex + 1, 1)} of {lessons.totalSubsections}
 						</Text>
-						<Text color="text.primary" fontSize="sm" fontWeight="semibold" lineClamp={1}>
-							{activeLesson?.title || 'Choose a lesson'}
+						<Text
+							display={{ base: 'block', sm: 'none' }}
+							color="text.primary"
+							fontSize="xs"
+							fontWeight="semibold"
+							whiteSpace="nowrap"
+						>
+							{Math.max(activeLessonIndex + 1, 1)}/{lessons.totalSubsections}
 						</Text>
 					</Box>
 				</HStack>
-				<HStack gap={2} flexShrink={0}>
-					<Text color="primary" fontSize="sm" fontWeight="bold">
-						{lessons.lessonProgressPercentage}%
-					</Text>
-					<FiChevronDown aria-hidden="true" />
-				</HStack>
+				<FiChevronDown aria-hidden="true" />
 			</Button>
 
 			<Box

@@ -92,6 +92,7 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 			</Container>
 		);
 	}
+	const lessonContentBottomPadding = isLessonNavigationPinned ? { base: '84px', xl: 0 } : { base: '84px', md: '76px' };
 
 	return (
 		<Box bg="bg.subtle" minH="100vh" w="full">
@@ -155,7 +156,7 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 							w="full"
 							maxW={activeTab === 'lessons' && !isContentExpanded ? '760px' : undefined}
 							mx="auto"
-							pb={activeTab === 'lessons' && !isLessonNavigationPinned ? { base: '84px', md: '76px' } : 0}
+							pb={activeTab === 'lessons' ? lessonContentBottomPadding : 0}
 							transition="max-width 180ms ease"
 							_motionReduce={{ transition: 'none' }}
 						>

@@ -97,6 +97,7 @@ export type CourseLearningDashboard = {
 				title: string;
 				isCompleted: boolean;
 				isCurrent: boolean;
+				isLocked: boolean;
 			}>;
 		} | null;
 	};

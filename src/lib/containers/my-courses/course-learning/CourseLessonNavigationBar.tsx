@@ -1,4 +1,5 @@
 import { Box, Button, HStack, Text } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
 import { FiArrowDown, FiArrowUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 import type { CourseLessonsState } from '~/lib/api/enrollments';
@@ -6,6 +7,11 @@ import ShineButton from '~/lib/components/actions/ShineButton';
 
 import { workspaceActiveTextColor, workspaceBoundaryColor } from './constants';
 import { getActiveLessonContext, getNextLessonRow, getPreviousUnlockedLessonRow } from './utils';
+
+const CourseLessonMobileNavigationControl = dynamic(
+	() => import('./CourseLessons').then(module => module.CourseLessonMobileNavigationControl),
+	{ loading: () => <Box boxSize="44px" /> }
+);
 
 type CourseLessonNavigationBarProps = {
 	canComplete: boolean;
@@ -78,12 +84,12 @@ const getNavigationFrameProps = ({
 }: Pick<CourseLessonNavigationBarProps, 'isLearningRailCollapsed' | 'isPinned' | 'isWorkspaceSidebarCollapsed'>) => {
 	if (isPinned) {
 		return {
-			bottom: undefined,
-			boxShadow: 'soft',
-			left: undefined,
-			mt: 4,
-			position: 'static' as const,
-			right: undefined
+			bottom: { base: 'calc(0.75rem + env(safe-area-inset-bottom))', xl: 'auto' },
+			boxShadow: { base: 'float', xl: 'soft' },
+			left: { base: 3, xl: 'auto' },
+			mt: { base: 0, xl: 4 },
+			position: { base: 'fixed', xl: 'static' } as const,
+			right: { base: 3, xl: 'auto' }
 		};
 	}
 
@@ -174,15 +180,22 @@ export const CourseLessonNavigationBar = ({
 			_motionReduce={{ transition: 'none' }}
 		>
 			<HStack justify="space-between" gap={{ base: 2, md: 3 }}>
-				<LessonNavigationPinButton isPinned={isPinned} onTogglePinned={onTogglePinned} />
+				<Box display={{ base: 'block', xl: 'none' }} flexShrink={0}>
+					<CourseLessonMobileNavigationControl lessons={lessons} onLessonSelect={onLessonSelect} />
+				</Box>
+				<Box display={{ base: 'none', xl: 'block' }} flexShrink={0}>
+					<LessonNavigationPinButton isPinned={isPinned} onTogglePinned={onTogglePinned} />
+				</Box>
 
 				<HStack gap={{ base: 2, md: 3 }} ml="auto">
 					<Button
 						minH="44px"
-						minW={{ base: '84px', sm: '112px' }}
+						minW={{ base: '44px', sm: '112px' }}
 						borderRadius="full"
 						variant="outline"
 						disabled={!previousLesson || isNavigating}
+						aria-label="Previous lesson"
+						title="Previous lesson"
 						onClick={() => {
 							if (previousLesson) {
 								onLessonSelect(previousLesson.subsection.id);
@@ -190,7 +203,9 @@ export const CourseLessonNavigationBar = ({
 						}}
 					>
 						<FiChevronLeft />
-						Previous
+						<Text as="span" display={{ base: 'none', sm: 'inline' }}>
+							Previous
+						</Text>
 					</Button>
 
 					<NextLessonButton

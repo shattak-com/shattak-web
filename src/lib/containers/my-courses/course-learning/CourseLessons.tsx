@@ -205,12 +205,33 @@ export const LessonProgressSidebar = ({
 	);
 };
 
+export const CourseLessonMobileNavigationControl = ({
+	lessons,
+	onLessonSelect
+}: Pick<LessonProgressSidebarProps, 'lessons' | 'onLessonSelect'>) => {
+	if (!lessons) {
+		return null;
+	}
+
+	return (
+		<CourseLessonMobileNavigator lessons={lessons} onLessonSelect={onLessonSelect}>
+			{(handleMobileLessonSelect, isMobileNavigatorOpen) => (
+				<LessonProgressSidebar
+					lessons={lessons}
+					onLessonSelect={handleMobileLessonSelect}
+					embedded
+					isVisible={isMobileNavigatorOpen}
+				/>
+			)}
+		</CourseLessonMobileNavigator>
+	);
+};
+
 type CourseLessonsTabProps = {
 	canBypassProgression: boolean;
 	isLoading: boolean;
 	lessonsResult: CourseLessonsResult | null;
 	lessonErrorMessage: string;
-	onLessonSelect: (subsectionId: string) => void;
 	onRetry: () => void;
 	onScrollBottomReached: () => void;
 };
@@ -220,7 +241,6 @@ export const CourseLessonsTab = ({
 	isLoading,
 	lessonsResult,
 	lessonErrorMessage,
-	onLessonSelect,
 	onRetry,
 	onScrollBottomReached
 }: CourseLessonsTabProps) => {
@@ -326,19 +346,6 @@ export const CourseLessonsTab = ({
 
 	return (
 		<Stack gap={4}>
-			<Box display={{ base: 'block', xl: 'none' }} position="sticky" top="72px" zIndex={8} bg="bg.subtle" py={1}>
-				<CourseLessonMobileNavigator lessons={lessons} onLessonSelect={onLessonSelect}>
-					{(handleMobileLessonSelect, isMobileNavigatorOpen) => (
-						<LessonProgressSidebar
-							lessons={lessons}
-							onLessonSelect={handleMobileLessonSelect}
-							embedded
-							isVisible={isMobileNavigatorOpen}
-						/>
-					)}
-				</CourseLessonMobileNavigator>
-			</Box>
-
 			<Box
 				ref={lessonStartRef}
 				border="1px solid"
@@ -346,7 +353,7 @@ export const CourseLessonsTab = ({
 				borderRadius="card"
 				bg="bg.card"
 				p={{ base: 4, md: 6 }}
-				scrollMarginTop={{ base: '148px', xl: '88px' }}
+				scrollMarginTop="88px"
 			>
 				<Stack gap={3}>
 					<HStack gap={2} flexWrap="wrap">
@@ -357,11 +364,7 @@ export const CourseLessonsTab = ({
 							<Badge colorPalette="green" borderRadius="full" px={3} py={1}>
 								Completed
 							</Badge>
-						) : (
-							<Badge colorPalette="orange" borderRadius="full" px={3} py={1}>
-								In progress
-							</Badge>
-						)}
+						) : null}
 						{lessons.hasAdminAccess ? (
 							<Badge colorPalette="purple" borderRadius="full" px={3} py={1}>
 								Admin access

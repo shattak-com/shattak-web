@@ -57,15 +57,15 @@ export const getPreviousUnlockedLessonRow = (lessons: CourseLessonsState, subsec
 };
 
 export const getLessonStateLabel = (subsection: CourseLessonsState['modules'][number]['subsections'][number]) => {
-	if (subsection.isActive) {
-		return 'Current';
-	}
-
 	if (subsection.isCompleted) {
 		return 'Completed';
 	}
 
-	return subsection.isLocked ? 'Locked' : 'Available';
+	if (subsection.isLocked) {
+		return 'Locked';
+	}
+
+	return subsection.isCurrent ? 'Continue learning' : 'Ready';
 };
 
 const streakWeekdayFormatter = new Intl.DateTimeFormat('en-US', {

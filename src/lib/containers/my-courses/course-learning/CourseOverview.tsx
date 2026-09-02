@@ -426,6 +426,11 @@ const CourseLearningActionRow = ({
 	let statusIcon: ReactNode = <FiPlayCircle />;
 	let statusLabel = 'Ready';
 
+	if (subsection.isLocked) {
+		statusIcon = <FiLock />;
+		statusLabel = 'Locked';
+	}
+
 	if (subsection.isCurrent) {
 		statusBackground = 'orange.100';
 		statusColor = 'orange.700';
@@ -452,6 +457,7 @@ const CourseLearningActionRow = ({
 			py={3}
 			justifyContent="stretch"
 			textAlign="left"
+			disabled={subsection.isLocked}
 			_hover={{ bg: subsection.isCurrent ? 'bg.accent' : 'bg.subtle' }}
 			onClick={() => onOpen(subsection.id, subsection.title)}
 		>
@@ -498,6 +504,153 @@ const CourseLearningActionRow = ({
 	);
 };
 
+type CourseNextLearningActionProps = {
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	dashboard: CourseLearningDashboard;
+	enrollment: CourseEnrollment;
+	onLessonSelect: (subsectionId: string) => void;
+	onTabChange: (tabId: CourseTabId) => void;
+	sourcePage: string;
+};
+
+export const CourseNextLearningAction = ({
+	courseId,
+	currentUser,
+	dashboard,
+	enrollment,
+	onLessonSelect,
+	onTabChange,
+	sourcePage
+}: CourseNextLearningActionProps) => {
+	const learningModule = dashboard.learningProgress.module;
+	const moduleProgress = learningModule?.totalSubsections
+		? Math.round((learningModule.completedSubsections / learningModule.totalSubsections) * 100)
+		: 0;
+	const progressButtonLabel =
+		dashboard.learningProgress.destination === 'lesson' ? 'Continue learning' : dashboard.learningProgress.buttonLabel;
+
+	const trackProgressClick = (lesson?: { id: string; title: string }) => {
+		trackCourseDashboardEvent({
+			eventName: 'course_progress_clicked',
+			courseId,
+			courseTitle: enrollment.course.title,
+			userId: currentUser?.id,
+			destination: dashboard.learningProgress.destination,
+			lessonId: lesson?.id ?? dashboard.learningProgress.subsectionId ?? undefined,
+			lessonTitle: lesson?.title ?? dashboard.learningProgress.subsectionTitle ?? undefined,
+			moduleId: dashboard.learningProgress.moduleId ?? undefined,
+			moduleTitle: dashboard.learningProgress.moduleTitle ?? undefined,
+			completionPercentage: dashboard.completion.percentage,
+			enrollmentStatus: enrollment.status,
+			sourcePage
+		});
+	};
+
+	const openLesson = (subsectionId: string, subsectionTitle: string) => {
+		trackProgressClick({ id: subsectionId, title: subsectionTitle });
+		onLessonSelect(subsectionId);
+	};
+
+	const handleProgressClick = () => {
+		trackProgressClick();
+		if (dashboard.learningProgress.destination === 'lesson' && dashboard.learningProgress.subsectionId) {
+			onLessonSelect(dashboard.learningProgress.subsectionId);
+			return;
+		}
+		onTabChange(dashboard.learningProgress.tabId);
+	};
+
+	return (
+		<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" overflow="hidden">
+			<Stack gap={0}>
+				<HStack justify="space-between" align="center" gap={4} flexWrap="wrap" p={{ base: 5, md: 6 }}>
+					<HStack align="start" gap={4} minW={0}>
+						<Box
+							boxSize="46px"
+							borderRadius="xl"
+							bg="bg.brand"
+							color="primary"
+							display="grid"
+							flexShrink={0}
+							fontSize="xl"
+							placeItems="center"
+						>
+							<FiZap />
+						</Box>
+						<Box minW={0}>
+							<Heading size={{ base: 'lg', md: 'xl' }}>Your next learning action</Heading>
+							<Text mt={1} color="text.muted" fontSize="sm">
+								Keep going. You&apos;re building real skills step by step.
+							</Text>
+						</Box>
+					</HStack>
+					<ShineButton
+						borderRadius="full"
+						bg="primary"
+						color={workspaceActiveTextColor}
+						px={6}
+						_hover={{ bg: 'primaryHover' }}
+						onClick={handleProgressClick}
+					>
+						{progressButtonLabel}
+						<FiChevronRight />
+					</ShineButton>
+				</HStack>
+
+				{learningModule ? (
+					<Box borderTop="1px solid" borderColor={workspaceBoundaryColor}>
+						<HStack justify="space-between" gap={4} bg="bg.brand" px={{ base: 4, md: 6 }} py={4} flexWrap="wrap">
+							<HStack gap={3} minW={0}>
+								<Box color="primary" fontSize="xl">
+									<FiCode />
+								</Box>
+								<Text fontWeight="bold" lineClamp={1}>
+									{learningModule.title}
+								</Text>
+							</HStack>
+							<HStack gap={3} minW={{ base: 'full', sm: '280px' }}>
+								<Text color="text.muted" fontSize="xs" whiteSpace="nowrap">
+									<Text as="span" color="primary" fontWeight="bold">
+										{learningModule.completedSubsections}
+									</Text>{' '}
+									/ {learningModule.totalSubsections} completed
+								</Text>
+								<Box flex={1} h="8px" borderRadius="full" bg="bg.muted" overflow="hidden">
+									<Box
+										h="full"
+										w={`${moduleProgress}%`}
+										borderRadius="full"
+										bg="primary"
+										transition="width 180ms ease"
+									/>
+								</Box>
+							</HStack>
+						</HStack>
+
+						<Stack gap={0}>
+							{learningModule.subsections.map((subsection, index) => (
+								<CourseLearningActionRow
+									key={subsection.id}
+									index={index}
+									onOpen={openLesson}
+									subsection={subsection}
+								/>
+							))}
+						</Stack>
+					</Box>
+				) : (
+					<Box borderTop="1px solid" borderColor={workspaceBoundaryColor} bg="bg.subtle" p={5}>
+						<Text color="text.muted" fontSize="sm">
+							{dashboard.learningProgress.subtitle}
+						</Text>
+					</Box>
+				)}
+			</Stack>
+		</Box>
+	);
+};
+
 type CourseUnlockedOverviewTabProps = {
 	dashboard: CourseLearningDashboard;
 	enrollment: CourseEnrollment;
@@ -525,43 +678,6 @@ const CourseUnlockedOverviewTab = ({
 		dashboard.streak.cycleDays
 	);
 	const { course } = enrollment;
-	const learningModule = dashboard.learningProgress.module;
-	const moduleProgress = learningModule?.totalSubsections
-		? Math.round((learningModule.completedSubsections / learningModule.totalSubsections) * 100)
-		: 0;
-	const progressButtonLabel =
-		dashboard.learningProgress.destination === 'lesson' ? 'Continue learning' : dashboard.learningProgress.buttonLabel;
-
-	const trackProgressClick = (lesson?: { id: string; title: string }) => {
-		trackCourseDashboardEvent({
-			eventName: 'course_progress_clicked',
-			courseId,
-			courseTitle: course.title,
-			userId: currentUser?.id,
-			destination: dashboard.learningProgress.destination,
-			lessonId: lesson?.id ?? dashboard.learningProgress.subsectionId ?? undefined,
-			lessonTitle: lesson?.title ?? dashboard.learningProgress.subsectionTitle ?? undefined,
-			moduleId: dashboard.learningProgress.moduleId ?? undefined,
-			moduleTitle: dashboard.learningProgress.moduleTitle ?? undefined,
-			completionPercentage: dashboard.completion.percentage,
-			enrollmentStatus: enrollment.status,
-			sourcePage: `/my-courses/${encodeURIComponent(courseId)}/overview`
-		});
-	};
-
-	const openLesson = (subsectionId: string, subsectionTitle: string) => {
-		trackProgressClick({ id: subsectionId, title: subsectionTitle });
-		onLessonSelect(subsectionId);
-	};
-
-	const handleProgressClick = () => {
-		trackProgressClick();
-		if (dashboard.learningProgress.destination === 'lesson' && dashboard.learningProgress.subsectionId) {
-			onLessonSelect(dashboard.learningProgress.subsectionId);
-			return;
-		}
-		onTabChange(dashboard.learningProgress.tabId);
-	};
 
 	return (
 		<Stack gap={4}>
@@ -646,92 +762,15 @@ const CourseUnlockedOverviewTab = ({
 				</Box>
 			) : null}
 
-			<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" overflow="hidden">
-				<Stack gap={0}>
-					<HStack justify="space-between" align="center" gap={4} flexWrap="wrap" p={{ base: 5, md: 6 }}>
-						<HStack align="start" gap={4} minW={0}>
-							<Box
-								boxSize="46px"
-								borderRadius="xl"
-								bg="bg.brand"
-								color="primary"
-								display="grid"
-								flexShrink={0}
-								fontSize="xl"
-								placeItems="center"
-							>
-								<FiZap />
-							</Box>
-							<Box minW={0}>
-								<Heading size={{ base: 'lg', md: 'xl' }}>Your next learning action</Heading>
-								<Text mt={1} color="text.muted" fontSize="sm">
-									Keep going—you&apos;re building real skills step by step.
-								</Text>
-							</Box>
-						</HStack>
-						<ShineButton
-							borderRadius="full"
-							bg="primary"
-							color={workspaceActiveTextColor}
-							px={6}
-							_hover={{ bg: 'primaryHover' }}
-							onClick={handleProgressClick}
-						>
-							{progressButtonLabel}
-							<FiChevronRight />
-						</ShineButton>
-					</HStack>
-
-					{learningModule ? (
-						<Box borderTop="1px solid" borderColor={workspaceBoundaryColor}>
-							<HStack justify="space-between" gap={4} bg="bg.brand" px={{ base: 4, md: 6 }} py={4} flexWrap="wrap">
-								<HStack gap={3} minW={0}>
-									<Box color="primary" fontSize="xl">
-										<FiCode />
-									</Box>
-									<Text fontWeight="bold" lineClamp={1}>
-										{learningModule.title}
-									</Text>
-								</HStack>
-								<HStack gap={3} minW={{ base: 'full', sm: '280px' }}>
-									<Text color="text.muted" fontSize="xs" whiteSpace="nowrap">
-										<Text as="span" color="primary" fontWeight="bold">
-											{learningModule.completedSubsections}
-										</Text>{' '}
-										/ {learningModule.totalSubsections} completed
-									</Text>
-									<Box flex={1} h="8px" borderRadius="full" bg="bg.muted" overflow="hidden">
-										<Box
-											h="full"
-											w={`${moduleProgress}%`}
-											borderRadius="full"
-											bg="primary"
-											transition="width 180ms ease"
-										/>
-									</Box>
-								</HStack>
-							</HStack>
-
-							<Stack gap={0}>
-								{learningModule.subsections.map((subsection, index) => (
-									<CourseLearningActionRow
-										key={subsection.id}
-										index={index}
-										onOpen={openLesson}
-										subsection={subsection}
-									/>
-								))}
-							</Stack>
-						</Box>
-					) : (
-						<Box borderTop="1px solid" borderColor={workspaceBoundaryColor} bg="bg.subtle" p={5}>
-							<Text color="text.muted" fontSize="sm">
-								{dashboard.learningProgress.subtitle}
-							</Text>
-						</Box>
-					)}
-				</Stack>
-			</Box>
+			<CourseNextLearningAction
+				courseId={courseId}
+				currentUser={currentUser}
+				dashboard={dashboard}
+				enrollment={enrollment}
+				onLessonSelect={onLessonSelect}
+				onTabChange={onTabChange}
+				sourcePage={`/my-courses/${encodeURIComponent(courseId)}/overview`}
+			/>
 
 			<CourseWelcomeVideo
 				courseTitle={course.title}

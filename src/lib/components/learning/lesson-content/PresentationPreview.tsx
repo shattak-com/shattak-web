@@ -1,17 +1,22 @@
 'use client';
 
-import { Box, Flex, Spinner, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useState } from 'react';
+import { FiExternalLink } from 'react-icons/fi';
 
-import { getSafePresentationViewerUrl } from '~/lib/components/learning/lesson-content/lesson-content-urls';
+import {
+	getSafeExternalUrl,
+	getSafePresentationViewerUrl
+} from '~/lib/components/learning/lesson-content/lesson-content-urls';
 
 type PresentationPreviewProps = {
 	url: string;
 	title?: string;
 };
 
-export const PresentationPreview = ({ url, title = 'Course presentation' }: PresentationPreviewProps) => {
+export const PresentationPreview = ({ url, title = 'Lesson PPT' }: PresentationPreviewProps) => {
 	const [isLoading, setIsLoading] = useState(true);
+	const sourceUrl = getSafeExternalUrl(url);
 	const viewerUrl = getSafePresentationViewerUrl(url);
 
 	if (!viewerUrl) {
@@ -35,20 +40,18 @@ export const PresentationPreview = ({ url, title = 'Course presentation' }: Pres
 				px={{ base: 3, md: 4 }}
 				py={3}
 			>
-				<Box minW={0}>
-					<Text color="text.primary" fontSize="sm" fontWeight="semibold" lineClamp={1}>
-						{title}
+				<Flex align="center" gap={2} color="text.muted" minW={0}>
+					{isLoading ? <Spinner size="xs" flexShrink={0} /> : null}
+					<Text fontSize="xs" lineClamp={1}>
+						{isLoading ? 'Loading presentation' : 'Presentation ready'}
 					</Text>
-					<Text color="text.muted" fontSize="xs">
-						Presentation preview
-					</Text>
-				</Box>
-				{isLoading ? (
-					<Flex align="center" gap={2} color="text.muted" flexShrink={0}>
-						<Spinner size="xs" />
-						<Text fontSize="xs">Loading presentation</Text>
-					</Flex>
-				) : null}
+				</Flex>
+				<Button asChild size="sm" variant="outline" borderRadius="full" flexShrink={0}>
+					<a href={sourceUrl} target="_blank" rel="noreferrer">
+						<FiExternalLink aria-hidden="true" />
+						Open presentation
+					</a>
+				</Button>
 			</Flex>
 
 			<Box

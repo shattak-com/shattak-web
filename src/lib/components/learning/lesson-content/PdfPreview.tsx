@@ -22,7 +22,7 @@ const getPreviewHeight = (height: PdfPreviewProps['height']) => {
 	return Math.min(Math.max(numericHeight, 620), 900);
 };
 
-export const PdfPreview = ({ url, height, title = 'PDF lesson resource' }: PdfPreviewProps) => {
+export const PdfPreview = ({ url, height, title = 'Lesson PDF' }: PdfPreviewProps) => {
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const previewHeight = getPreviewHeight(height);
 	const previewUrl = `${url.split('#')[0]}#toolbar=0&navpanes=0&scrollbar=1`;

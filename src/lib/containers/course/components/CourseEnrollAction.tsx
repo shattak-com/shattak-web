@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { trackMetaPixelCourseEnrollmentConversion } from '~/lib/analytics/meta-pixel';
 import { trackEnrollmentEvent, trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import { ApiRequestError } from '~/lib/api/client';
 import { enrollInFreeCourse, getCourseEnrollmentStatus, type CourseEnrollment } from '~/lib/api/enrollments';
@@ -163,6 +164,14 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 
 		try {
 			const result = await enrollInFreeCourse(course.id);
+			if (!result.alreadyEnrolled && result.metaEventId) {
+				trackMetaPixelCourseEnrollmentConversion({
+					courseId: result.enrollment.course.id,
+					courseTitle: result.enrollment.course.title,
+					eventId: result.metaEventId,
+					value: result.enrollment.course.price
+				});
+			}
 			setEnrollment(result.enrollment);
 			setMessage(
 				result.alreadyEnrolled

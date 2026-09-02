@@ -115,8 +115,6 @@ type CourseLearningMainContentProps = {
 	dashboard: CourseLearningDashboard | null;
 	dashboardErrorMessage: string;
 	enrollment: CourseEnrollment;
-	hasReachedLessonBottom: boolean;
-	isCompletingLesson: boolean;
 	isDashboardLoading: boolean;
 	isLessonsLoading: boolean;
 	learnerName: string;
@@ -125,7 +123,6 @@ type CourseLearningMainContentProps = {
 	onCourseUnlocked: (enrollment: CourseEnrollment) => void;
 	onDashboardRetry: () => void;
 	onLessonBottomReached: () => void;
-	onLessonComplete: () => void;
 	onLessonRetry: () => void;
 	onLessonSelect: (subsectionId: string) => void;
 	onTabChange: (tabId: CourseTabId) => void;
@@ -140,8 +137,6 @@ export const CourseLearningMainContent = ({
 	dashboard,
 	dashboardErrorMessage,
 	enrollment,
-	hasReachedLessonBottom,
-	isCompletingLesson,
 	isDashboardLoading,
 	isLessonsLoading,
 	learnerName,
@@ -150,7 +145,6 @@ export const CourseLearningMainContent = ({
 	onCourseUnlocked,
 	onDashboardRetry,
 	onLessonBottomReached,
-	onLessonComplete,
 	onLessonRetry,
 	onLessonSelect,
 	onTabChange
@@ -177,14 +171,10 @@ export const CourseLearningMainContent = ({
 		return (
 			<CourseLessonsTab
 				canBypassProgression={canBypassProgression}
-				hasReachedBottom={hasReachedLessonBottom}
-				isCompletingLesson={isCompletingLesson}
 				isLoading={isLessonsLoading}
 				lessonsResult={lessonsResult}
 				lessonErrorMessage={lessonErrorMessage}
-				onCompleteLesson={onLessonComplete}
 				onLessonSelect={onLessonSelect}
-				onPreviousLesson={onLessonSelect}
 				onRetry={onLessonRetry}
 				onScrollBottomReached={onLessonBottomReached}
 			/>

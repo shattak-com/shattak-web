@@ -7,6 +7,7 @@ import { ProfilePageSkeleton } from '~/lib/components/feedback/LoadingStates';
 
 import { workspaceActiveTextColor, workspaceBoundaryColor } from './course-learning/constants';
 import { CourseLearningMainContent, CourseLearningRail } from './course-learning/CourseLearningContent';
+import { CourseLessonNavigationBar } from './course-learning/CourseLessonNavigationBar';
 import { CourseMobileNavigation } from './course-learning/CourseMobileNavigation';
 import { CourseWorkspaceHeader } from './course-learning/CourseWorkspaceHeader';
 import { CourseWorkspaceSidebar } from './course-learning/CourseWorkspaceSidebar';
@@ -30,11 +31,13 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 		handleLessonSelect,
 		handleTabChange,
 		handleToggleContentWidth,
+		handleToggleLessonNavigationPinned,
 		hasReachedLessonBottom,
 		isCompletingLesson,
 		isContentExpanded,
 		isDashboardLoading,
 		isLearningRailCollapsed,
+		isLessonNavigationPinned,
 		isLessonsLoading,
 		isLoading,
 		isMobileNavOpen,
@@ -152,6 +155,7 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 							w="full"
 							maxW={activeTab === 'lessons' && !isContentExpanded ? '760px' : undefined}
 							mx="auto"
+							pb={activeTab === 'lessons' && !isLessonNavigationPinned ? { base: '84px', md: '76px' } : 0}
 							transition="max-width 180ms ease"
 							_motionReduce={{ transition: 'none' }}
 						>
@@ -164,8 +168,6 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 								dashboard={dashboard}
 								dashboardErrorMessage={dashboardErrorMessage}
 								enrollment={enrollment}
-								hasReachedLessonBottom={hasReachedLessonBottom}
-								isCompletingLesson={isCompletingLesson}
 								isDashboardLoading={isDashboardLoading}
 								isLessonsLoading={isLessonsLoading}
 								learnerName={learnerName}
@@ -176,15 +178,29 @@ const CourseLearningPage = ({ courseId, initialRoute }: CourseLearningPageProps)
 									loadDashboard(currentUser).catch(() => undefined);
 								}}
 								onLessonBottomReached={handleLessonBottomReached}
-								onLessonComplete={() => {
-									handleCompleteLesson().catch(() => undefined);
-								}}
 								onLessonRetry={() => {
 									loadLessons(lessonsResult?.lessons.activeSubsectionId).catch(() => undefined);
 								}}
 								onLessonSelect={handleLessonSelect}
 								onTabChange={handleTabChange}
 							/>
+
+							{activeTab === 'lessons' ? (
+								<CourseLessonNavigationBar
+									canComplete={canBypassProgression || hasReachedLessonBottom}
+									isCompletingLesson={isCompletingLesson}
+									isNavigating={isLessonsLoading}
+									isLearningRailCollapsed={isLearningRailCollapsed}
+									isPinned={isLessonNavigationPinned}
+									isWorkspaceSidebarCollapsed={isWorkspaceSidebarCollapsed}
+									lessons={lessonsResult?.lessons ?? null}
+									onCompleteLesson={() => {
+										handleCompleteLesson().catch(() => undefined);
+									}}
+									onLessonSelect={handleLessonSelect}
+									onTogglePinned={handleToggleLessonNavigationPinned}
+								/>
+							) : null}
 						</Box>
 
 						<CourseLearningRail

@@ -1,3 +1,4 @@
+import { createMetaConversionContext } from '~/lib/analytics/meta-pixel';
 import { getJson, postJson } from '~/lib/api/client';
 import type { OnboardingProfile } from '~/lib/api/onboarding';
 
@@ -16,6 +17,8 @@ export type AuthenticatedUser = {
 export type AuthResult = {
 	user: AuthenticatedUser;
 	onboardingProfile?: OnboardingProfile;
+	isNewUser?: boolean;
+	metaEventId?: string | null;
 };
 
 export type AdminInvitation = {
@@ -50,7 +53,8 @@ const consumeBootstrapResult = (context: 'user' | 'admin') => {
 
 export const loginWithGoogleCredential = async (credential: string) => {
 	const result = await postJson<AuthResult>('/auth/google', {
-		credential
+		credential,
+		conversion: createMetaConversionContext()
 	});
 	userBootstrapResult = result;
 	return result;

@@ -1,3 +1,4 @@
+import { createMetaConversionContext } from '~/lib/analytics/meta-pixel';
 import { getJson, postJson } from '~/lib/api/client';
 
 export type CourseEnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
@@ -179,6 +180,7 @@ export type CourseEnrollmentStatusResult = {
 export type CourseEnrollmentResult = {
 	alreadyEnrolled: boolean;
 	enrollment: CourseEnrollment;
+	metaEventId: string | null;
 };
 
 export type CourseLearningDashboardResult = {
@@ -210,7 +212,9 @@ export const getCourseEnrollmentStatus = (slug: string) =>
 	getJson<CourseEnrollmentStatusResult>(`/enrollments/courses/${encodeURIComponent(slug)}/status`);
 
 export const enrollInFreeCourse = (slug: string) =>
-	postJson<CourseEnrollmentResult>(`/enrollments/courses/${encodeURIComponent(slug)}`);
+	postJson<CourseEnrollmentResult>(`/enrollments/courses/${encodeURIComponent(slug)}`, {
+		conversion: createMetaConversionContext()
+	});
 
 export const unlockCourseAccess = (slug: string, accessCode: string) =>
 	postJson<{ enrollment: CourseEnrollment }>(`/enrollments/courses/${encodeURIComponent(slug)}/unlock`, { accessCode });

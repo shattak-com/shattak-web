@@ -1,6 +1,6 @@
 # Analytics Integration Guide
 
-This project uses client-only analytics integrations with centralized helpers for Mixpanel and Meta Pixel.
+This project uses centralized Mixpanel, Meta Pixel, and server-side Meta Conversions API integrations.
 
 Custom properties follow the `#property_name` convention.
 
@@ -19,6 +19,7 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 - Safe browser-only initialization (`initMixpanel`)
 - Mixpanel auto page view tracking via autocapture
 - Meta Pixel initialization and `PageView` tracking across App Router transitions
+- Deduplicated Meta Pixel and Conversions API signup/enrollment conversions
 - Analytics collection for all users
 - Session replay ensured across all pages and App Router transitions
 - Temporary anonymous identify/profile sync (until real auth is added)
@@ -92,6 +93,8 @@ Set these in `.env` and deployment environments:
 - `NEXT_PUBLIC_META_PIXEL_ENABLED`
 - `NEXT_PUBLIC_META_PIXEL_TRACK_LOCALHOST`
 
+The matching server-side Meta dataset id and access token are configured only in `Shattak.Api`; never expose the CAPI access token through a `NEXT_PUBLIC_` variable.
+
 For QA or full capture across pages, set `NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT=100`.
 
 ## Tracking Behavior
@@ -126,6 +129,15 @@ Free-course enrollment events use the existing Mixpanel helpers and include cour
 - `#destination`
 
 Admin enrollment events are limited to aggregate/count viewing and selected course inspection. Do not track internal course upload/edit operations, invitation management, or other admin-only workflow actions unless they directly affect a student-facing experience.
+
+## Meta Conversion Tracking
+
+- A newly created Shattak user sends the standard `CompleteRegistration` event.
+- A newly created free-course enrollment sends the standard `Lead` event.
+- Existing-user logins and already-existing enrollments do not send conversion events.
+- The browser supplies one event id to the API. Pixel and CAPI use that same id for Meta deduplication.
+- CAPI user matching uses SHA-256-normalized email and internal user id, plus request IP/user-agent and `_fbp`/`_fbc` identifiers when available.
+- Browser blocking never prevents CAPI delivery, and Meta delivery failure never blocks signup or enrollment.
 
 ## Course Dashboard Tracking
 

@@ -1,5 +1,12 @@
 type MetaPixelEventProperties = Record<string, unknown>;
 
+export type MetaConversionContext = {
+	eventId: string;
+	eventSourceUrl: string;
+	fbp?: string;
+	fbc?: string;
+};
+
 type MetaPixelFunction = {
 	(...args: unknown[]): void;
 	callMethod?: (...args: unknown[]) => void;
@@ -35,6 +42,46 @@ const canTrackMetaPixel = () =>
 	(!isLocalhost() || META_PIXEL_TRACK_LOCALHOST);
 
 const getFbq = () => window.fbq;
+
+const readBrowserCookie = (name: string) => {
+	if (!isBrowser()) {
+		return undefined;
+	}
+
+	const prefix = `${encodeURIComponent(name)}=`;
+	const cookie = document.cookie
+		.split(';')
+		.map(value => value.trim())
+		.find(value => value.startsWith(prefix));
+
+	return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : undefined;
+};
+
+const createMetaEventId = () => {
+	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return crypto.randomUUID();
+	}
+
+	return `meta-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+export const createMetaConversionContext = (): MetaConversionContext | undefined => {
+	if (!isBrowser()) {
+		return undefined;
+	}
+
+	const fbp = readBrowserCookie('_fbp');
+	const cookieFbc = readBrowserCookie('_fbc');
+	const fbclid = new URLSearchParams(window.location.search).get('fbclid')?.trim();
+	const fbc = cookieFbc || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : undefined);
+
+	return {
+		eventId: createMetaEventId(),
+		eventSourceUrl: window.location.href,
+		...(fbp ? { fbp } : {}),
+		...(fbc ? { fbc } : {})
+	};
+};
 
 const ensureMetaPixelStub = () => {
 	if (!isBrowser()) {
@@ -121,4 +168,51 @@ export const trackMetaPixelEvent = (eventName: string, properties?: MetaPixelEve
 	}
 
 	getFbq()?.('trackCustom', eventName);
+};
+
+const trackMetaPixelStandardEvent = (
+	eventName: 'CompleteRegistration' | 'Lead',
+	properties: MetaPixelEventProperties,
+	eventId: string
+) => {
+	if (!isMetaPixelInitialized || !eventId) {
+		return;
+	}
+
+	getFbq()?.('track', eventName, properties, { eventID: eventId });
+};
+
+export const trackMetaPixelSignupConversion = (eventId: string) => {
+	trackMetaPixelStandardEvent(
+		'CompleteRegistration',
+		{
+			content_name: 'Shattak account',
+			status: true
+		},
+		eventId
+	);
+};
+
+export const trackMetaPixelCourseEnrollmentConversion = ({
+	courseId,
+	courseTitle,
+	eventId,
+	value
+}: {
+	courseId: string;
+	courseTitle: string;
+	eventId: string;
+	value: number;
+}) => {
+	trackMetaPixelStandardEvent(
+		'Lead',
+		{
+			content_ids: [courseId],
+			content_name: courseTitle,
+			content_type: 'product',
+			currency: 'INR',
+			value
+		},
+		eventId
+	);
 };

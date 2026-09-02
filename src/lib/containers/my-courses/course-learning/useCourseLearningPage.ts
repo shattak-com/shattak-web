@@ -22,6 +22,7 @@ import type { CourseTabId, CourseWorkspaceRoute } from './types';
 import { getActiveLessonContext, getCourseWorkspaceGridColumns, getNextLessonRow, isAdminLearner } from './utils';
 
 const CONTENT_WIDTH_STORAGE_KEY = 'shattak-course-content-width';
+const LESSON_NAVIGATION_PINNED_SESSION_KEY = 'shattak-course-lesson-navigation-pinned';
 
 type RouteNavigationMode = 'push' | 'replace';
 
@@ -189,6 +190,7 @@ export const useCourseLearningPage = (courseId: string, initialRoute: CourseWork
 	const [isWorkspaceSidebarCollapsed, setIsWorkspaceSidebarCollapsed] = useState(false);
 	const [isLearningRailCollapsed, setIsLearningRailCollapsed] = useState(false);
 	const [isContentExpanded, setIsContentExpanded] = useState(false);
+	const [isLessonNavigationPinned, setIsLessonNavigationPinned] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 	const [lessonsResult, setLessonsResult] = useState<CourseLessonsResult | null>(null);
@@ -376,6 +378,14 @@ export const useCourseLearningPage = (courseId: string, initialRoute: CourseWork
 	}, []);
 
 	useEffect(() => {
+		try {
+			setIsLessonNavigationPinned(window.sessionStorage.getItem(LESSON_NAVIGATION_PINNED_SESSION_KEY) === 'true');
+		} catch {
+			setIsLessonNavigationPinned(false);
+		}
+	}, []);
+
+	useEffect(() => {
 		if (!enrollment || currentRoute.tab === 'overview' || canOpenLearningTabs) {
 			return;
 		}
@@ -498,6 +508,20 @@ export const useCourseLearningPage = (courseId: string, initialRoute: CourseWork
 		});
 	}, [courseId, currentUser?.id, enrollment?.course.title, isContentExpanded, lessonsResult?.lessons]);
 
+	const handleToggleLessonNavigationPinned = useCallback(() => {
+		setIsLessonNavigationPinned(currentValue => {
+			const nextValue = !currentValue;
+
+			try {
+				window.sessionStorage.setItem(LESSON_NAVIGATION_PINNED_SESSION_KEY, String(nextValue));
+			} catch {
+				// Keep the in-memory session preference when browser storage is unavailable.
+			}
+
+			return nextValue;
+		});
+	}, []);
+
 	const handleCompleteLesson = useCallback(async () => {
 		const lessons = lessonsResult?.lessons ?? null;
 		const activeContext = getActiveLessonContext(lessons);
@@ -589,11 +613,13 @@ export const useCourseLearningPage = (courseId: string, initialRoute: CourseWork
 		handleLessonSelect,
 		handleTabChange,
 		handleToggleContentWidth,
+		handleToggleLessonNavigationPinned,
 		hasReachedLessonBottom,
 		isCompletingLesson,
 		isContentExpanded,
 		isDashboardLoading,
 		isLearningRailCollapsed,
+		isLessonNavigationPinned,
 		isLessonsLoading,
 		isLoading,
 		isMobileNavOpen,

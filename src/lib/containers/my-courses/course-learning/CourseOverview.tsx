@@ -1,7 +1,6 @@
 'use client';
 
 import { AspectRatio, Box, Button, Heading, HStack, Image, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
-import { keyframes } from '@emotion/react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
@@ -788,17 +787,6 @@ type CourseOverviewTabProps = {
 	onUnlocked: (enrollment: CourseEnrollment) => void;
 };
 
-const communityButtonPulse = keyframes`
-	0%, 100% {
-		box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.28);
-		transform: translateY(0);
-	}
-	50% {
-		box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-		transform: translateY(-1px);
-	}
-`;
-
 const communityBenefits = [
 	{ icon: FiUsers, label: 'Mentor guidance' },
 	{ icon: FiMessageCircle, label: 'Peer support' },
@@ -1018,15 +1006,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 
 								<Box>
 									{hasInviteLink ? (
-										<Button
-											asChild
-											borderRadius="full"
-											bg="green.500"
-											color="white"
-											animation={`${communityButtonPulse} 2.4s ease-in-out infinite`}
-											_hover={{ bg: 'green.600', transform: 'translateY(-1px)' }}
-											_motionReduce={{ animation: 'none', _hover: { transform: 'none' } }}
-										>
+										<ShineButton asChild borderRadius="full" bg="green.500" color="white" _hover={{ bg: 'green.600' }}>
 											<Link
 												href={course.whatsappGroupUrl}
 												target="_blank"
@@ -1043,9 +1023,11 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 													})
 												}
 											>
-												<FaWhatsapp /> Join WhatsApp Group <FiExternalLink />
+												<Box as="span" position="relative" zIndex={1} display="inline-flex" alignItems="center" gap={2}>
+													<FaWhatsapp /> Join WhatsApp Group <FiExternalLink />
+												</Box>
 											</Link>
-										</Button>
+										</ShineButton>
 									) : (
 										<Text color="red.500" fontSize="sm">
 											The WhatsApp group link is not configured for this course yet.

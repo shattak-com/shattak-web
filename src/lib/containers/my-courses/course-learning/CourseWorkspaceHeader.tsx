@@ -17,6 +17,9 @@ type CourseWorkspaceHeaderProps = {
 	onToggleContentWidth: () => void;
 };
 
+const workspaceControlHeight = { base: '44px', md: '36px' } as const;
+const workspaceIconControlWidth = { base: '44px', md: '36px' } as const;
+
 const StandardWorkspaceHeader = ({
 	activeTab,
 	enrollment,
@@ -34,8 +37,10 @@ const StandardWorkspaceHeader = ({
 			variant="outline"
 			size="sm"
 			borderRadius="full"
-			boxSize="44px"
-			minW="44px"
+			h={workspaceControlHeight}
+			minH={workspaceControlHeight}
+			minW={workspaceIconControlWidth}
+			px={0}
 			onClick={onOpenMobileNavigation}
 			aria-label="Open course navigation"
 		>
@@ -54,8 +59,9 @@ const StandardWorkspaceHeader = ({
 						onClick={onAskDoubt}
 						aria-label="Ask a doubt in the course community"
 						title="Ask a doubt in the course community"
-						boxSize={{ base: '44px', xl: 'auto' }}
-						minW={{ base: '44px', xl: 'auto' }}
+						h={workspaceControlHeight}
+						minH={workspaceControlHeight}
+						minW={{ ...workspaceIconControlWidth, xl: 'auto' }}
 						px={{ base: 0, xl: 3 }}
 					>
 						<FiMessageCircle />
@@ -72,6 +78,10 @@ const StandardWorkspaceHeader = ({
 						aria-pressed={isContentExpanded}
 						title={isContentExpanded ? 'Return to the narrower reading width' : 'Use the full available content width'}
 						display={{ base: 'none', md: 'inline-flex' }}
+						h={workspaceControlHeight}
+						minH={workspaceControlHeight}
+						minW={{ md: '36px', xl: 'auto' }}
+						px={{ md: 0, xl: 3 }}
 					>
 						{isContentExpanded ? <FiMinimize2 /> : <FiMaximize2 />}
 						<Box as="span" display={{ base: 'none', xl: 'inline' }}>
@@ -80,13 +90,20 @@ const StandardWorkspaceHeader = ({
 					</Button>
 				</>
 			) : null}
-			<ThemeToggle />
+			<ThemeToggle
+				size="sm"
+				h={workspaceControlHeight}
+				minH={workspaceControlHeight}
+				minW={workspaceIconControlWidth}
+				px={0}
+			/>
 			<Button
 				asChild
 				borderRadius="full"
 				size="sm"
 				variant="outline"
-				boxSize={{ base: '44px', md: 'auto' }}
+				h={workspaceControlHeight}
+				minH={workspaceControlHeight}
 				minW={{ base: '44px', md: 'auto' }}
 				px={{ base: 0, md: 3 }}
 			>

@@ -20,32 +20,41 @@ type ShineButtonProps = Omit<ButtonProps, 'children'> & {
 /**
  * Shared high-emphasis CTA with a continuous, reduced-motion-safe light sweep.
  */
-const ShineButton = ({ children, ...props }: ShineButtonProps) => (
-	<Button
-		position="relative"
-		overflow="hidden"
-		isolation="isolate"
-		_before={{
-			content: '""',
-			position: 'absolute',
-			top: '-30%',
-			bottom: '-30%',
-			left: 0,
-			width: '28%',
-			background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent)',
-			animation: `${slideShine} 2.6s ease-in-out infinite`,
-			pointerEvents: 'none',
-			zIndex: 0
-		}}
-		_motionReduce={{
-			_before: { animation: 'none' }
-		}}
-		{...props}
-	>
+const ShineButton = ({ children, ...props }: ShineButtonProps) => {
+	const content = props.asChild ? (
+		children
+	) : (
 		<Box as="span" position="relative" zIndex={1} display="inline-flex" alignItems="center" gap={2}>
 			{children}
 		</Box>
-	</Button>
-);
+	);
+
+	return (
+		<Button
+			position="relative"
+			overflow="hidden"
+			isolation="isolate"
+			whiteSpace="nowrap"
+			_before={{
+				content: '""',
+				position: 'absolute',
+				top: '-30%',
+				bottom: '-30%',
+				left: 0,
+				width: '28%',
+				background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent)',
+				animation: `${slideShine} 2.6s ease-in-out infinite`,
+				pointerEvents: 'none',
+				zIndex: 0
+			}}
+			_motionReduce={{
+				_before: { animation: 'none' }
+			}}
+			{...props}
+		>
+			{content}
+		</Button>
+	);
+};
 
 export default ShineButton;

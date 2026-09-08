@@ -48,7 +48,7 @@ const NotesHomePage = async () => {
 			<Container maxW="6xl" py={{ base: 8, md: 12 }}>
 				<Stack gap={{ base: 10, md: 14 }}>
 					<NotesHero />
-					<Box as="section" aria-labelledby="notes-departments-heading">
+					<Box id="notes-departments" as="section" aria-labelledby="notes-departments-heading" scrollMarginTop="96px">
 						<Flex justify="space-between" align="flex-end" mb={5} gap={4}>
 							<Box>
 								<Text

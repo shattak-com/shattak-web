@@ -11,15 +11,23 @@ const ContributorBanner = () => (
 	<Box
 		as="section"
 		aria-labelledby="notes-contributor-heading"
-		bg="bg.inverse"
+		bg="gray.950"
 		color="text.onDark"
+		border="1px solid"
+		borderColor="whiteAlpha.200"
 		borderRadius={{ base: 'panel', md: 'card' }}
 		p={{ base: 6, md: 8 }}
 		position="relative"
 		overflow="hidden"
 		boxShadow="elevated"
+		_dark={{ bg: 'gray.950', borderColor: 'whiteAlpha.300' }}
 	>
-		<Box position="absolute" inset="0" bg="gradients.ctaCoolOrb" pointerEvents="none" opacity={0.7} />
+		<Box
+			position="absolute"
+			inset="0"
+			background="radial-gradient(circle at 88% 18%, rgba(124, 58, 237, 0.3), transparent 34%), radial-gradient(circle at 12% 100%, rgba(255, 107, 90, 0.18), transparent 38%)"
+			pointerEvents="none"
+		/>
 		<Flex position="relative" direction={{ base: 'column', lg: 'row' }} gap={7} justify="space-between">
 			<Stack gap={4} maxW="580px" align="flex-start">
 				<Text color="brand.300" fontSize="xs" fontWeight="bold" letterSpacing="wider" textTransform="uppercase">
@@ -62,7 +70,7 @@ const ContributorBanner = () => (
 
 			<SimpleGrid columns={{ base: 1, sm: 2, lg: 1 }} gap={3} minW={{ lg: '330px' }}>
 				<HStack bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" borderRadius="tile" p={4} gap={3}>
-					<Icon as={FiUploadCloud} color="brand.300" boxSize={5} />
+					<Icon as={FiUploadCloud} color="brand.200" boxSize={5} />
 					<Box>
 						<Text fontWeight="semibold" fontSize="sm">
 							Share your notes

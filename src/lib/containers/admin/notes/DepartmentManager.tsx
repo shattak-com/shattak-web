@@ -2,7 +2,7 @@
 
 /* eslint-disable no-nested-ternary, sonarjs/cognitive-complexity */
 
-import { Box, Button, HStack, SimpleGrid, Stack, Table, Text } from '@chakra-ui/react';
+import { Box, Button, HStack, Portal, SimpleGrid, Stack, Table, Text, Tooltip } from '@chakra-ui/react';
 import { useState } from 'react';
 import { FiArrowRight, FiEdit2, FiFolder, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 
@@ -25,6 +25,31 @@ type DepartmentManagerProps = {
 	onChanged: () => Promise<void>;
 	onOpen: (department: AdminNoteDepartment) => void;
 };
+
+type DepartmentNameProps = {
+	name: string;
+	lines?: number;
+};
+
+const DepartmentName = ({ name, lines = 1 }: DepartmentNameProps) => (
+	<Tooltip.Root openDelay={250} positioning={{ placement: 'top-start' }}>
+		<Tooltip.Trigger asChild>
+			<Text as="span" display="block" maxW="full" fontWeight="semibold" lineClamp={lines} cursor="help" tabIndex={0}>
+				{name}
+			</Text>
+		</Tooltip.Trigger>
+		<Portal>
+			<Tooltip.Positioner>
+				<Tooltip.Content maxW="420px" px={3} py={2} fontSize="sm" lineHeight="compact">
+					{name}
+					<Tooltip.Arrow>
+						<Tooltip.ArrowTip />
+					</Tooltip.Arrow>
+				</Tooltip.Content>
+			</Tooltip.Positioner>
+		</Portal>
+	</Tooltip.Root>
+);
 
 const getErrorMessage = (error: unknown) => {
 	if (error instanceof ApiRequestError && error.code === 'NOTE_DEPARTMENT_HAS_SUBJECTS') {
@@ -190,20 +215,24 @@ const DepartmentManager = ({ departments, isLoading, onChanged, onOpen }: Depart
 				) : visibleDepartments.length ? (
 					viewMode === 'table' ? (
 						<Box overflowX="auto" borderTop="1px solid" borderColor="border.default">
-							<Table.Root size="sm" minW="720px">
+							<Table.Root size="sm" minW="820px" tableLayout="fixed">
 								<Table.Header>
 									<Table.Row>
-										<Table.ColumnHeader>Department</Table.ColumnHeader>
-										<Table.ColumnHeader>URL slug</Table.ColumnHeader>
-										<Table.ColumnHeader textAlign="center">Subjects</Table.ColumnHeader>
-										<Table.ColumnHeader textAlign="right">Actions</Table.ColumnHeader>
+										<Table.ColumnHeader w="40%">Department</Table.ColumnHeader>
+										<Table.ColumnHeader w="31%">URL slug</Table.ColumnHeader>
+										<Table.ColumnHeader w="9%" textAlign="center">
+											Subjects
+										</Table.ColumnHeader>
+										<Table.ColumnHeader w="20%" textAlign="right">
+											Actions
+										</Table.ColumnHeader>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
 									{visibleDepartments.map(department => (
 										<Table.Row key={department.id}>
-											<Table.Cell>
-												<HStack gap={3}>
+											<Table.Cell minW={0}>
+												<HStack gap={3} minW={0}>
 													<Box
 														boxSize="36px"
 														borderRadius="lg"
@@ -215,10 +244,16 @@ const DepartmentManager = ({ departments, isLoading, onChanged, onOpen }: Depart
 													>
 														{department.icon || <FiFolder />}
 													</Box>
-													<Text fontWeight="semibold">{department.name}</Text>
+													<Box minW={0} flex="1">
+														<DepartmentName name={department.name} />
+													</Box>
 												</HStack>
 											</Table.Cell>
-											<Table.Cell color="text.muted">{department.slug}</Table.Cell>
+											<Table.Cell minW={0} color="text.muted">
+												<Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={department.slug}>
+													{department.slug}
+												</Text>
+											</Table.Cell>
 											<Table.Cell textAlign="center">{department.subjectCount}</Table.Cell>
 											<Table.Cell>{renderActions(department)}</Table.Cell>
 										</Table.Row>
@@ -251,9 +286,7 @@ const DepartmentManager = ({ departments, isLoading, onChanged, onOpen }: Depart
 												{department.icon || <FiFolder />}
 											</Box>
 											<Box minW={0}>
-												<Text fontWeight="semibold" lineClamp={2}>
-													{department.name}
-												</Text>
+												<DepartmentName name={department.name} lines={2} />
 												<Text color="text.muted" fontSize="xs">
 													{department.subjectCount} subjects
 												</Text>

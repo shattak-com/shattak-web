@@ -1,22 +1,13 @@
-export const getIndiaCalendarDate = (value = new Date()) => {
-	const parts = new Intl.DateTimeFormat('en-US', {
-		timeZone: 'Asia/Kolkata',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).formatToParts(value);
-	const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === type)?.value ?? '';
-	return `${part('year')}-${part('month')}-${part('day')}`;
-};
-
-export const formatCalendarDate = (dateKey: string) => {
-	const [year, month, day] = dateKey.split('-').map(Number);
-	if (!year || !month || !day) return dateKey;
+export const formatResourceTimestamp = (timestamp: string) => {
+	const value = new Date(timestamp);
+	if (Number.isNaN(value.getTime())) return timestamp;
 
 	return new Intl.DateTimeFormat('en-IN', {
-		timeZone: 'UTC',
+		timeZone: 'Asia/Kolkata',
 		day: 'numeric',
 		month: 'short',
-		year: 'numeric'
-	}).format(new Date(Date.UTC(year, month - 1, day)));
+		year: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit'
+	}).format(value);
 };

@@ -161,13 +161,13 @@ const AdminNotesPage = () => {
 	return (
 		<Stack gap={4}>
 			<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={{ base: 4, md: 5 }}>
-				<Stack gap={4}>
+				<HStack justify="space-between" align="flex-start" gap={4} flexWrap="wrap">
 					<Box>
 						<Text fontSize="lg" fontWeight="bold">
-							Notes content lifecycle
+							Notes workspace
 						</Text>
 						<Text mt={1} color="text.muted" fontSize="sm">
-							Manage the Department → Subject → Notes structure and Google Drive resources.
+							Manage departments, subjects, and linked resources from one place.
 						</Text>
 					</Box>
 					<HStack gap={2} flexWrap="wrap" role="navigation" aria-label="Notes admin sections">
@@ -184,7 +184,7 @@ const AdminNotesPage = () => {
 							</Button>
 						))}
 					</HStack>
-				</Stack>
+				</HStack>
 			</Box>
 
 			<NotesStatus message={loadError} tone="error" />

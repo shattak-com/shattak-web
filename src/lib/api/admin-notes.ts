@@ -69,15 +69,12 @@ export type AdminNoteInput = {
 	subjectId: string;
 	title: string;
 	slug?: string;
-	description?: string;
 	category: AdminNoteCategory;
 	resourceType: AdminNoteResourceType;
 	resourceUrl: string;
-	resourceDate: string;
 };
 
 export type AdminNoteBulkInput = {
-	departmentId: string;
 	subjectId: string;
 	notes: Array<Omit<AdminNoteInput, 'subjectId'>>;
 };

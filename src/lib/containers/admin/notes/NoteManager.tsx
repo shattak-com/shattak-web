@@ -1,10 +1,10 @@
 'use client';
 
-/* eslint-disable no-nested-ternary, sonarjs/no-nested-template-literals */
+/* eslint-disable complexity, no-nested-ternary, sonarjs/cognitive-complexity, sonarjs/no-nested-template-literals */
 
-import { Badge, Box, Button, HStack, Stack, Table, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, HStack, SimpleGrid, Stack, Table, Text } from '@chakra-ui/react';
 import { useMemo, useState } from 'react';
-import { FiCopy, FiEdit2, FiExternalLink, FiFileText, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
+import { FiCopy, FiEdit2, FiExternalLink, FiFileText, FiLayers, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 
 import {
 	createAdminNote,
@@ -24,7 +24,8 @@ import { ApiRequestError } from '~/lib/api/client';
 import BulkNotesForm from './BulkNotesForm';
 import { NotesField, NotesInput, NotesSelect, NotesStatus } from './NotesAdminControls';
 import NotesDeleteDialog from './NotesDeleteDialog';
-import { formatCalendarDate, getIndiaCalendarDate } from './utils';
+import NotesModal from './NotesModal';
+import { formatResourceTimestamp } from './utils';
 
 type NoteManagerProps = {
 	departments: AdminNoteDepartment[];
@@ -40,11 +41,9 @@ type NoteManagerProps = {
 const createBlankNote = (subjectId = ''): AdminNoteInput => ({
 	subjectId,
 	title: '',
-	description: '',
 	category: 'NOTES',
 	resourceType: 'PDF',
-	resourceUrl: '',
-	resourceDate: getIndiaCalendarDate()
+	resourceUrl: ''
 });
 
 const NoteManager = ({
@@ -58,6 +57,9 @@ const NoteManager = ({
 	onFiltersChange
 }: NoteManagerProps) => {
 	const [draftFilters, setDraftFilters] = useState<AdminNoteListParams>(filters);
+	const [isEditorOpen, setIsEditorOpen] = useState(false);
+	const [isBulkOpen, setIsBulkOpen] = useState(false);
+	const [isBulkSaving, setIsBulkSaving] = useState(false);
 	const [editing, setEditing] = useState<AdminNote | null>(null);
 	const [form, setForm] = useState<AdminNoteInput>(createBlankNote(filters.subjectId));
 	const [message, setMessage] = useState('');
@@ -74,6 +76,9 @@ const NoteManager = ({
 			),
 		[draftFilters.departmentId, subjects]
 	);
+	const hasActiveFilters = Boolean(
+		filters.q || filters.departmentId || filters.subjectId || filters.category || filters.resourceType
+	);
 
 	const updateForm = <K extends keyof AdminNoteInput>(field: K, value: AdminNoteInput[K]) => {
 		setForm(current => ({ ...current, [field]: value }));
@@ -84,26 +89,37 @@ const NoteManager = ({
 		setForm(createBlankNote(filters.subjectId));
 	};
 
+	const openCreate = () => {
+		resetForm();
+		setMessage('');
+		setIsEditorOpen(true);
+	};
+
+	const closeEditor = () => {
+		if (isSaving) return;
+		setIsEditorOpen(false);
+		resetForm();
+		setMessage('');
+	};
+
 	const startEdit = (note: AdminNote) => {
 		setEditing(note);
 		setForm({
 			subjectId: note.subjectId,
 			title: note.title,
 			slug: note.slug,
-			description: note.description,
 			category: note.category,
 			resourceType: note.resourceType,
-			resourceUrl: note.resourceUrl,
-			resourceDate: note.resourceDate
+			resourceUrl: note.resourceUrl
 		});
 		setMessage('');
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+		setIsEditorOpen(true);
 	};
 
 	const handleSave = async () => {
-		if (!form.subjectId || !form.title.trim() || !form.resourceUrl.trim() || !form.resourceDate) {
+		if (!form.subjectId || !form.title.trim() || !form.resourceUrl.trim()) {
 			setTone('error');
-			setMessage('Select a subject and enter the note title, Google Drive link, and resource date.');
+			setMessage('Select a subject and enter the note title and Google Drive link.');
 			return;
 		}
 
@@ -114,7 +130,6 @@ const NoteManager = ({
 				...form,
 				title: form.title.trim(),
 				slug: form.slug?.trim() || undefined,
-				description: form.description?.trim() || undefined,
 				resourceUrl: form.resourceUrl.trim()
 			};
 			if (editing) await updateAdminNote(editing.id, input);
@@ -122,6 +137,7 @@ const NoteManager = ({
 			await onChanged();
 			setTone('success');
 			setMessage(editing ? 'Note updated.' : 'Note created.');
+			setIsEditorOpen(false);
 			resetForm();
 		} catch (error) {
 			setTone('error');
@@ -196,114 +212,6 @@ const NoteManager = ({
 		<Stack gap={4}>
 			<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={{ base: 4, md: 5 }}>
 				<Stack gap={4}>
-					<Box>
-						<Text fontSize="lg" fontWeight="bold">
-							{editing ? 'Edit note' : 'Add note'}
-						</Text>
-						<Text mt={1} color="text.muted" fontSize="sm">
-							Link a Google Drive file or folder. No file is uploaded to Shattak.
-						</Text>
-					</Box>
-					<Box display="grid" gridTemplateColumns={{ base: '1fr', lg: 'minmax(0, 1.4fr) minmax(0, 2fr)' }} gap={4}>
-						<Stack gap={3}>
-							<NotesSelect label="Subject" value={form.subjectId} onChange={value => updateForm('subjectId', value)}>
-								<option value="">Select subject</option>
-								{subjects.map(subject => (
-									<option key={subject.id} value={subject.id}>
-										{subject.name}
-									</option>
-								))}
-							</NotesSelect>
-							<NotesField label="Note title">
-								<NotesInput
-									value={form.title}
-									onChange={event => updateForm('title', event.currentTarget.value)}
-									placeholder="Unit 01 — Introduction & Fundamentals"
-								/>
-							</NotesField>
-							<NotesField label="URL slug" helper="Leave blank to generate it from the title.">
-								<NotesInput
-									value={form.slug ?? ''}
-									onChange={event => updateForm('slug', event.currentTarget.value)}
-									placeholder="unit-01-introduction"
-								/>
-							</NotesField>
-						</Stack>
-						<Stack gap={3}>
-							<Box display="grid" gridTemplateColumns={{ base: '1fr', sm: '1fr 1fr 170px' }} gap={3}>
-								<NotesSelect
-									label="Category"
-									value={form.category}
-									onChange={value => updateForm('category', value as AdminNoteCategory)}
-								>
-									<option value="NOTES">Notes</option>
-									<option value="PYQ">PYQ</option>
-									<option value="LAB">Lab</option>
-								</NotesSelect>
-								<NotesSelect
-									label="Resource type"
-									value={form.resourceType}
-									onChange={value => updateForm('resourceType', value as AdminNoteResourceType)}
-								>
-									<option value="PDF">PDF</option>
-									<option value="PPT">PPT</option>
-									<option value="FOLDER">Folder</option>
-								</NotesSelect>
-								<NotesField label="Resource date">
-									<NotesInput
-										type="date"
-										value={form.resourceDate}
-										onChange={event => updateForm('resourceDate', event.currentTarget.value)}
-									/>
-								</NotesField>
-							</Box>
-							<NotesField label="Google Drive link">
-								<NotesInput
-									type="url"
-									value={form.resourceUrl}
-									onChange={event => updateForm('resourceUrl', event.currentTarget.value)}
-									placeholder="https://drive.google.com/..."
-								/>
-							</NotesField>
-							<NotesField label="Description">
-								<NotesInput
-									value={form.description ?? ''}
-									onChange={event => updateForm('description', event.currentTarget.value)}
-									placeholder="Optional short description"
-								/>
-							</NotesField>
-						</Stack>
-					</Box>
-					<HStack gap={2}>
-						<Button
-							borderRadius="full"
-							bg="primary"
-							color="text.inverse"
-							disabled={isSaving || !subjects.length}
-							onClick={() => handleSave().catch(() => undefined)}
-						>
-							<FiPlus /> {isSaving ? 'Saving...' : editing ? 'Save note' : 'Add note'}
-						</Button>
-						{editing ? (
-							<Button variant="outline" borderRadius="full" onClick={resetForm}>
-								<FiX /> Cancel
-							</Button>
-						) : null}
-					</HStack>
-					<NotesStatus message={message} tone={tone} />
-				</Stack>
-			</Box>
-
-			<BulkNotesForm
-				departments={departments}
-				subjects={subjects}
-				initialDepartmentId={filters.departmentId ?? ''}
-				initialSubjectId={filters.subjectId ?? ''}
-				onCreated={onChanged}
-			/>
-
-			<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={{ base: 4, md: 5 }}>
-				<Stack gap={4}>
 					<HStack justify="space-between" gap={3} flexWrap="wrap">
 						<Box>
 							<Text fontSize="lg" fontWeight="bold">
@@ -313,15 +221,40 @@ const NoteManager = ({
 								{pagination.total} linked resources · newest first
 							</Text>
 						</Box>
-						<Button variant="outline" borderRadius="full" onClick={() => copyFilteredLink().catch(() => undefined)}>
-							<FiCopy /> Copy Notes link
-						</Button>
+						<HStack gap={2} flexWrap="wrap">
+							<Button variant="outline" borderRadius="full" onClick={() => copyFilteredLink().catch(() => undefined)}>
+								<FiCopy /> Copy link
+							</Button>
+							<Button
+								variant="outline"
+								borderRadius="full"
+								disabled={!subjects.length}
+								onClick={() => setIsBulkOpen(true)}
+							>
+								<FiLayers /> Bulk upload
+							</Button>
+							<Button
+								borderRadius="full"
+								bg="primary"
+								color="text.inverse"
+								disabled={!subjects.length}
+								onClick={openCreate}
+							>
+								<FiPlus /> Add note
+							</Button>
+						</HStack>
 					</HStack>
+					<NotesStatus message={!isEditorOpen && !isBulkOpen ? message : ''} tone={tone} />
 					<Box
+						as="form"
 						display="grid"
 						gridTemplateColumns={{ base: '1fr', md: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(5, minmax(0, 1fr)) auto' }}
 						gap={3}
 						alignItems="end"
+						onSubmit={event => {
+							event.preventDefault();
+							applyFilters();
+						}}
 					>
 						<NotesField label="Search">
 							<Box position="relative">
@@ -332,7 +265,7 @@ const NoteManager = ({
 									value={draftFilters.q ?? ''}
 									onChange={event => setDraftFilters(current => ({ ...current, q: event.currentTarget.value }))}
 									pl={9}
-									placeholder="Title or description"
+									placeholder="Title or URL slug"
 								/>
 							</Box>
 						</NotesField>
@@ -381,10 +314,10 @@ const NoteManager = ({
 							<option value="FOLDER">Folder</option>
 						</NotesSelect>
 						<HStack gap={2}>
-							<Button borderRadius="full" bg="primary" color="text.inverse" onClick={applyFilters}>
+							<Button type="submit" borderRadius="full" bg="primary" color="text.inverse">
 								Filter
 							</Button>
-							<Button variant="outline" borderRadius="full" onClick={resetFilters}>
+							<Button type="button" variant="outline" borderRadius="full" onClick={resetFilters}>
 								Reset
 							</Button>
 						</HStack>
@@ -402,7 +335,7 @@ const NoteManager = ({
 										<Table.ColumnHeader minW="300px">Note</Table.ColumnHeader>
 										<Table.ColumnHeader>Subject</Table.ColumnHeader>
 										<Table.ColumnHeader>Type</Table.ColumnHeader>
-										<Table.ColumnHeader>Date</Table.ColumnHeader>
+										<Table.ColumnHeader>Added</Table.ColumnHeader>
 										<Table.ColumnHeader>Activity</Table.ColumnHeader>
 										<Table.ColumnHeader textAlign="right">Actions</Table.ColumnHeader>
 									</Table.Row>
@@ -446,7 +379,7 @@ const NoteManager = ({
 												</HStack>
 											</Table.Cell>
 											<Table.Cell>
-												<Text fontSize="sm">{formatCalendarDate(note.resourceDate)}</Text>
+												<Text fontSize="sm">{formatResourceTimestamp(note.resourceDate)}</Text>
 											</Table.Cell>
 											<Table.Cell>
 												<Text fontSize="xs">
@@ -479,9 +412,27 @@ const NoteManager = ({
 								</Table.Body>
 							</Table.Root>
 						) : (
-							<Text p={4} color="text.muted">
-								No notes match these filters.
-							</Text>
+							<Stack align="flex-start" gap={3} p={4}>
+								<Text color="text.muted">
+									{hasActiveFilters ? 'No notes match these filters.' : 'No notes have been added yet.'}
+								</Text>
+								<HStack gap={2} flexWrap="wrap">
+									{hasActiveFilters ? (
+										<Button size="sm" variant="outline" borderRadius="full" onClick={resetFilters}>
+											Reset filters
+										</Button>
+									) : null}
+									<Button
+										size="sm"
+										variant="outline"
+										borderRadius="full"
+										disabled={!subjects.length}
+										onClick={openCreate}
+									>
+										<FiPlus /> Add note
+									</Button>
+								</HStack>
+							</Stack>
 						)}
 					</Box>
 
@@ -510,6 +461,123 @@ const NoteManager = ({
 					</HStack>
 				</Stack>
 			</Box>
+
+			<NotesModal
+				open={isEditorOpen}
+				title={editing ? 'Edit note' : 'Add note'}
+				description="Link a Google Drive file or folder. The note date is assigned automatically when it is created."
+				onClose={closeEditor}
+				closeDisabled={isSaving}
+				size="lg"
+				footer={
+					<HStack justify="flex-end" gap={2} w="full">
+						<Button variant="outline" borderRadius="full" disabled={isSaving} onClick={closeEditor}>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							form="note-editor-form"
+							borderRadius="full"
+							bg="primary"
+							color="text.inverse"
+							disabled={isSaving || !subjects.length}
+						>
+							{isSaving ? 'Saving...' : editing ? 'Save changes' : 'Add note'}
+						</Button>
+					</HStack>
+				}
+			>
+				<Box
+					as="form"
+					id="note-editor-form"
+					onSubmit={event => {
+						event.preventDefault();
+						handleSave().catch(() => undefined);
+					}}
+				>
+					<Stack gap={4}>
+						<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+							<NotesSelect label="Subject" value={form.subjectId} onChange={value => updateForm('subjectId', value)}>
+								<option value="">Select subject</option>
+								{subjects.map(subject => (
+									<option key={subject.id} value={subject.id}>
+										{subject.name}
+									</option>
+								))}
+							</NotesSelect>
+							<NotesField label="Note title">
+								<NotesInput
+									autoFocus
+									value={form.title}
+									onChange={event => updateForm('title', event.currentTarget.value)}
+									placeholder="Unit 01 — Introduction & Fundamentals"
+								/>
+							</NotesField>
+						</SimpleGrid>
+						<SimpleGrid columns={{ base: 1, sm: 3 }} gap={4}>
+							<NotesField label="URL slug" helper="Leave blank to generate it from the title.">
+								<NotesInput
+									value={form.slug ?? ''}
+									onChange={event => updateForm('slug', event.currentTarget.value)}
+									placeholder="unit-01-introduction"
+								/>
+							</NotesField>
+							<NotesSelect
+								label="Category"
+								value={form.category}
+								onChange={value => updateForm('category', value as AdminNoteCategory)}
+							>
+								<option value="NOTES">Notes</option>
+								<option value="PYQ">PYQ</option>
+								<option value="LAB">Lab</option>
+							</NotesSelect>
+							<NotesSelect
+								label="Resource type"
+								value={form.resourceType}
+								onChange={value => updateForm('resourceType', value as AdminNoteResourceType)}
+							>
+								<option value="PDF">PDF</option>
+								<option value="PPT">PPT</option>
+								<option value="FOLDER">Folder</option>
+							</NotesSelect>
+						</SimpleGrid>
+						<NotesField label="Google Drive link" helper="Use an HTTPS drive.google.com or docs.google.com link.">
+							<NotesInput
+								type="url"
+								value={form.resourceUrl}
+								onChange={event => updateForm('resourceUrl', event.currentTarget.value)}
+								placeholder="https://drive.google.com/..."
+							/>
+						</NotesField>
+						<NotesStatus message={message} tone={tone} />
+					</Stack>
+				</Box>
+			</NotesModal>
+
+			<NotesModal
+				open={isBulkOpen}
+				title="Bulk upload notes"
+				description="Create up to 50 linked resources for one subject. Department visibility is inherited from the subject."
+				onClose={() => {
+					if (!isBulkSaving) setIsBulkOpen(false);
+				}}
+				closeDisabled={isBulkSaving}
+				size="xl"
+			>
+				<BulkNotesForm
+					subjects={subjects}
+					initialSubjectId={filters.subjectId ?? ''}
+					onSavingChange={setIsBulkSaving}
+					onCancel={() => setIsBulkOpen(false)}
+					onCreated={async () => {
+						await onChanged();
+						setIsBulkOpen(false);
+						setTone('success');
+						setMessage('Notes created successfully.');
+					}}
+				/>
+			</NotesModal>
+
 			<NotesDeleteDialog
 				open={Boolean(pendingDelete)}
 				title="Delete note?"

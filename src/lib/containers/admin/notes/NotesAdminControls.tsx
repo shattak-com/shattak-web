@@ -19,12 +19,46 @@ export const NotesField = ({ label, helper, children }: { label: string; helper?
 
 export const NotesInput = (props: InputProps) => <Input h="40px" bg="bg.card" {...props} />;
 
-export const NotesSelect = ({
-	label,
+export const NotesSelectControl = ({
 	value,
 	onChange,
 	children,
-	disabled = false
+	disabled = false,
+	ariaLabel
+}: {
+	value: string;
+	onChange: (value: string) => void;
+	children: ReactNode;
+	disabled?: boolean;
+	ariaLabel?: string;
+}) => (
+	<Box
+		asChild
+		h="40px"
+		w="full"
+		border="1px solid"
+		borderColor="border.muted"
+		borderRadius="md"
+		bg="bg.card"
+		color="text.primary"
+		px={3}
+		fontSize="sm"
+		_disabled={{ opacity: 0.55, cursor: 'not-allowed' }}
+	>
+		<select
+			value={value}
+			disabled={disabled}
+			aria-label={ariaLabel}
+			onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value)}
+		>
+			{children}
+		</select>
+	</Box>
+);
+
+export const NotesSelect = ({
+	label,
+	...props
 }: {
 	label: string;
 	value: string;
@@ -33,27 +67,7 @@ export const NotesSelect = ({
 	disabled?: boolean;
 }) => (
 	<NotesField label={label}>
-		<Box
-			asChild
-			h="40px"
-			w="full"
-			border="1px solid"
-			borderColor="border.muted"
-			borderRadius="md"
-			bg="bg.card"
-			color="text.primary"
-			px={3}
-			fontSize="sm"
-			_disabled={{ opacity: 0.55, cursor: 'not-allowed' }}
-		>
-			<select
-				value={value}
-				disabled={disabled}
-				onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value)}
-			>
-				{children}
-			</select>
-		</Box>
+		<NotesSelectControl {...props} ariaLabel={label} />
 	</NotesField>
 );
 

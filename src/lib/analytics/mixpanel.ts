@@ -47,7 +47,13 @@ const SECTION_NAME_BY_LOCATION: Record<string, string> = {
 	profile_account: 'Profile',
 	profile_learning: 'Learning Profile',
 	profile_enrolled_courses: 'Enrolled Courses',
-	admin_enrollments: 'Admin Enrollments'
+	admin_enrollments: 'Admin Enrollments',
+	notes_departments: 'Departments',
+	notes_subjects: 'Subjects',
+	notes_resources: 'Resources',
+	notes_contributor: 'Contributor Banner',
+	notes_whatsapp: 'WhatsApp Banner',
+	notes_suggested_courses: 'Suggested Courses'
 };
 
 const FIRST_TOUCH_ATTRIBUTION_KEY = 'shattak-first-touch-attribution';
@@ -510,6 +516,27 @@ export const trackCtaClicked = (payload: { label: string; location: string; dest
 			cta_context: payload.context
 		}
 	);
+
+export const trackNotesEvent = (payload: {
+	eventName: string;
+	location: string;
+	noteId?: string;
+	subjectId?: string;
+	departmentId?: string;
+	category?: string;
+	resourceType?: string;
+	action?: string;
+	errorType?: string;
+}) =>
+	trackMixpanelEvent(buildEventName({ location: payload.location, eventName: payload.eventName }), {
+		note_id: payload.noteId,
+		subject_id: payload.subjectId,
+		department_id: payload.departmentId,
+		note_category: payload.category,
+		resource_type: payload.resourceType,
+		action: payload.action,
+		error_type: payload.errorType
+	});
 
 export const trackInstructorCtaClicked = (payload: { location: string; destination?: string; context?: string }) =>
 	trackMixpanelEvent(

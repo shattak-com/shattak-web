@@ -95,6 +95,23 @@ const Header = () => {
 			</Text>
 		</Link>
 	);
+	const notesLink = (context: 'desktop' | 'mobile') => (
+		<Link
+			href="/notes"
+			onClick={() =>
+				trackCtaClicked({
+					label: 'Notes',
+					location: context === 'desktop' ? 'header_primary' : 'mobile_header',
+					destination: '/notes',
+					context
+				})
+			}
+		>
+			<Text fontSize="sm" fontWeight="medium" color="text.secondary" whiteSpace="nowrap">
+				Notes
+			</Text>
+		</Link>
+	);
 	const loginButton = (location: 'header_nav' | 'mobile_header') => (
 		<Button
 			asChild
@@ -190,13 +207,17 @@ const Header = () => {
 						</Text>
 					</Link>
 					<HStack display={{ base: 'flex', md: 'none' }} gap={3}>
-						<Box display={{ base: 'none', sm: 'block' }}>{roadmapLink('mobile')}</Box>
+						<HStack display={{ base: 'none', sm: 'flex' }} gap={3}>
+							{notesLink('mobile')}
+							{roadmapLink('mobile')}
+						</HStack>
 						<Flex w="88px" justify="flex-end" align="center" flexShrink={0}>
 							{mobileAuthAction}
 						</Flex>
 						<ThemeToggle />
 					</HStack>
 					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
+						{notesLink('desktop')}
 						{roadmapLink('desktop')}
 						<Flex w="100px" justify="flex-end" align="center" flexShrink={0}>
 							{desktopAuthAction}

@@ -2,8 +2,8 @@
 
 /* eslint-disable no-nested-ternary, sonarjs/cognitive-complexity */
 
-import { Box, Button, HStack, Portal, SimpleGrid, Stack, Table, Text, Tooltip } from '@chakra-ui/react';
-import { useState } from 'react';
+import { Box, type BoxProps, Button, HStack, Portal, SimpleGrid, Stack, Table, Text, Tooltip } from '@chakra-ui/react';
+import { type ComponentType, type ReactNode, useState } from 'react';
 import { FiArrowRight, FiEdit2, FiFolder, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 
 import {
@@ -31,22 +31,39 @@ type DepartmentNameProps = {
 	lines?: number;
 };
 
+type TooltipSlotProps = { children: ReactNode };
+
+// Chakra's tooltip slots support these props at runtime, but their current React 19 declarations omit them.
+const TooltipTrigger = Tooltip.Trigger as unknown as ComponentType<TooltipSlotProps & { asChild?: boolean }>;
+const TooltipPositioner = Tooltip.Positioner as unknown as ComponentType<TooltipSlotProps>;
+const TooltipContent = Tooltip.Content as unknown as ComponentType<TooltipSlotProps & BoxProps>;
+const TooltipArrow = Tooltip.Arrow as unknown as ComponentType<TooltipSlotProps>;
+
 const DepartmentName = ({ name, lines = 1 }: DepartmentNameProps) => (
-	<Tooltip.Root openDelay={250} positioning={{ placement: 'top-start' }}>
-		<Tooltip.Trigger asChild>
-			<Text as="span" display="block" maxW="full" fontWeight="semibold" lineClamp={lines} cursor="help" tabIndex={0}>
+	<Tooltip.Root openDelay={250} closeDelay={100} positioning={{ placement: 'top-start' }}>
+		<TooltipTrigger asChild>
+			<Text
+				as="span"
+				display="block"
+				maxW="full"
+				fontWeight="semibold"
+				lineClamp={lines}
+				cursor="help"
+				tabIndex={0}
+				aria-label={name}
+			>
 				{name}
 			</Text>
-		</Tooltip.Trigger>
+		</TooltipTrigger>
 		<Portal>
-			<Tooltip.Positioner>
-				<Tooltip.Content maxW="420px" px={3} py={2} fontSize="sm" lineHeight="compact">
+			<TooltipPositioner>
+				<TooltipContent maxW="420px" px={3} py={2} fontSize="sm" lineHeight="compact">
 					{name}
-					<Tooltip.Arrow>
+					<TooltipArrow>
 						<Tooltip.ArrowTip />
-					</Tooltip.Arrow>
-				</Tooltip.Content>
-			</Tooltip.Positioner>
+					</TooltipArrow>
+				</TooltipContent>
+			</TooltipPositioner>
 		</Portal>
 	</Tooltip.Root>
 );

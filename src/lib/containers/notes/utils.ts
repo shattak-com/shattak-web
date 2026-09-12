@@ -28,6 +28,17 @@ export const createNoteViewerUrl = (sourceUrl: string, resourceType: NoteResourc
 	try {
 		const url = new URL(sourceUrl);
 		const { pathname } = url;
+		const hostname = url.hostname.replace(/^www\./, '');
+
+		if (resourceType === 'FOLDER') {
+			if (hostname !== 'drive.google.com') return '';
+
+			const [, pathFolderId] = pathname.match(/\/folders\/([A-Za-z0-9_-]+)/) ?? [];
+			const queryFolderId = url.searchParams.get('id');
+			const folderId = pathFolderId || queryFolderId;
+
+			return folderId ? `https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(folderId)}#list` : '';
+		}
 
 		if (resourceType === 'PPT' || pathname.includes('/presentation/d/')) {
 			const [, presentationId] = pathname.match(/\/presentation\/d\/([^/]+)/) ?? [];

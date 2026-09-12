@@ -78,23 +78,6 @@ const Header = () => {
 	}, []);
 
 	const firstName = useMemo(() => (currentUser ? getFirstName(currentUser) : ''), [currentUser]);
-	const roadmapLink = (context: 'desktop' | 'mobile') => (
-		<Link
-			href="/roadmap"
-			onClick={() =>
-				trackCtaClicked({
-					label: 'Roadmap',
-					location: context === 'desktop' ? 'header_primary' : 'mobile_header',
-					destination: '/roadmap',
-					context
-				})
-			}
-		>
-			<Text fontSize="sm" fontWeight="medium" color="text.secondary" whiteSpace="nowrap">
-				Roadmap
-			</Text>
-		</Link>
-	);
 	const notesLink = (context: 'desktop' | 'mobile') => (
 		<Link
 			href="/notes"
@@ -209,7 +192,6 @@ const Header = () => {
 					<HStack display={{ base: 'flex', md: 'none' }} gap={3}>
 						<HStack display={{ base: 'none', sm: 'flex' }} gap={3}>
 							{notesLink('mobile')}
-							{roadmapLink('mobile')}
 						</HStack>
 						<Flex w="88px" justify="flex-end" align="center" flexShrink={0}>
 							{mobileAuthAction}
@@ -218,7 +200,6 @@ const Header = () => {
 					</HStack>
 					<HStack gap={6} display={{ base: 'none', md: 'flex' }}>
 						{notesLink('desktop')}
-						{roadmapLink('desktop')}
 						<Flex w="100px" justify="flex-end" align="center" flexShrink={0}>
 							{desktopAuthAction}
 						</Flex>

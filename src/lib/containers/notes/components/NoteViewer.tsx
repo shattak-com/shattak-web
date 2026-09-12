@@ -3,10 +3,11 @@
 import { AspectRatio, Box, Button, Flex, Heading, Icon, Spinner, Stack, Text } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { FiDownload, FiExternalLink, FiFolder, FiLock } from 'react-icons/fi';
+import { FiDownload, FiLock } from 'react-icons/fi';
 
 import { trackNotesEvent } from '~/lib/analytics/mixpanel';
 import { accessNote, type PublicNote } from '~/lib/api/notes';
+import FolderResourceViewer from '~/lib/containers/notes/components/FolderResourceViewer';
 import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
 import useNotesAuth from '~/lib/containers/notes/hooks/useNotesAuth';
 import { createNoteViewerUrl } from '~/lib/containers/notes/utils';
@@ -138,33 +139,20 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 
 	if (note.resourceType === 'FOLDER') {
 		return (
-			<Flex
-				minH={{ base: '300px', md: '420px' }}
-				bg="bg.card"
-				border="1px solid"
-				borderColor="border.default"
-				borderRadius="panel"
-				align="center"
-				justify="center"
-				p={6}
-			>
-				<Stack align="center" textAlign="center" gap={4} maxW="480px">
-					<Flex boxSize={16} borderRadius="panel" bg="bg.accent" color="text.accent" align="center" justify="center">
-						<Icon as={FiFolder} boxSize={7} />
-					</Flex>
-					<Stack gap={1}>
-						<Heading size="lg">Open this resource folder</Heading>
-						<Text color="text.muted">
-							This note is a Google Drive folder containing one or more learning resources.
-						</Text>
-					</Stack>
-					<Button asChild bg="primary" color="text.inverse" borderRadius="full">
-						<a href={resourceUrl} target="_blank" rel="noopener noreferrer">
-							<FiExternalLink /> Open Drive folder
-						</a>
-					</Button>
-				</Stack>
-			</Flex>
+			<FolderResourceViewer
+				resourceUrl={resourceUrl}
+				title={note.title}
+				onOpenExternally={() =>
+					trackNotesEvent({
+						eventName: 'Folder Opened Externally',
+						location: 'notes_resources',
+						noteId: note.id,
+						category: note.category,
+						resourceType: note.resourceType,
+						action: 'VIEW'
+					})
+				}
+			/>
 		);
 	}
 

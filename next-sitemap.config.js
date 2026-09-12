@@ -103,7 +103,7 @@ const getNotesSitemapPaths = async () => {
 const NextSitemapConfig = {
 	siteUrl: SITE_URL,
 	generateRobotsTxt: true,
-	exclude: ['/booking', '/booking/*', '/manifest.webmanifest', '/roadmap', '/[contentSlug]'],
+	exclude: ['/booking', '/booking/*', '/manifest.webmanifest', '/[contentSlug]'],
 	transform: async (config, path) => ({
 		loc: path,
 		changefreq: path === '/' ? 'daily' : 'weekly',

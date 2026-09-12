@@ -483,17 +483,17 @@ const Hero = () => {
 								fontWeight="semibold"
 							>
 								<Link
-									href="/roadmap"
+									href="/notes"
 									onClick={() =>
 										trackCtaClicked({
-											label: 'View Roadmap',
+											label: 'View Notes',
 											location: 'home_hero',
-											destination: '/roadmap',
-											context: 'roadmap'
+											destination: '/notes',
+											context: 'notes'
 										})
 									}
 								>
-									View Roadmap
+									View Notes
 								</Link>
 							</Button>
 						</HStack>

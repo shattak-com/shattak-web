@@ -1,14 +1,60 @@
 'use client';
 
 import { Box, Button, HStack, Portal, Stack, Text } from '@chakra-ui/react';
-import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { FiX } from 'react-icons/fi';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { FiMaximize2, FiMinimize2, FiX } from 'react-icons/fi';
 
 const modalWidths = {
 	md: '640px',
 	lg: '820px',
 	xl: '1320px'
 } as const;
+
+const NotesModalHeaderActions = ({
+	allowFullScreen,
+	isFullScreen,
+	closeDisabled,
+	onFullScreenChange,
+	onClose
+}: {
+	allowFullScreen: boolean;
+	isFullScreen: boolean;
+	closeDisabled: boolean;
+	onFullScreenChange: () => void;
+	onClose: () => void;
+}) => (
+	<HStack gap={1} flexShrink={0}>
+		{allowFullScreen ? (
+			<Button
+				type="button"
+				size="sm"
+				variant="ghost"
+				borderRadius="full"
+				aria-label={isFullScreen ? 'Exit full screen' : 'Open full screen'}
+				title={isFullScreen ? 'Exit full screen' : 'Full screen'}
+				aria-pressed={isFullScreen}
+				onClick={onFullScreenChange}
+			>
+				{isFullScreen ? <FiMinimize2 /> : <FiMaximize2 />}
+				<Text as="span" display={{ base: 'none', sm: 'inline' }}>
+					{isFullScreen ? 'Exit full screen' : 'Full screen'}
+				</Text>
+			</Button>
+		) : null}
+		<Button
+			aria-label="Close dialog"
+			title="Close"
+			size="sm"
+			variant="ghost"
+			borderRadius="full"
+			flexShrink={0}
+			disabled={closeDisabled}
+			onClick={onClose}
+		>
+			<FiX />
+		</Button>
+	</HStack>
+);
 
 const NotesModal = ({
 	open,
@@ -18,7 +64,8 @@ const NotesModal = ({
 	footer,
 	onClose,
 	size = 'lg',
-	closeDisabled = false
+	closeDisabled = false,
+	allowFullScreen = false
 }: {
 	open: boolean;
 	title: string;
@@ -28,7 +75,9 @@ const NotesModal = ({
 	onClose: () => void;
 	size?: keyof typeof modalWidths;
 	closeDisabled?: boolean;
+	allowFullScreen?: boolean;
 }) => {
+	const [isFullScreen, setIsFullScreen] = useState(false);
 	const titleId = useId();
 	const descriptionId = useId();
 	const dialogRef = useRef<HTMLDivElement>(null);
@@ -98,7 +147,7 @@ const NotesModal = ({
 				zIndex={1700}
 				display="grid"
 				placeItems="center"
-				p={{ base: 3, md: 6 }}
+				p={isFullScreen ? 0 : { base: 3, md: 6 }}
 				pointerEvents="none"
 			>
 				<Box
@@ -109,12 +158,13 @@ const NotesModal = ({
 					aria-labelledby={titleId}
 					aria-describedby={description ? descriptionId : undefined}
 					w="full"
-					maxW={modalWidths[size]}
-					maxH={{ base: 'calc(100dvh - 24px)', md: 'calc(100dvh - 48px)' }}
+					maxW={isFullScreen ? '100vw' : modalWidths[size]}
+					h={isFullScreen ? '100dvh' : undefined}
+					maxH={isFullScreen ? '100dvh' : { base: 'calc(100dvh - 24px)', md: 'calc(100dvh - 48px)' }}
 					bg="bg.card"
 					border="1px solid"
 					borderColor="border.default"
-					borderRadius="xl"
+					borderRadius={isFullScreen ? 0 : 'xl'}
 					boxShadow="2xl"
 					overflow="hidden"
 					pointerEvents="auto"
@@ -139,18 +189,13 @@ const NotesModal = ({
 									</Text>
 								) : null}
 							</Box>
-							<Button
-								aria-label="Close dialog"
-								title="Close"
-								size="sm"
-								variant="ghost"
-								borderRadius="full"
-								flexShrink={0}
-								disabled={closeDisabled}
-								onClick={onClose}
-							>
-								<FiX />
-							</Button>
+							<NotesModalHeaderActions
+								allowFullScreen={allowFullScreen}
+								isFullScreen={isFullScreen}
+								closeDisabled={closeDisabled}
+								onFullScreenChange={() => setIsFullScreen(current => !current)}
+								onClose={onClose}
+							/>
 						</HStack>
 						{children ? (
 							<Box flex="1" minH={0} px={{ base: 4, md: 5 }} py={5} overflowY="auto">

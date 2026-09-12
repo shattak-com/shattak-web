@@ -20,6 +20,7 @@ import {
 	type AdminNoteSubject
 } from '~/lib/api/admin-notes';
 import { ApiRequestError } from '~/lib/api/client';
+import SearchableSingleSelect from '~/lib/components/forms/SearchableSingleSelect';
 
 import BulkNotesForm from './BulkNotesForm';
 import { NotesField, NotesInput, NotesSelect, NotesStatus } from './NotesAdminControls';
@@ -208,6 +209,13 @@ const NoteManager = ({
 		}
 	};
 
+	const getNotePreviewPath = (note: AdminNote) => {
+		const department = note.departments.find(item => item.id === filters.departmentId) ?? note.departments[0];
+		return department
+			? `/notes/${encodeURIComponent(department.slug)}/${encodeURIComponent(note.subject.slug)}/${encodeURIComponent(note.slug)}`
+			: '';
+	};
+
 	return (
 		<Stack gap={4}>
 			<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" p={{ base: 4, md: 5 }}>
@@ -263,7 +271,10 @@ const NoteManager = ({
 								</Box>
 								<NotesInput
 									value={draftFilters.q ?? ''}
-									onChange={event => setDraftFilters(current => ({ ...current, q: event.currentTarget.value }))}
+									onChange={event => {
+										const q = event.currentTarget.value;
+										setDraftFilters(current => ({ ...current, q }));
+									}}
 									pl={9}
 									placeholder="Title or URL slug"
 								/>
@@ -388,6 +399,17 @@ const NoteManager = ({
 											</Table.Cell>
 											<Table.Cell textAlign="right">
 												<HStack justify="flex-end" gap={1}>
+													<Button
+														asChild
+														size="xs"
+														variant="outline"
+														borderRadius="full"
+														disabled={!getNotePreviewPath(note)}
+													>
+														<a href={getNotePreviewPath(note)} target="_blank" rel="noopener noreferrer">
+															<FiExternalLink /> View
+														</a>
+													</Button>
 													<Button asChild size="xs" variant="outline" borderRadius="full">
 														<a href={note.resourceUrl} target="_blank" rel="noopener noreferrer">
 															<FiExternalLink /> Open
@@ -497,14 +519,14 @@ const NoteManager = ({
 				>
 					<Stack gap={4}>
 						<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-							<NotesSelect label="Subject" value={form.subjectId} onChange={value => updateForm('subjectId', value)}>
-								<option value="">Select subject</option>
-								{subjects.map(subject => (
-									<option key={subject.id} value={subject.id}>
-										{subject.name}
-									</option>
-								))}
-							</NotesSelect>
+							<SearchableSingleSelect
+								label="Subject"
+								value={form.subjectId}
+								onChange={value => updateForm('subjectId', value)}
+								options={subjects.map(subject => ({ value: subject.id, label: subject.name }))}
+								placeholder="Select subject"
+								searchPlaceholder="Search subjects"
+							/>
 							<NotesField label="Note title">
 								<NotesInput
 									autoFocus
@@ -563,6 +585,7 @@ const NoteManager = ({
 				}}
 				closeDisabled={isBulkSaving}
 				size="xl"
+				allowFullScreen
 			>
 				<BulkNotesForm
 					subjects={subjects}

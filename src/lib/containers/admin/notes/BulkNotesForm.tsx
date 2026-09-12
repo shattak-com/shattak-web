@@ -12,15 +12,19 @@ import {
 	type AdminNoteSubject
 } from '~/lib/api/admin-notes';
 import { ApiRequestError } from '~/lib/api/client';
+import SearchableSingleSelect from '~/lib/components/forms/SearchableSingleSelect';
 
-import { NotesField, NotesInput, NotesSelect, NotesSelectControl, NotesStatus } from './NotesAdminControls';
+import { NotesField, NotesInput, NotesSelectControl, NotesStatus } from './NotesAdminControls';
 
 type BulkNoteRow = AdminNoteBulkInput['notes'][number];
 
-const createBlankRow = (): BulkNoteRow => ({
+const createBlankRow = (
+	category: AdminNoteCategory = 'NOTES',
+	resourceType: AdminNoteResourceType = 'PDF'
+): BulkNoteRow => ({
 	title: '',
-	category: 'NOTES',
-	resourceType: 'PDF',
+	category,
+	resourceType,
 	resourceUrl: ''
 });
 
@@ -47,7 +51,13 @@ const BulkNotesForm = ({
 	const generateRows = () => {
 		const nextCount = Math.min(50, Math.max(1, count || 1));
 		setCount(nextCount);
-		setRows(current => Array.from({ length: nextCount }, (_, index) => current[index] ?? createBlankRow()));
+		setRows(current => {
+			const template = current[0] ?? createBlankRow();
+			return Array.from(
+				{ length: nextCount },
+				(_, index) => current[index] ?? createBlankRow(template.category, template.resourceType)
+			);
+		});
 		setMessage('');
 	};
 
@@ -86,21 +96,21 @@ const BulkNotesForm = ({
 	};
 
 	return (
-		<Stack gap={5}>
+		<Stack gap={5} h="full" minH={0}>
 			<Box
 				display="grid"
 				gridTemplateColumns={{ base: '1fr', md: 'minmax(0, 1fr) 140px auto' }}
 				gap={3}
 				alignItems="end"
 			>
-				<NotesSelect label="Subject" value={subjectId} onChange={setSubjectId}>
-					<option value="">Select subject</option>
-					{subjects.map(subject => (
-						<option key={subject.id} value={subject.id}>
-							{subject.name}
-						</option>
-					))}
-				</NotesSelect>
+				<SearchableSingleSelect
+					label="Subject"
+					value={subjectId}
+					onChange={setSubjectId}
+					options={subjects.map(subject => ({ value: subject.id, label: subject.name }))}
+					placeholder="Select subject"
+					searchPlaceholder="Search subjects"
+				/>
 				<NotesField label="Number of notes">
 					<NotesInput
 						type="number"
@@ -122,14 +132,16 @@ const BulkNotesForm = ({
 			</Box>
 
 			<Text color="text.muted" fontSize="sm">
-				{rows.length} input {rows.length === 1 ? 'row' : 'rows'} ready. Dates are assigned automatically when the notes
-				are created.
+				{rows.length} input {rows.length === 1 ? 'row' : 'rows'} ready. New rows inherit category and resource type from
+				row 1. Dates are assigned automatically when the notes are created.
 			</Text>
 
 			<Box
 				border="1px solid"
 				borderColor="border.default"
 				borderRadius="lg"
+				flex="1"
+				minH="220px"
 				overflowX="auto"
 				maxH={{ base: 'min(48dvh, 440px)', md: 'min(54dvh, 520px)' }}
 				overflowY="auto"

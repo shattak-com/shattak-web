@@ -4,7 +4,7 @@
 
 import { Box, type BoxProps, Button, HStack, Portal, SimpleGrid, Stack, Table, Text, Tooltip } from '@chakra-ui/react';
 import { type ComponentType, type ReactNode, useState } from 'react';
-import { FiArrowRight, FiEdit2, FiFolder, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
+import { FiArrowRight, FiEdit2, FiExternalLink, FiFolder, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 
 import {
 	createAdminNoteDepartment,
@@ -169,6 +169,11 @@ const DepartmentManager = ({ departments, isLoading, onChanged, onOpen }: Depart
 
 	const renderActions = (department: AdminNoteDepartment) => (
 		<HStack gap={1} justify="flex-end" flexWrap="wrap">
+			<Button asChild size="xs" variant="outline" borderRadius="full">
+				<a href={`/notes/${encodeURIComponent(department.slug)}`} target="_blank" rel="noopener noreferrer">
+					<FiExternalLink /> View
+				</a>
+			</Button>
 			<Button size="xs" borderRadius="full" bg="text.primary" color="text.inverse" onClick={() => onOpen(department)}>
 				Open <FiArrowRight />
 			</Button>

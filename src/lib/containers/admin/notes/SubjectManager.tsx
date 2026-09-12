@@ -4,7 +4,7 @@
 
 import { Box, Button, HStack, SimpleGrid, Stack, Table, Text } from '@chakra-ui/react';
 import { useCallback, useMemo, useState } from 'react';
-import { FiArrowRight, FiBookOpen, FiEdit2, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
+import { FiArrowRight, FiBookOpen, FiEdit2, FiExternalLink, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 
 import {
 	createAdminNoteSubject,
@@ -158,33 +158,45 @@ const SubjectManager = ({
 		if (!editing) setDepartmentIds(value ? [value] : []);
 	};
 
-	const renderActions = (subject: AdminNoteSubject) => (
-		<HStack gap={1} justify="flex-end" flexWrap="wrap">
-			<Button
-				size="xs"
-				borderRadius="full"
-				bg="text.primary"
-				color="text.inverse"
-				onClick={() => onOpen(subject, departmentFilter || subject.departments[0]?.id || '')}
-			>
-				Open <FiArrowRight />
-			</Button>
-			<Button size="xs" variant="outline" borderRadius="full" onClick={() => startEdit(subject)}>
-				<FiEdit2 /> Edit
-			</Button>
-			<Button
-				size="xs"
-				variant="outline"
-				borderRadius="full"
-				colorPalette="red"
-				disabled={subject.noteCount > 0}
-				title={subject.noteCount > 0 ? 'Remove notes before deleting' : 'Delete subject'}
-				onClick={() => setPendingDelete(subject)}
-			>
-				<FiTrash2 /> Delete
-			</Button>
-		</HStack>
-	);
+	const renderActions = (subject: AdminNoteSubject) => {
+		const department = subject.departments.find(item => item.id === departmentFilter) ?? subject.departments[0];
+		const previewPath = department
+			? `/notes/${encodeURIComponent(department.slug)}/${encodeURIComponent(subject.slug)}`
+			: '';
+
+		return (
+			<HStack gap={1} justify="flex-end" flexWrap="wrap">
+				<Button asChild size="xs" variant="outline" borderRadius="full" disabled={!previewPath}>
+					<a href={previewPath} target="_blank" rel="noopener noreferrer">
+						<FiExternalLink /> View
+					</a>
+				</Button>
+				<Button
+					size="xs"
+					borderRadius="full"
+					bg="text.primary"
+					color="text.inverse"
+					onClick={() => onOpen(subject, departmentFilter || subject.departments[0]?.id || '')}
+				>
+					Open <FiArrowRight />
+				</Button>
+				<Button size="xs" variant="outline" borderRadius="full" onClick={() => startEdit(subject)}>
+					<FiEdit2 /> Edit
+				</Button>
+				<Button
+					size="xs"
+					variant="outline"
+					borderRadius="full"
+					colorPalette="red"
+					disabled={subject.noteCount > 0}
+					title={subject.noteCount > 0 ? 'Remove notes before deleting' : 'Delete subject'}
+					onClick={() => setPendingDelete(subject)}
+				>
+					<FiTrash2 /> Delete
+				</Button>
+			</HStack>
+		);
+	};
 
 	return (
 		<Stack gap={4}>

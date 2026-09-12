@@ -24,20 +24,22 @@ export const NotesSelectControl = ({
 	onChange,
 	children,
 	disabled = false,
-	ariaLabel
+	ariaLabel,
+	invalid = false
 }: {
 	value: string;
 	onChange: (value: string) => void;
 	children: ReactNode;
 	disabled?: boolean;
 	ariaLabel?: string;
+	invalid?: boolean;
 }) => (
 	<Box
 		asChild
 		h="40px"
 		w="full"
 		border="1px solid"
-		borderColor="border.muted"
+		borderColor={invalid ? 'red.400' : 'border.muted'}
 		borderRadius="md"
 		bg="bg.card"
 		color="text.primary"
@@ -49,6 +51,7 @@ export const NotesSelectControl = ({
 			value={value}
 			disabled={disabled}
 			aria-label={ariaLabel}
+			aria-invalid={invalid || undefined}
 			onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(event.currentTarget.value)}
 		>
 			{children}

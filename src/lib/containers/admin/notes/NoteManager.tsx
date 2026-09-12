@@ -22,7 +22,7 @@ import {
 import { ApiRequestError } from '~/lib/api/client';
 import SearchableSingleSelect from '~/lib/components/forms/SearchableSingleSelect';
 
-import BulkNotesForm from './BulkNotesForm';
+import BulkNotesForm, { BulkUploadModeSwitch, type BulkUploadMode } from './BulkNotesForm';
 import { NotesField, NotesInput, NotesSelect, NotesStatus } from './NotesAdminControls';
 import NotesDeleteDialog from './NotesDeleteDialog';
 import NotesModal from './NotesModal';
@@ -60,6 +60,7 @@ const NoteManager = ({
 	const [draftFilters, setDraftFilters] = useState<AdminNoteListParams>(filters);
 	const [isEditorOpen, setIsEditorOpen] = useState(false);
 	const [isBulkOpen, setIsBulkOpen] = useState(false);
+	const [bulkUploadMode, setBulkUploadMode] = useState<BulkUploadMode>('manual');
 	const [isBulkSaving, setIsBulkSaving] = useState(false);
 	const [editing, setEditing] = useState<AdminNote | null>(null);
 	const [form, setForm] = useState<AdminNoteInput>(createBlankNote(filters.subjectId));
@@ -579,22 +580,33 @@ const NoteManager = ({
 			<NotesModal
 				open={isBulkOpen}
 				title="Bulk upload notes"
-				description="Create up to 50 linked resources for one subject. Department visibility is inherited from the subject."
+				description="Create up to 50 linked resources manually or from CSV. Department visibility is inherited from the subject."
 				onClose={() => {
-					if (!isBulkSaving) setIsBulkOpen(false);
+					if (!isBulkSaving) {
+						setIsBulkOpen(false);
+						setBulkUploadMode('manual');
+					}
 				}}
 				closeDisabled={isBulkSaving}
 				size="xl"
 				allowFullScreen
+				headerActions={
+					<BulkUploadModeSwitch value={bulkUploadMode} disabled={isBulkSaving} onChange={setBulkUploadMode} />
+				}
 			>
 				<BulkNotesForm
+					mode={bulkUploadMode}
 					subjects={subjects}
 					initialSubjectId={filters.subjectId ?? ''}
 					onSavingChange={setIsBulkSaving}
-					onCancel={() => setIsBulkOpen(false)}
+					onCancel={() => {
+						setIsBulkOpen(false);
+						setBulkUploadMode('manual');
+					}}
 					onCreated={async () => {
 						await onChanged();
 						setIsBulkOpen(false);
+						setBulkUploadMode('manual');
 						setTone('success');
 						setMessage('Notes created successfully.');
 					}}

@@ -11,19 +11,28 @@ const modalWidths = {
 } as const;
 
 const NotesModalHeaderActions = ({
+	headerActions,
 	allowFullScreen,
 	isFullScreen,
 	closeDisabled,
 	onFullScreenChange,
 	onClose
 }: {
+	headerActions?: ReactNode;
 	allowFullScreen: boolean;
 	isFullScreen: boolean;
 	closeDisabled: boolean;
 	onFullScreenChange: () => void;
 	onClose: () => void;
 }) => (
-	<HStack gap={1} flexShrink={0}>
+	<HStack
+		gap={2}
+		w={{ base: headerActions ? 'full' : 'auto', md: 'auto' }}
+		flexShrink={0}
+		flexWrap="wrap"
+		justify="flex-end"
+	>
+		{headerActions}
 		{allowFullScreen ? (
 			<Button
 				type="button"
@@ -62,6 +71,7 @@ const NotesModal = ({
 	description,
 	children,
 	footer,
+	headerActions,
 	onClose,
 	size = 'lg',
 	closeDisabled = false,
@@ -72,6 +82,7 @@ const NotesModal = ({
 	description?: string;
 	children?: ReactNode;
 	footer?: ReactNode;
+	headerActions?: ReactNode;
 	onClose: () => void;
 	size?: keyof typeof modalWidths;
 	closeDisabled?: boolean;
@@ -174,12 +185,13 @@ const NotesModal = ({
 							align="flex-start"
 							justify="space-between"
 							gap={4}
+							flexWrap={{ base: 'wrap', lg: 'nowrap' }}
 							px={{ base: 4, md: 5 }}
 							py={4}
 							borderBottom="1px solid"
 							borderColor="border.default"
 						>
-							<Box>
+							<Box flex="1" minW={0}>
 								<Text id={titleId} fontSize="lg" fontWeight="bold">
 									{title}
 								</Text>
@@ -190,6 +202,7 @@ const NotesModal = ({
 								) : null}
 							</Box>
 							<NotesModalHeaderActions
+								headerActions={headerActions}
 								allowFullScreen={allowFullScreen}
 								isFullScreen={isFullScreen}
 								closeDisabled={closeDisabled}

@@ -6,17 +6,44 @@ import {
 	Container,
 	HStack as ChakraHStack,
 	Heading as ChakraHeading,
+	Icon as ChakraIcon,
 	Stack,
 	Text as ChakraText
 } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import type { MotionProps, MotionStyle } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import type { ComponentProps, ComponentType, ElementType, MouseEvent as ReactMouseEvent } from 'react';
+import type { IconType } from 'react-icons';
+import { BiLogoMicrosoft } from 'react-icons/bi';
+import { FiUsers } from 'react-icons/fi';
+import {
+	SiAdobe,
+	SiAirbnb,
+	SiAmazon,
+	SiAtlassian,
+	SiFlipkart,
+	SiGoogle,
+	SiInfosys,
+	SiLinkedin,
+	SiMahindra,
+	SiMeta,
+	SiNetflix,
+	SiPaytm,
+	SiPhonepe,
+	SiRazorpay,
+	SiSalesforce,
+	SiSwiggy,
+	SiTcs,
+	SiWipro,
+	SiZoho,
+	SiZomato
+} from 'react-icons/si';
 
-import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+import { trackCtaClicked } from '~/lib/analytics/mixpanel';
+import HeroMedia from '~/lib/containers/home/components/HeroMedia';
 
 type MotionCompatibleProps<T extends ElementType> = Omit<ComponentProps<T>, keyof MotionProps | 'style'> &
 	MotionProps & {
@@ -28,13 +55,6 @@ const Box = ChakraBox as MotionCompatibleComponent<typeof ChakraBox>;
 const Heading = ChakraHeading as MotionCompatibleComponent<typeof ChakraHeading>;
 const HStack = ChakraHStack as MotionCompatibleComponent<typeof ChakraHStack>;
 const Text = ChakraText as MotionCompatibleComponent<typeof ChakraText>;
-
-type TypingLineProps = {
-	text: string;
-	color?: string;
-	delay?: number;
-	reducedMotion: boolean | null;
-};
 
 type FloatingParticleProps = {
 	delay: number;
@@ -48,6 +68,135 @@ type FloatingParticleProps = {
 	bottom?: string;
 };
 
+type MentorBrand = {
+	name: string;
+	icon: IconType;
+	color: string;
+};
+
+const mentorBrands: MentorBrand[] = [
+	{ name: 'Amazon', icon: SiAmazon, color: '#FF9900' },
+	{ name: 'Google', icon: SiGoogle, color: '#4285F4' },
+	{ name: 'Microsoft', icon: BiLogoMicrosoft, color: '#00A4EF' },
+	{ name: 'Zomato', icon: SiZomato, color: '#E23744' },
+	{ name: 'TCS', icon: SiTcs, color: '#486AAE' },
+	{ name: 'Infosys', icon: SiInfosys, color: '#007CC3' },
+	{ name: 'Wipro', icon: SiWipro, color: '#341F65' },
+	{ name: 'Razorpay', icon: SiRazorpay, color: '#2B56F5' },
+	{ name: 'PhonePe', icon: SiPhonepe, color: '#5F259F' },
+	{ name: 'Flipkart', icon: SiFlipkart, color: '#2874F0' },
+	{ name: 'Zoho', icon: SiZoho, color: '#E42527' },
+	{ name: 'Swiggy', icon: SiSwiggy, color: '#FC8019' },
+	{ name: 'Paytm', icon: SiPaytm, color: '#00BAF2' },
+	{ name: 'Mahindra', icon: SiMahindra, color: '#E31837' },
+	{ name: 'Adobe', icon: SiAdobe, color: '#FF0000' },
+	{ name: 'Airbnb', icon: SiAirbnb, color: '#FF5A5F' },
+	{ name: 'Atlassian', icon: SiAtlassian, color: '#1868DB' },
+	{ name: 'LinkedIn', icon: SiLinkedin, color: '#0A66C2' },
+	{ name: 'Meta', icon: SiMeta, color: '#0866FF' },
+	{ name: 'Netflix', icon: SiNetflix, color: '#E50914' },
+	{ name: 'Salesforce', icon: SiSalesforce, color: '#00A1E0' }
+];
+
+const mentorBrandScroll = keyframes`
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+
+	to {
+		transform: translate3d(-50%, 0, 0);
+	}
+`;
+
+type MentorBrandMarqueeProps = {
+	prefersReducedMotion: boolean | null;
+};
+
+const MentorBrandMarquee = ({ prefersReducedMotion }: MentorBrandMarqueeProps) => {
+	const canAnimateBrands = prefersReducedMotion !== true;
+
+	return (
+		<Stack
+			direction={{ base: 'column', md: 'row' }}
+			align={{ base: 'stretch', md: 'center' }}
+			gap={{ base: 4, md: 8 }}
+			mt={{ base: 10, lg: 12 }}
+			p={{ base: 4, md: 5 }}
+			bg="bg.glass"
+			border="1px solid"
+			borderColor="border.default"
+			borderRadius="panel"
+			boxShadow="soft"
+			backdropFilter="blur(10px)"
+			overflow="hidden"
+		>
+			<HStack
+				gap={3}
+				flexShrink={0}
+				justify={{ base: 'flex-start', md: 'flex-start' }}
+				pb={{ base: 3, md: 0 }}
+				borderBottomWidth={{ base: '1px', md: '0' }}
+				borderColor="border.default"
+			>
+				<Box bg="bg.brand" color="text.brand" borderRadius="full" p={2.5} lineHeight="1">
+					<ChakraIcon as={FiUsers} boxSize={5} aria-hidden="true" />
+				</Box>
+				<Stack gap={0}>
+					<Text fontSize="xs" color="text.muted">
+						Mentors from
+					</Text>
+					<Text fontSize="sm" fontWeight="bold" color="text.primary">
+						Top companies
+					</Text>
+				</Stack>
+			</HStack>
+
+			<Box
+				minW={0}
+				flex="1"
+				overflowX={canAnimateBrands ? 'hidden' : 'auto'}
+				className={canAnimateBrands ? undefined : 'hide-scrollbar'}
+				css={{
+					maskImage: canAnimateBrands
+						? 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+						: 'none',
+					WebkitMaskImage: canAnimateBrands
+						? 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+						: 'none'
+				}}
+				aria-label="Companies represented by Shattak mentors"
+			>
+				<Box
+					display="flex"
+					alignItems="center"
+					w="max-content"
+					animation={canAnimateBrands ? `${mentorBrandScroll} 34s linear infinite` : undefined}
+					willChange={canAnimateBrands ? 'transform' : undefined}
+				>
+					{[0, 1].map(copyIndex => (
+						<HStack
+							key={copyIndex}
+							gap={{ base: 7, md: 10 }}
+							pr={{ base: 7, md: 10 }}
+							flexShrink={0}
+							aria-hidden={copyIndex > 0 ? 'true' : undefined}
+						>
+							{mentorBrands.map(brand => (
+								<HStack key={brand.name} gap={{ base: 2, md: 2.5 }} minW="max-content">
+									<ChakraIcon as={brand.icon} boxSize={{ base: 6, md: 7 }} color={brand.color} aria-hidden="true" />
+									<Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="text.secondary">
+										{brand.name}
+									</Text>
+								</HStack>
+							))}
+						</HStack>
+					))}
+				</Box>
+			</Box>
+		</Stack>
+	);
+};
+
 const Hero = () => {
 	const prefersReducedMotion = useReducedMotion();
 	const x = useMotionValue(0);
@@ -56,7 +205,6 @@ const Hero = () => {
 	const springY = useSpring(y, { stiffness: 90, damping: 20, mass: 0.6 });
 	const rotateX = useTransform(springY, [-50, 50], [4, -4]);
 	const rotateY = useTransform(springX, [-50, 50], [-6, 6]);
-
 	const handleMouseMove = useCallback(
 		(event: ReactMouseEvent<HTMLElement>) => {
 			if (prefersReducedMotion) return;
@@ -73,79 +221,6 @@ const Hero = () => {
 		x.set(0);
 		y.set(0);
 	}, [x, y]);
-
-	const TypingLine = ({ text, color, delay = 0, reducedMotion }: TypingLineProps) => {
-		const [displayedText, setDisplayedText] = useState('');
-		const [showCursor, setShowCursor] = useState(false);
-
-		useEffect(() => {
-			if (reducedMotion) {
-				setDisplayedText(text);
-				return undefined;
-			}
-
-			let currentTimeout: NodeJS.Timeout;
-			let typingInterval: NodeJS.Timeout;
-			let erasingInterval: NodeJS.Timeout;
-
-			const startCycle = () => {
-				setShowCursor(true);
-				let currentIndex = 0;
-
-				typingInterval = setInterval(() => {
-					if (currentIndex < text.length) {
-						setDisplayedText(text.slice(0, currentIndex + 1));
-						currentIndex += 1;
-					} else {
-						clearInterval(typingInterval);
-						currentTimeout = setTimeout(() => {
-							let eraseIndex = text.length;
-							erasingInterval = setInterval(() => {
-								if (eraseIndex > 0) {
-									setDisplayedText(text.slice(0, eraseIndex - 1));
-									eraseIndex -= 1;
-								} else {
-									clearInterval(erasingInterval);
-									currentTimeout = setTimeout(() => startCycle(), 500);
-								}
-							}, 50);
-						}, 2000);
-					}
-				}, 80);
-			};
-
-			currentTimeout = setTimeout(() => startCycle(), delay * 1000);
-
-			return () => {
-				clearTimeout(currentTimeout);
-				clearInterval(typingInterval);
-				clearInterval(erasingInterval);
-			};
-		}, [text, delay, reducedMotion]);
-
-		return (
-			<Box as="span" display="inline-flex" alignItems="center" color={color}>
-				<Box as="span" display="inline-block" minW="max-content">
-					{displayedText}
-					{/* Invisible placeholder to maintain layout */}
-					<Box as="span" visibility="hidden" position="absolute">
-						{text}
-					</Box>
-				</Box>
-				{showCursor && (
-					<Box
-						as={motion.span}
-						ml="3px"
-						w="2px"
-						h="1em"
-						bg="currentColor"
-						animate={{ opacity: [0, 1, 0] }}
-						transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-					/>
-				)}
-			</Box>
-		);
-	};
 
 	// Floating particles
 	const FloatingParticle = ({
@@ -279,7 +354,6 @@ const Hero = () => {
 						flex={{ base: 'unset', lg: 1 }}
 						textAlign={{ base: 'center', lg: 'left' }}
 					>
-						{/* Enhanced badge */}
 						<Box
 							as={motion.div}
 							display="inline-flex"
@@ -299,17 +373,11 @@ const Hero = () => {
 							transition={{ delay: 0.2 }}
 							whileHover={{ scale: 1.05, borderColor: 'border.brand' }}
 						>
-							<Box
-								w="8px"
-								h="8px"
-								borderRadius="full"
-								bg="primary"
-								as={motion.div}
-								animate={{ scale: [1, 1.3, 1] }}
-								transition={{ duration: 2, repeat: Infinity }}
-							/>
+							<Text as="span" aria-hidden="true">
+								👋
+							</Text>
 							<Text fontSize="sm" fontWeight="semibold" color="text.secondary">
-								🚀 Welcome to Shattak.com
+								Pay After Certification
 							</Text>
 						</Box>
 
@@ -320,7 +388,6 @@ const Hero = () => {
 							lineHeight="display"
 							fontFamily="display"
 							fontWeight="semibold"
-							wordSpacing={{ base: '0.08em', md: '0.14em' }}
 							initial="hidden"
 							animate="show"
 							variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12 } } }}
@@ -329,30 +396,21 @@ const Hero = () => {
 								as={motion.span}
 								display="block"
 								variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-								position="relative"
-								minH="1.2em"
 							>
-								<TypingLine text="Learn From Experts." delay={0.2} reducedMotion={prefersReducedMotion} />
-							</Text>
-							<Text
-								as={motion.span}
-								display="block"
-								color="text.brand"
-								variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-								position="relative"
-								minH="1.2em"
-							>
-								<TypingLine
-									text="Build What Matters."
-									delay={1.8}
-									color="text.brand"
-									reducedMotion={prefersReducedMotion}
-								/>
+								Courses designed by professionals with{' '}
+								<Box as="span" color="text.brand">
+									5+ years of experience
+								</Box>{' '}
+								or{' '}
+								<Box as="span" color="text.brand">
+									₹12+ LPA packages.
+								</Box>
 							</Text>
 						</Heading>
 
-						<Text mt={4} color="text.muted" fontSize={{ base: 'sm', md: 'md' }} lineHeight="relaxed">
-							We deliver outcome-driven courses with live mentor sessions to help you build a job-ready portfolio.
+						<Text mt={4} color="text.muted" fontSize={{ base: 'sm', md: 'md' }} lineHeight="relaxed" maxW="xl">
+							A completion-focused learning platform that keeps every student moving until they finish the course and
+							learn something meaningful.
 						</Text>
 
 						<HStack
@@ -368,40 +426,49 @@ const Hero = () => {
 						>
 							<Button
 								asChild
-								size={{ base: 'xs', md: 'md' }}
+								size="md"
+								h={{ base: '44px', md: '48px' }}
+								w={{ base: '112px', md: '188px' }}
+								flexShrink={0}
+								boxSizing="border-box"
 								bg="var(--chakra-gradients-brand-sunset)"
 								color="text.inverse"
 								_hover={{ transform: 'translateY(-3px)', boxShadow: 'primaryHover' }}
 								borderRadius="full"
-								px={{ base: 4, md: 7 }}
+								border="2px solid transparent"
+								px={{ base: 3, md: 7 }}
 								fontSize={{ base: 'xs', md: 'sm' }}
 								whiteSpace="nowrap"
 								transition="all 0.3s ease"
-								boxShadow="primary"
+								boxShadow="none"
 								fontWeight="semibold"
 							>
 								<Link
-									href="https://forms.gle/yQVwU7FJ9Q5rDHTq7"
-									target="_blank"
-									rel="noopener noreferrer"
+									href="#courses"
 									onClick={() =>
-										trackInstructorCtaClicked({
+										trackCtaClicked({
+											label: 'Explore Courses',
 											location: 'home_hero',
-											destination: 'https://forms.gle/yQVwU7FJ9Q5rDHTq7'
+											destination: '#courses',
+											context: 'course_discovery'
 										})
 									}
 								>
-									Become an Instructor
+									Explore Courses
 								</Link>
 							</Button>
 							<Button
 								asChild
-								size={{ base: 'xs', md: 'md' }}
+								size="md"
+								h={{ base: '44px', md: '48px' }}
+								w={{ base: '112px', md: '188px' }}
+								flexShrink={0}
+								boxSizing="border-box"
 								borderRadius="full"
-								px={{ base: 4, md: 7 }}
+								px={{ base: 3, md: 7 }}
 								bg="bg.card"
 								border="2px solid"
-								borderColor="border.default"
+								borderColor="border.brand"
 								color="text.primary"
 								_hover={{
 									bg: 'bg.subtle',
@@ -412,23 +479,21 @@ const Hero = () => {
 								fontSize={{ base: 'xs', md: 'sm' }}
 								whiteSpace="nowrap"
 								transition="all 0.3s ease"
-								boxShadow="neutral"
+								boxShadow="none"
 								fontWeight="semibold"
 							>
 								<Link
-									href="https://forms.gle/HqTLJG6EcNzgNRcW9"
-									target="_blank"
-									rel="noopener noreferrer"
+									href="/notes"
 									onClick={() =>
 										trackCtaClicked({
-											label: 'Campus Ambassador Program',
+											label: 'View Notes',
 											location: 'home_hero',
-											destination: 'https://forms.gle/HqTLJG6EcNzgNRcW9',
-											context: 'campus_ambassador'
+											destination: '/notes',
+											context: 'notes'
 										})
 									}
 								>
-									Campus Ambassador Program
+									View Notes
 								</Link>
 							</Button>
 						</HStack>
@@ -439,7 +504,7 @@ const Hero = () => {
 						initial={{ opacity: 0, y: 32 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-						display={{ base: 'none', lg: 'block' }}
+						display="block"
 						flex={{ base: 'unset', lg: 1 }}
 						w={{ base: '100%', md: '80%', lg: '48%' }}
 						css={{ perspective: '900px' }}
@@ -499,7 +564,7 @@ const Hero = () => {
 										transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 2 }}
 									/>
 
-									<Image src="/illustrations/hero.svg" alt="Live class preview" width={640} height={560} priority />
+									<HeroMedia prefersReducedMotion={prefersReducedMotion} />
 								</Box>
 
 								{/* Floating emoji badges */}
@@ -535,6 +600,7 @@ const Hero = () => {
 						</Box>
 					</Box>
 				</Stack>
+				<MentorBrandMarquee prefersReducedMotion={prefersReducedMotion} />
 			</Container>
 		</Box>
 	);

@@ -1,100 +1,169 @@
 'use client';
 
-import { Box, Container, Heading, HStack, Icon, Separator, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import {
+	Badge,
+	Box,
+	Container,
+	Heading,
+	HStack,
+	IconButton,
+	Separator,
+	SimpleGrid,
+	Stack,
+	Text
+} from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiInstagram, FiLinkedin, FiTwitter, FiYoutube } from 'react-icons/fi';
 
-import { trackCtaClicked, trackWhatsAppCtaClicked } from '~/lib/analytics/mixpanel';
-import { WHATSAPP_GROUP_URL } from '~/lib/constants/contact';
-import { navLinks } from '~/lib/constants/landing';
+import { trackCtaClicked } from '~/lib/analytics/mixpanel';
+import { courseCategories } from '~/lib/constants/landing';
+import { footerPageGroups } from '~/lib/constants/marketing-pages';
 
-const Footer = () => {
-	const joinNowUrl = WHATSAPP_GROUP_URL;
-	const isJoinNowExternal = /^https?:\/\//i.test(joinNowUrl);
+const socialLinks = [
+	{ label: 'Instagram', href: 'https://www.instagram.com/shattakofficial/', icon: FiInstagram },
+	{ label: 'LinkedIn', href: 'https://www.linkedin.com/company/shattak/', icon: FiLinkedin },
+	{ label: 'YouTube', href: 'https://www.youtube.com/@shattakofficial', icon: FiYoutube },
+	{ label: 'X', href: 'https://x.com/shattakofficial', icon: FiTwitter }
+] as const;
 
-	return (
-		<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
-			<Container maxW="6xl">
-				<SimpleGrid columns={{ base: 1, md: 3 }} gap={{ base: 8, md: 10 }}>
-					<Stack gap={4}>
-						<Heading size="md">Shattak</Heading>
+const getCourseCategoryHref = (category: string, index: number) =>
+	index === 0 ? '/#courses' : `/?category=${encodeURIComponent(category)}#courses`;
 
-						<Text fontSize="sm" color="text.onDarkMuted">
+const Footer = () => (
+	<Box as="footer" bg="bg.footer" color="text.onDark" py={{ base: 12, md: 16 }}>
+		<Container maxW="6xl">
+			<SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={{ base: 10, md: 12 }}>
+				<Stack gap={5} minW={0}>
+					<Stack gap={2}>
+						<Heading size="lg">Shattak</Heading>
+						<Text fontSize="sm" color="text.onDarkMuted" lineHeight="body">
 							Learn from Experts. Build What Matters.
 						</Text>
+					</Stack>
 
-						<HStack gap={3}>
-							<Link href="https://www.instagram.com/shattakofficial/" target="_blank" rel="noopener noreferrer">
-								<Icon as={FiInstagram} boxSize={8} cursor="pointer" />
-							</Link>
+					<HStack gap={2}>
+						{socialLinks.map(link => (
+							<IconButton
+								key={link.label}
+								asChild
+								aria-label={`Follow Shattak on ${link.label}`}
+								title={link.label}
+								variant="outline"
+								borderColor="border.onDark"
+								color="text.onDark"
+								borderRadius="full"
+								size="sm"
+								_hover={{ bg: 'bg.glassSoft', borderColor: 'border.brand' }}
+							>
+								<Link href={link.href} target="_blank" rel="noopener noreferrer">
+									<link.icon />
+								</Link>
+							</IconButton>
+						))}
+					</HStack>
 
-							<Link href="https://www.linkedin.com/company/shattak/" target="_blank" rel="noopener noreferrer">
-								<Icon as={FiLinkedin} boxSize={8} cursor="pointer" />
-							</Link>
-
-							<Link href="https://www.youtube.com/@shattakofficial" target="_blank" rel="noopener noreferrer">
-								<Icon as={FiYoutube} boxSize={8} cursor="pointer" />
-							</Link>
-
-							<Link href="https://x.com/shattakofficial" target="_blank" rel="noopener noreferrer">
-								<Icon as={FiTwitter} boxSize={8} cursor="pointer" />
-							</Link>
+					<Stack gap={2} align="flex-start">
+						<Text fontSize="xs" color="text.onDarkSubtle" textTransform="uppercase" letterSpacing="wider">
+							Mobile apps
+						</Text>
+						<HStack gap={2} flexWrap="wrap">
+							<Badge bg="bg.glassSoft" color="text.onDarkMuted" borderRadius="full" px={3} py={1.5}>
+								iOS · Coming soon
+							</Badge>
+							<Badge bg="bg.glassSoft" color="text.onDarkMuted" borderRadius="full" px={3} py={1.5}>
+								Android · Coming soon
+							</Badge>
 						</HStack>
 					</Stack>
-					<Stack gap={3}>
-						<Text fontWeight="semibold">Quick Links</Text>
-						{navLinks.map(link => (
-							<Link
-								key={link.id}
-								href={link.href}
-								onClick={() =>
-									trackCtaClicked({
-										label: link.label,
-										location: 'footer_quick_links',
-										destination: link.href,
-										context: link.id
-									})
-								}
-							>
-								<Text fontSize="sm" color="text.onDarkMuted">
-									{link.label}
-								</Text>
-							</Link>
-						))}
-						<Link
-							href={joinNowUrl}
-							target={isJoinNowExternal ? '_blank' : undefined}
-							rel={isJoinNowExternal ? 'noopener noreferrer' : undefined}
-							onClick={() =>
-								trackWhatsAppCtaClicked({
-									location: 'footer_join_now',
-									destination: joinNowUrl,
-									label: 'Join Now'
-								})
-							}
-						>
-							<Text fontSize="sm" color="text.onDarkMuted">
-								Join Now
-							</Text>
-						</Link>
-					</Stack>
-					<Stack gap={3}>
-						<Text fontWeight="semibold">Contact</Text>
-						<Text fontSize="sm" color="text.onDarkMuted">
-							hello@shattak.com
+				</Stack>
+
+				{footerPageGroups.map(group => (
+					<Stack as="nav" aria-labelledby={`footer-${group.id}-heading`} key={group.id} gap={3} minW={0}>
+						<Text id={`footer-${group.id}-heading`} fontWeight="semibold" color="text.onDark">
+							{group.label}
 						</Text>
-						<Text fontSize="sm" color="text.onDarkMuted">
-							+91 90000 00000
-						</Text>
+						{group.links.map(link => {
+							const href = `/${link.slug}`;
+
+							return (
+								<Link
+									key={link.slug}
+									href={href}
+									onClick={() =>
+										trackCtaClicked({
+											label: link.label,
+											location: 'footer_quick_links',
+											destination: href,
+											context: group.id
+										})
+									}
+								>
+									<Text
+										fontSize="sm"
+										color="text.onDarkMuted"
+										_hover={{ color: 'text.onDark', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+									>
+										{link.label}
+									</Text>
+								</Link>
+							);
+						})}
 					</Stack>
+				))}
+			</SimpleGrid>
+
+			<Separator my={{ base: 10, md: 12 }} borderColor="border.onDark" />
+
+			<Box as="nav" aria-labelledby="footer-courses-heading">
+				<Heading id="footer-courses-heading" size="md" mb={5}>
+					Courses
+				</Heading>
+				<SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} gapX={{ base: 4, md: 8 }} gapY={3}>
+					{courseCategories
+						.filter(category => !category.includes('Private'))
+						.map((category, index) => {
+							const href = getCourseCategoryHref(category, index);
+
+							return (
+								<Link
+									key={category}
+									href={href}
+									onClick={() =>
+										trackCtaClicked({
+											label: category,
+											location: 'footer_quick_links',
+											destination: href,
+											context: 'course_category'
+										})
+									}
+								>
+									<Text
+										fontSize="xs"
+										color="text.onDarkMuted"
+										lineHeight="body"
+										_hover={{ color: 'text.onDark', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+									>
+										{category}
+									</Text>
+								</Link>
+							);
+						})}
 				</SimpleGrid>
-				<Separator my={8} borderColor="border.onDark" />
-				<Text fontSize="sm" color="text.onDarkSubtle" textAlign={{ base: 'left', md: 'center' }}>
-					All Copy Right Reserved
+			</Box>
+
+			<Separator my={8} borderColor="border.onDark" />
+			<Stack direction={{ base: 'column', md: 'row' }} justify="space-between" gap={3}>
+				<Text fontSize="xs" color="text.onDarkSubtle">
+					© {new Date().getFullYear()} Shattak. All rights reserved.
 				</Text>
-			</Container>
-		</Box>
-	);
-};
+				<Link href="mailto:hello@shattak.com">
+					<Text fontSize="xs" color="text.onDarkMuted" _hover={{ color: 'text.onDark' }}>
+						hello@shattak.com
+					</Text>
+				</Link>
+			</Stack>
+		</Container>
+	</Box>
+);
 
 export default Footer;

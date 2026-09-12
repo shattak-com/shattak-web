@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
+import { trackMetaPixelSignupConversion } from '~/lib/analytics/meta-pixel';
 import { identifyAuthenticatedMixpanelUser, trackAuthEvent } from '~/lib/analytics/mixpanel';
 import { getCurrentUser, loginWithGoogleCredential } from '~/lib/api/auth';
 import { getOnboardingStatus } from '~/lib/api/onboarding';
@@ -68,6 +69,9 @@ const GoogleOneTapProvider = () => {
 						setLoginProgressMessage('Signing in with Google...');
 						const loginResult = await loginWithGoogleCredential(response.credential);
 						setLoginProgressMessage('Preparing your learning profile...');
+						if (loginResult.isNewUser && loginResult.metaEventId) {
+							trackMetaPixelSignupConversion(loginResult.metaEventId);
+						}
 						const onboardingStatus = loginResult.onboardingProfile
 							? {
 									user: loginResult.user,
@@ -129,7 +133,7 @@ const GoogleOneTapProvider = () => {
 		};
 	}, [pathname, router, scriptReady]);
 
-	if (!googleClientId) {
+	if (!googleClientId || shouldSuppressOneTap(pathname)) {
 		return null;
 	}
 

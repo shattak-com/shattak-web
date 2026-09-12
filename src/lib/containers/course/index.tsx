@@ -1,4 +1,5 @@
 import WhatsAppBanner from '~/lib/components/WhatsAppBanner';
+import type { FaqItem } from '~/lib/constants/platform-faqs';
 import CourseAudience from '~/lib/containers/course/components/CourseAudience';
 import CourseCompletion from '~/lib/containers/course/components/CourseCompletion';
 import CourseCurriculum from '~/lib/containers/course/components/CourseCurriculum';
@@ -7,7 +8,6 @@ import CourseFaq from '~/lib/containers/course/components/CourseFaq';
 import CourseHero from '~/lib/containers/course/components/CourseHero';
 import CourseInstructor from '~/lib/containers/course/components/CourseInstructor';
 import CourseOutcomes from '~/lib/containers/course/components/CourseOutcomes';
-import CourseOverview from '~/lib/containers/course/components/CourseOverview';
 import CourseProjects from '~/lib/containers/course/components/CourseProjects';
 import CourseRequirements from '~/lib/containers/course/components/CourseRequirements';
 import CourseReviews from '~/lib/containers/course/components/CourseReviews';
@@ -16,12 +16,13 @@ import type { CourseDetails } from '~/lib/containers/course/types';
 
 type CourseDetailsPageProps = {
 	course: CourseDetails;
+	faqs?: readonly FaqItem[];
 };
 
-const CourseDetailsPage = ({ course }: CourseDetailsPageProps) => (
+// TODO: Add CourseOverview back when content for this section is ready to publish.
+const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProps) => (
 	<>
 		<CourseHero course={course} />
-		<CourseOverview course={course} />
 		<CourseOutcomes outcomes={course.outcomes} />
 		<CourseCurriculum
 			lessons={course.lessons}
@@ -36,7 +37,7 @@ const CourseDetailsPage = ({ course }: CourseDetailsPageProps) => (
 		<CourseReviews reviews={course.reviews} />
 		<CourseProjects projects={course.projects} />
 		<WhatsAppBanner title="Join Our Community, Ask Questions" />
-		<CourseFaq faqs={course.faqs} />
+		<CourseFaq faqs={faqs} />
 		<CourseEnrollBanner course={course} />
 	</>
 );

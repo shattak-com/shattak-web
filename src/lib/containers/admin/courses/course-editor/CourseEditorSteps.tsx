@@ -1,14 +1,12 @@
 import { Box, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
 import { Controller, useWatch } from 'react-hook-form';
 
 import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
-import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import { courseCategories } from '~/lib/constants/course-categories';
-import CourseCurriculumEditor from '~/lib/containers/admin/courses/CourseCurriculumEditor';
 
 import {
 	AudienceEditor,
-	CompletionEditor,
 	FaqsEditor,
 	GalleryEditor,
 	HighlightsEditor,
@@ -24,15 +22,32 @@ import { FormField, ImageField, SelectField, TextareaField } from './FormControl
 import type { CourseEditorSectionProps, CourseEditorStepFieldsProps } from './types';
 import { getFieldError } from './utils';
 
-const BasicsStep = ({ control, register, errors }: CourseEditorSectionProps) => {
+const QrCodePreview = dynamic(() => import('~/lib/components/forms/QrCodePreview'));
+const CourseCurriculumEditor = dynamic(() => import('~/lib/containers/admin/courses/CourseCurriculumEditor'));
+
+const BasicsStep = ({
+	control,
+	register,
+	errors,
+	onSlugChange,
+	onTitleChange
+}: CourseEditorSectionProps & Pick<CourseEditorStepFieldsProps, 'onSlugChange' | 'onTitleChange'>) => {
 	const whatsappGroupUrl = useWatch({ control, name: 'whatsappGroupUrl' });
 
 	return (
 		<Stack gap={5}>
 			<Stack gap={4}>
 				<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-					<FormField label="Title" name="title" register={register} errors={errors} />
-					<FormField label="Slug" name="slug" register={register} errors={errors} placeholder="generated-from-title" />
+					<FormField label="Title" name="title" register={register} errors={errors} onValueChange={onTitleChange} />
+					<FormField
+						label="Slug"
+						name="slug"
+						register={register}
+						errors={errors}
+						placeholder="generated-from-title"
+						helperText="Generated from the title as you type. You can edit it before saving."
+						onValueChange={onSlugChange}
+					/>
 				</SimpleGrid>
 				<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
 					<SelectField label="Status" name="status" register={register} options={courseStatusOptions} />
@@ -100,18 +115,18 @@ const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 		<SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
 			<FormField label="Price" name="price" register={register} errors={errors} type="number" />
 			<FormField label="Original price" name="originalPrice" register={register} errors={errors} type="number" />
-			<FormField label="Rating" name="rating" register={register} errors={errors} type="number" />
+			<FormField label="Rating" name="rating" register={register} errors={errors} type="number" step={0.1} />
 			<FormField label="Enrollment count" name="enrollmentCount" register={register} errors={errors} type="number" />
 		</SimpleGrid>
 		<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
 			<ImageField label="Thumbnail image" name="thumbnailImage" control={control} errors={errors} />
 			<ImageField label="Promo image" name="promoImage" control={control} errors={errors} />
 			<ImageField label="Promo brand image" name="promoImageBrand" control={control} errors={errors} />
-			<FormField label="Payment link" name="paymentLink" register={register} errors={errors} />
 		</SimpleGrid>
 	</Stack>
 );
 
+// TODO: Restore this step when highlights and schedules are admin-managed again.
 const HighlightsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 	<Stack gap={5}>
 		<HighlightsEditor control={control} register={register} errors={errors} />
@@ -129,7 +144,7 @@ const OutcomesStep = ({ control, register, errors }: CourseEditorSectionProps) =
 			minH="100px"
 			placeholder="One requirement per line"
 		/>
-		<CompletionEditor control={control} register={register} errors={errors} />
+		{/* TODO: Restore CompletionEditor when completion content is no longer hard-coded. */}
 		<OutcomesEditor control={control} register={register} errors={errors} />
 	</Stack>
 );
@@ -239,6 +254,8 @@ export const CourseEditorStepFields = ({
 	control,
 	register,
 	errors,
+	onSlugChange,
+	onTitleChange,
 	summaryItems,
 	course,
 	courseId,
@@ -246,7 +263,15 @@ export const CourseEditorStepFields = ({
 }: CourseEditorStepFieldsProps) => {
 	switch (activeStepId) {
 		case 'basics':
-			return <BasicsStep control={control} register={register} errors={errors} />;
+			return (
+				<BasicsStep
+					control={control}
+					register={register}
+					errors={errors}
+					onSlugChange={onSlugChange}
+					onTitleChange={onTitleChange}
+				/>
+			);
 		case 'media':
 			return <MediaStep control={control} register={register} errors={errors} />;
 		case 'highlights':

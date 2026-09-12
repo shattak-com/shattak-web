@@ -2,12 +2,15 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 
 import { getCourseById } from '~/lib/api/courses';
+import { platformFaqs } from '~/lib/constants/platform-faqs';
 import CourseDetailsPage from '~/lib/containers/course';
 import CourseUnavailable from '~/lib/containers/course/components/CourseUnavailable';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
+import { createFaqPageStructuredData, mergeFaqs } from '~/lib/utils/faqs';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+export const dynamic = 'force-static';
 
 type CoursePageProps = {
 	params: Promise<{ id: string }>;
@@ -118,23 +121,7 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 	)[0];
 	const visibleReviews = course.reviews.filter(review => review.show);
 	const ratingValue = course.rating > 0 ? Number(course.rating.toFixed(1)) : undefined;
-	const faqEntries = course.faqs
-		.map(faq => {
-			const question = faq.question.trim();
-			const answer = faq.answer.trim();
-			if (!question || !answer) {
-				return null;
-			}
-			return {
-				'@type': 'Question',
-				name: question,
-				acceptedAnswer: {
-					'@type': 'Answer',
-					text: answer
-				}
-			};
-		})
-		.filter(Boolean);
+	const mergedFaqs = mergeFaqs(course.faqs, platformFaqs);
 
 	const courseJsonLd = {
 		'@context': 'https://schema.org',
@@ -216,13 +203,7 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 			}
 		]
 	};
-	const faqJsonLd = faqEntries.length
-		? {
-				'@context': 'https://schema.org',
-				'@type': 'FAQPage',
-				mainEntity: faqEntries
-			}
-		: null;
+	const faqJsonLd = createFaqPageStructuredData(mergedFaqs);
 
 	return (
 		<>
@@ -231,7 +212,7 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 			{faqJsonLd ? (
 				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 			) : null}
-			<CourseDetailsPage course={course} />
+			<CourseDetailsPage course={course} faqs={mergedFaqs} />
 		</>
 	);
 };

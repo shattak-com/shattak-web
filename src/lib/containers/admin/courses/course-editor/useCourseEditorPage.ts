@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, type SubmitErrorHandler } from 'react-hook-form';
 
 import { createAdminCourse, getAdminCourse, updateAdminCourse, type AdminCourse } from '~/lib/api/admin-courses';
+import { ApiRequestError } from '~/lib/api/client';
 import type { CurriculumSectionKey } from '~/lib/containers/admin/courses/curriculum-editor/types';
 
 import { courseEditorSteps, defaultFormValues } from './constants';
@@ -13,6 +14,7 @@ import { useUnsavedCourseEditorGuard } from './useUnsavedCourseEditorGuard';
 import {
 	collectErrorPaths,
 	countErrorsByStep,
+	createCourseSlug,
 	courseToFormValues,
 	formatDurationFromMinutes,
 	formValuesToPayload,
@@ -36,7 +38,11 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 	});
 
 	const {
+		clearErrors,
 		reset,
+		setError,
+		setFocus,
+		setValue,
 		watch,
 		formState: { errors, isDirty }
 	} = form;
@@ -117,6 +123,23 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 		[activeStepIndex, dirtyCurriculumSection]
 	);
 
+	const handleSlugChange = useCallback(() => {
+		clearErrors('slug');
+		setFeedback(null);
+	}, [clearErrors]);
+
+	const handleTitleChange = useCallback(
+		(title: string) => {
+			clearErrors('slug');
+			setFeedback(null);
+			setValue('slug', createCourseSlug(title), {
+				shouldDirty: true,
+				shouldValidate: true
+			});
+		},
+		[clearErrors, setValue]
+	);
+
 	const handleSave = useCallback(
 		async (values: CourseEditorFormValues) => {
 			setIsSaving(true);
@@ -134,12 +157,31 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 					router.replace(`/admin/courses/${result.course.id}/edit`);
 				}
 			} catch (error) {
+				const isSlugConflict =
+					error instanceof ApiRequestError &&
+					(error.code === 'COURSE_SLUG_CONFLICT' ||
+						(error.statusCode === 409 &&
+							typeof error.details === 'object' &&
+							error.details !== null &&
+							'slug' in error.details));
+
+				if (isSlugConflict) {
+					const message = 'This slug is already used by another course. Change the title or enter a different slug.';
+					const basicsStepIndex = courseEditorSteps.findIndex(step => step.id === 'basics');
+
+					setError('slug', { type: 'server', message });
+					requestStepChange(basicsStepIndex);
+					setFeedback({ tone: 'error', message: `Course was not saved. ${message}` });
+					window.requestAnimationFrame(() => setFocus('slug'));
+					return;
+				}
+
 				setFeedback({ tone: 'error', message: error instanceof Error ? error.message : 'Unable to save course.' });
 			} finally {
 				setIsSaving(false);
 			}
 		},
-		[courseId, reset, router]
+		[courseId, requestStepChange, reset, router, setError, setFocus]
 	);
 
 	const handleInvalidSave = useCallback<SubmitErrorHandler<CourseEditorFormValues>>(
@@ -201,6 +243,8 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 		handleInvalidSave,
 		handleCurriculumDirtyChange,
 		handleSave,
+		handleSlugChange,
+		handleTitleChange,
 		dirtyCurriculumSection,
 		hasUnsavedChanges,
 		isDirty,

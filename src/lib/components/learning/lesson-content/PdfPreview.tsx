@@ -22,7 +22,7 @@ const getPreviewHeight = (height: PdfPreviewProps['height']) => {
 	return Math.min(Math.max(numericHeight, 620), 900);
 };
 
-export const PdfPreview = ({ url, height, title = 'PDF lesson resource' }: PdfPreviewProps) => {
+export const PdfPreview = ({ url, height, title = 'Lesson PDF' }: PdfPreviewProps) => {
 	const [isFullScreen, setIsFullScreen] = useState(false);
 	const previewHeight = getPreviewHeight(height);
 	const previewUrl = `${url.split('#')[0]}#toolbar=0&navpanes=0&scrollbar=1`;
@@ -110,11 +110,11 @@ export const PdfPreview = ({ url, height, title = 'PDF lesson resource' }: PdfPr
 					isFullScreen
 						? undefined
 						: {
-								base: '68dvh',
+								base: 'min(68dvh, 560px)',
 								md: `clamp(620px, 72dvh, ${Math.max(previewHeight, 860)}px)`
 							}
 				}
-				minH={isFullScreen ? 0 : { base: '420px', md: '620px' }}
+				minH={isFullScreen ? 0 : { base: '360px', md: '620px' }}
 				bg="white"
 			>
 				<iframe

@@ -1,7 +1,8 @@
 'use client';
 
-import { Alert, Box, Button, Heading, HStack, Input, Stack, Text } from '@chakra-ui/react';
+import { Alert, Box, Button, Heading, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { useCallback, useEffect, useState } from 'react';
+import { FiEdit3 } from 'react-icons/fi';
 
 import { trackProfileEvent } from '~/lib/analytics/mixpanel';
 import { submitEducationProfile, submitMobileNumber, type OnboardingProfile } from '~/lib/api/onboarding';
@@ -29,39 +30,37 @@ const getProfileTrackingProperties = (profile: OnboardingProfile | null) => ({
 	interestsCount: profile?.interests.length
 });
 
+const LearningProfileDetail = ({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) => (
+	<Box
+		gridColumn={{ md: wide ? 'span 2' : undefined }}
+		border="1px solid"
+		borderColor="border.default"
+		borderRadius="panel"
+		bg="bg.surface"
+		p={{ base: 4, md: 5 }}
+		minW={0}
+	>
+		<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+			{label}
+		</Text>
+		<Text mt={2} color="text.primary" fontWeight="semibold" lineHeight="body" overflowWrap="anywhere">
+			{value}
+		</Text>
+	</Box>
+);
+
 const LearningProfileSummary = ({ profile }: { profile: OnboardingProfile | null }) => (
-	<Stack gap={4}>
-		<Box>
-			<Text fontSize="sm" color="text.muted">
-				Mobile
-			</Text>
-			<Text mt={1}>{profile?.mobileNumberE164 ?? 'Not added yet'}</Text>
-		</Box>
-		<Box>
-			<Text fontSize="sm" color="text.muted">
-				College
-			</Text>
-			<Text mt={1}>{profile?.college ?? 'Not selected yet'}</Text>
-		</Box>
-		<Box>
-			<Text fontSize="sm" color="text.muted">
-				Department
-			</Text>
-			<Text mt={1}>{profile?.department ?? 'Not selected yet'}</Text>
-		</Box>
-		<Box>
-			<Text fontSize="sm" color="text.muted">
-				Passout year
-			</Text>
-			<Text mt={1}>{profile?.passoutYear ?? 'Not added yet'}</Text>
-		</Box>
-		<Box>
-			<Text fontSize="sm" color="text.muted">
-				Interests
-			</Text>
-			<Text mt={1}>{profile?.interests.length ? profile.interests.join(', ') : 'Not selected yet'}</Text>
-		</Box>
-	</Stack>
+	<SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+		<LearningProfileDetail label="Mobile" value={profile?.mobileNumberE164 ?? 'Not added yet'} />
+		<LearningProfileDetail label="Passout year" value={profile?.passoutYear ?? 'Not added yet'} />
+		<LearningProfileDetail label="College" value={profile?.college ?? 'Not selected yet'} />
+		<LearningProfileDetail label="Department" value={profile?.department ?? 'Not selected yet'} />
+		<LearningProfileDetail
+			label="Interests"
+			value={profile?.interests.length ? profile.interests.join(', ') : 'Not selected yet'}
+			wide
+		/>
+	</SimpleGrid>
 );
 
 const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested }: LearningProfileSectionProps) => {
@@ -229,15 +228,34 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 	}, [college, department, interests, mobileNumber, onProfileUpdated, onRefreshRequested, passoutYear]);
 
 	return (
-		<Box border="1px solid" borderColor="border.default" borderRadius="card" p={{ base: 5, md: 6 }}>
-			<Stack gap={5}>
-				<HStack justify="space-between" align="center" gap={4}>
-					<Heading size="md">Learning profile</Heading>
+		<Box
+			as="section"
+			aria-labelledby="learning-profile-title"
+			border="1px solid"
+			borderColor="border.default"
+			borderRadius="surface"
+			bg="bg.card"
+			p={{ base: 5, md: 7 }}
+		>
+			<Stack gap={6}>
+				<HStack justify="space-between" align="flex-start" gap={4}>
+					<Box>
+						<Text color="primary" fontSize="xs" fontWeight="bold" textTransform="uppercase">
+							About you
+						</Text>
+						<Heading id="learning-profile-title" mt={2} size={{ base: 'lg', md: 'xl' }}>
+							Learning profile
+						</Heading>
+						<Text mt={2} color="text.muted" fontSize="sm" lineHeight="body">
+							Keep your education and learning interests accurate for a more relevant experience.
+						</Text>
+					</Box>
 					{isEditing ? null : (
 						<Button
-							size="sm"
+							minH="44px"
 							variant="outline"
 							borderRadius="full"
+							flexShrink={0}
 							onClick={() => {
 								trackProfileEvent({
 									location: 'profile_learning',
@@ -247,6 +265,7 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 								setIsEditing(true);
 							}}
 						>
+							<FiEdit3 />
 							Edit
 						</Button>
 					)}
@@ -255,10 +274,12 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 				{isEditing ? (
 					<Stack gap={5}>
 						<Box>
-							<Text fontSize="sm" mb={2} color="text.muted">
+							<Text id="profile-mobile-number-label" fontSize="sm" mb={2} color="text.muted" fontWeight="semibold">
 								Mobile
 							</Text>
 							<Input
+								id="profile-mobile-number"
+								aria-labelledby="profile-mobile-number-label"
 								type="tel"
 								value={mobileNumber}
 								onChange={event => setMobileNumber(event.target.value)}
@@ -282,10 +303,12 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 							onChange={setDepartment}
 						/>
 						<Box>
-							<Text fontSize="sm" mb={2} color="text.muted">
+							<Text id="profile-passout-year-label" fontSize="sm" mb={2} color="text.muted" fontWeight="semibold">
 								Passout year
 							</Text>
 							<Input
+								id="profile-passout-year"
+								aria-labelledby="profile-passout-year-label"
 								type="text"
 								value={passoutYear}
 								onChange={event => setPassoutYear(event.target.value)}
@@ -309,8 +332,9 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 								</Alert.Content>
 							</Alert.Root>
 						) : null}
-						<HStack gap={3} flexWrap="wrap">
+						<HStack gap={3} flexWrap="wrap" justify={{ sm: 'flex-end' }}>
 							<Button
+								minH="44px"
 								bg="primary"
 								color="text.inverse"
 								borderRadius="full"
@@ -321,7 +345,7 @@ const LearningProfileSection = ({ profile, onProfileUpdated, onRefreshRequested 
 							>
 								{isSaving ? 'Saving...' : 'Save changes'}
 							</Button>
-							<Button variant="outline" borderRadius="full" disabled={isSaving} onClick={handleCancel}>
+							<Button minH="44px" variant="outline" borderRadius="full" disabled={isSaving} onClick={handleCancel}>
 								Cancel
 							</Button>
 						</HStack>

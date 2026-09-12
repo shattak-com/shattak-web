@@ -17,8 +17,14 @@ import {
 } from '~/lib/api/enrollments';
 
 import { courseTabs } from './constants';
-import type { CourseTabId } from './types';
+import { buildCourseWorkspacePath, getCourseWorkspaceRoute, parseCourseWorkspacePath } from './routes';
+import type { CourseTabId, CourseWorkspaceRoute } from './types';
 import { getActiveLessonContext, getCourseWorkspaceGridColumns, getNextLessonRow, isAdminLearner } from './utils';
+
+const CONTENT_WIDTH_STORAGE_KEY = 'shattak-course-content-width';
+const LESSON_NAVIGATION_PINNED_SESSION_KEY = 'shattak-course-lesson-navigation-pinned';
+
+type RouteNavigationMode = 'push' | 'replace';
 
 type DashboardTrackingContext = {
 	courseId: string;
@@ -170,24 +176,21 @@ const useCourseWorkspaceBootstrap = ({
 	}, [courseId, currentPath, loadDashboard, onEnrollmentLoaded, onError, onLoadingComplete, onUserLoaded, router]);
 };
 
-export const useCourseLearningPage = (courseId: string) => {
-	const currentPath = `/my-courses/${courseId}`;
+export const useCourseLearningPage = (courseId: string, initialRoute: CourseWorkspaceRoute) => {
+	const initialPathRef = useRef(buildCourseWorkspacePath(courseId, initialRoute));
+	const currentPathRef = useRef(initialPathRef.current);
 	const hasTrackedCertificateRef = useRef<string | null>(null);
-	const workspaceRootRef = useRef<HTMLDivElement | null>(null);
-	const focusModeButtonRef = useRef<HTMLButtonElement | null>(null);
-	const exitFocusModeButtonRef = useRef<HTMLButtonElement | null>(null);
-	const wasFocusModeRef = useRef(false);
 	const [enrollment, setEnrollment] = useState<CourseEnrollment | null>(null);
 	const [dashboard, setDashboard] = useState<CourseLearningDashboard | null>(null);
-	const [activeTab, setActiveTab] = useState<CourseTabId>('overview');
+	const [currentRoute, setCurrentRoute] = useState<CourseWorkspaceRoute>(initialRoute);
+	const [activeTab, setActiveTab] = useState<CourseTabId>(initialRoute.tab);
 	const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
 	const [learnerName, setLearnerName] = useState('');
 	const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 	const [isWorkspaceSidebarCollapsed, setIsWorkspaceSidebarCollapsed] = useState(false);
 	const [isLearningRailCollapsed, setIsLearningRailCollapsed] = useState(false);
-	const [isFocusMode, setIsFocusMode] = useState(false);
-	const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
-	const [isBrowserFullscreenSupported, setIsBrowserFullscreenSupported] = useState(false);
+	const [isContentExpanded, setIsContentExpanded] = useState(false);
+	const [isLessonNavigationPinned, setIsLessonNavigationPinned] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 	const [lessonsResult, setLessonsResult] = useState<CourseLessonsResult | null>(null);
@@ -200,13 +203,35 @@ export const useCourseLearningPage = (courseId: string) => {
 	const canBypassProgression = isAdminLearner(currentUser);
 	const canOpenLearningTabs = Boolean(enrollment?.accessUnlockedAt) || canBypassProgression;
 
+	const navigateToRoute = useCallback(
+		(route: CourseWorkspaceRoute, mode: RouteNavigationMode = 'push') => {
+			const nextPath = buildCourseWorkspacePath(courseId, route);
+			setCurrentRoute(route);
+			setActiveTab(route.tab);
+
+			if (nextPath === currentPathRef.current) {
+				return;
+			}
+
+			currentPathRef.current = nextPath;
+
+			if (mode === 'replace') {
+				window.history.replaceState(window.history.state, '', nextPath);
+				return;
+			}
+
+			window.history.pushState(window.history.state, '', nextPath);
+		},
+		[courseId]
+	);
+
 	const applyDashboardResult = useCallback(
 		(result: { enrollment: CourseEnrollment; dashboard: CourseLearningDashboard }, user: AuthenticatedUser | null) => {
 			setEnrollment(result.enrollment);
 			setDashboard(result.dashboard);
 			const trackingContext = {
 				courseId,
-				currentPath,
+				currentPath: currentPathRef.current,
 				result,
 				trackedCertificateEnrollmentId: hasTrackedCertificateRef.current,
 				user
@@ -216,7 +241,7 @@ export const useCourseLearningPage = (courseId: string) => {
 			trackDashboardStreakUpdate(trackingContext);
 			hasTrackedCertificateRef.current = trackDashboardCertificateEarned(trackingContext);
 		},
-		[courseId, currentPath]
+		[courseId]
 	);
 
 	const loadDashboard = useCallback(
@@ -237,7 +262,7 @@ export const useCourseLearningPage = (courseId: string) => {
 	);
 
 	const loadLessons = useCallback(
-		async (subsectionId?: string) => {
+		async (subsectionId?: string, navigationMode: RouteNavigationMode = 'replace') => {
 			setIsLessonsLoading(true);
 			setLessonErrorMessage('');
 
@@ -250,6 +275,16 @@ export const useCourseLearningPage = (courseId: string) => {
 				setHasReachedLessonBottom(result.lessons.hasAdminAccess);
 
 				if (activeContext) {
+					const lessonRoute = getCourseWorkspaceRoute('lessons', {
+						moduleId: activeContext.courseModule.id,
+						subsectionId: activeContext.subsection.id
+					});
+					const lessonPath = buildCourseWorkspacePath(courseId, lessonRoute);
+
+					if (lessonPath !== currentPathRef.current) {
+						navigateToRoute(lessonRoute, navigationMode);
+					}
+
 					trackCourseDashboardEvent({
 						eventName: 'course_lesson_opened',
 						courseId,
@@ -261,7 +296,7 @@ export const useCourseLearningPage = (courseId: string) => {
 						moduleTitle: activeContext.courseModule.title,
 						completionPercentage: result.enrollment.progressPercent,
 						enrollmentStatus: result.enrollment.status,
-						sourcePage: currentPath
+						sourcePage: lessonPath
 					});
 				}
 			} catch (error) {
@@ -275,7 +310,7 @@ export const useCourseLearningPage = (courseId: string) => {
 				setIsLessonsLoading(false);
 			}
 		},
-		[courseId, currentPath, currentUser?.id]
+		[courseId, currentUser?.id, navigateToRoute]
 	);
 
 	const handleWorkspaceUserLoaded = useCallback((user: AuthenticatedUser) => {
@@ -294,7 +329,7 @@ export const useCourseLearningPage = (courseId: string) => {
 
 	useCourseWorkspaceBootstrap({
 		courseId,
-		currentPath,
+		currentPath: initialPathRef.current,
 		loadDashboard,
 		onEnrollmentLoaded: handleWorkspaceEnrollmentLoaded,
 		onError: handleWorkspaceError,
@@ -312,16 +347,82 @@ export const useCourseLearningPage = (courseId: string) => {
 		[currentUser, loadDashboard]
 	);
 
+	useEffect(() => {
+		currentPathRef.current = buildCourseWorkspacePath(courseId, initialRoute);
+		setCurrentRoute(initialRoute);
+		setActiveTab(initialRoute.tab);
+	}, [courseId, initialRoute]);
+
+	useEffect(() => {
+		const handleHistoryNavigation = () => {
+			const route = parseCourseWorkspacePath(window.location.pathname, courseId);
+			if (!route) {
+				return;
+			}
+
+			currentPathRef.current = buildCourseWorkspacePath(courseId, route);
+			setCurrentRoute(route);
+			setActiveTab(route.tab);
+		};
+
+		window.addEventListener('popstate', handleHistoryNavigation);
+		return () => window.removeEventListener('popstate', handleHistoryNavigation);
+	}, [courseId]);
+
+	useEffect(() => {
+		try {
+			setIsContentExpanded(window.localStorage.getItem(CONTENT_WIDTH_STORAGE_KEY) === 'expanded');
+		} catch {
+			setIsContentExpanded(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		try {
+			setIsLessonNavigationPinned(window.sessionStorage.getItem(LESSON_NAVIGATION_PINNED_SESSION_KEY) === 'true');
+		} catch {
+			setIsLessonNavigationPinned(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!enrollment || currentRoute.tab === 'overview' || canOpenLearningTabs) {
+			return;
+		}
+
+		setActiveTab('overview');
+		navigateToRoute(getCourseWorkspaceRoute('overview'), 'replace');
+	}, [canOpenLearningTabs, currentRoute.tab, enrollment, navigateToRoute]);
+
 	const handleTabChange = useCallback(
 		(tabId: CourseTabId) => {
 			if (tabId !== 'overview' && !canOpenLearningTabs) {
 				setActiveTab('overview');
+				navigateToRoute(getCourseWorkspaceRoute('overview'), 'replace');
 				return;
 			}
 
 			setActiveTab(tabId);
+
+			if (tabId === 'lessons') {
+				const activeContext = getActiveLessonContext(lessonsResult?.lessons ?? null);
+				navigateToRoute(
+					getCourseWorkspaceRoute(
+						'lessons',
+						activeContext
+							? {
+									moduleId: activeContext.courseModule.id,
+									subsectionId: activeContext.subsection.id
+								}
+							: null
+					)
+				);
+				return;
+			}
+
+			navigateToRoute(getCourseWorkspaceRoute(tabId));
 		},
-		[canOpenLearningTabs]
+		[canOpenLearningTabs, lessonsResult?.lessons, navigateToRoute]
 	);
 
 	useEffect(() => {
@@ -329,20 +430,33 @@ export const useCourseLearningPage = (courseId: string) => {
 			return;
 		}
 
-		if (!canOpenLearningTabs) {
-			setActiveTab('overview');
+		if (!enrollment || !canOpenLearningTabs) {
 			return;
 		}
 
-		if (!lessonsResult && !isLessonsLoading) {
-			loadLessons().catch(() => undefined);
+		const requestedSubsectionId = currentRoute.tab === 'lessons' ? (currentRoute.subsectionId ?? undefined) : undefined;
+		const activeSubsectionId = lessonsResult?.lessons.activeSubsectionId;
+		const shouldLoadLessons = !lessonsResult || (requestedSubsectionId && requestedSubsectionId !== activeSubsectionId);
+
+		if (shouldLoadLessons && !isLessonsLoading) {
+			loadLessons(requestedSubsectionId, 'replace').catch(() => undefined);
 		}
-	}, [activeTab, canOpenLearningTabs, isLessonsLoading, lessonsResult, loadLessons]);
+	}, [
+		activeTab,
+		canOpenLearningTabs,
+		enrollment,
+		currentRoute.subsectionId,
+		currentRoute.tab,
+		isLessonsLoading,
+		lessonsResult,
+		loadLessons
+	]);
 
 	const handleLessonSelect = useCallback(
 		(subsectionId: string) => {
+			setActiveTab('lessons');
 			setHasReachedLessonBottom(canBypassProgression);
-			loadLessons(subsectionId).catch(() => undefined);
+			loadLessons(subsectionId, 'push').catch(() => undefined);
 		},
 		[canBypassProgression, loadLessons]
 	);
@@ -361,28 +475,27 @@ export const useCourseLearningPage = (courseId: string) => {
 			userId: currentUser?.id,
 			destination: 'community',
 			enrollmentStatus: enrollment?.status,
-			sourcePage: currentPath
+			sourcePage: currentPathRef.current
 		});
 
 		if (whatsappGroupUrl && typeof window !== 'undefined') {
 			window.open(whatsappGroupUrl, '_blank', 'noopener,noreferrer');
 		}
-	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
+	}, [courseId, currentUser?.id, enrollment, lessonsResult]);
 
-	const restoreScrollAfterWorkspaceChange = useCallback((scrollTop: number) => {
-		window.requestAnimationFrame(() => {
-			window.requestAnimationFrame(() => {
-				window.scrollTo({ top: scrollTop, behavior: 'auto' });
-			});
-		});
-	}, []);
-
-	const handleEnterFocusMode = useCallback(() => {
-		const scrollTop = window.scrollY;
+	const handleToggleContentWidth = useCallback(() => {
+		const nextExpanded = !isContentExpanded;
 		const activeContext = getActiveLessonContext(lessonsResult?.lessons ?? null);
 
+		setIsContentExpanded(nextExpanded);
+		try {
+			window.localStorage.setItem(CONTENT_WIDTH_STORAGE_KEY, nextExpanded ? 'expanded' : 'reading');
+		} catch {
+			// Keep the in-memory preference when browser storage is unavailable.
+		}
+
 		trackCourseDashboardEvent({
-			eventName: 'course_focus_mode_entered',
+			eventName: 'course_content_width_toggled',
 			courseId,
 			courseTitle: enrollment?.course.title,
 			userId: currentUser?.id,
@@ -390,125 +503,24 @@ export const useCourseLearningPage = (courseId: string) => {
 			lessonTitle: activeContext?.subsection.title,
 			moduleId: activeContext?.courseModule.id,
 			moduleTitle: activeContext?.courseModule.title,
-			displayMode: 'focus',
-			sourcePage: currentPath
+			expanded: nextExpanded,
+			sourcePage: currentPathRef.current
 		});
+	}, [courseId, currentUser?.id, enrollment?.course.title, isContentExpanded, lessonsResult?.lessons]);
 
-		setIsMobileNavOpen(false);
-		setIsFocusMode(true);
-		restoreScrollAfterWorkspaceChange(scrollTop);
-	}, [
-		courseId,
-		currentPath,
-		currentUser?.id,
-		enrollment?.course.title,
-		lessonsResult?.lessons,
-		restoreScrollAfterWorkspaceChange
-	]);
+	const handleToggleLessonNavigationPinned = useCallback(() => {
+		setIsLessonNavigationPinned(currentValue => {
+			const nextValue = !currentValue;
 
-	const handleExitFocusMode = useCallback(() => {
-		const scrollTop = window.scrollY;
-		const activeContext = getActiveLessonContext(lessonsResult?.lessons ?? null);
-
-		trackCourseDashboardEvent({
-			eventName: 'course_focus_mode_exited',
-			courseId,
-			courseTitle: enrollment?.course.title,
-			userId: currentUser?.id,
-			lessonId: activeContext?.subsection.id,
-			lessonTitle: activeContext?.subsection.title,
-			moduleId: activeContext?.courseModule.id,
-			moduleTitle: activeContext?.courseModule.title,
-			displayMode: 'standard',
-			sourcePage: currentPath
-		});
-
-		if (document.fullscreenElement) {
-			document.exitFullscreen().catch(() => undefined);
-		}
-
-		setIsFocusMode(false);
-		restoreScrollAfterWorkspaceChange(scrollTop);
-	}, [
-		courseId,
-		currentPath,
-		currentUser?.id,
-		enrollment?.course.title,
-		lessonsResult?.lessons,
-		restoreScrollAfterWorkspaceChange
-	]);
-
-	const handleToggleBrowserFullscreen = useCallback(async () => {
-		const workspaceRoot = workspaceRootRef.current;
-		if (!workspaceRoot || !document.fullscreenEnabled) {
-			return;
-		}
-
-		if (document.fullscreenElement) {
-			trackCourseDashboardEvent({
-				eventName: 'course_fullscreen_toggled',
-				courseId,
-				courseTitle: enrollment?.course.title,
-				userId: currentUser?.id,
-				displayMode: 'focus',
-				sourcePage: currentPath
-			});
-			await document.exitFullscreen();
-			return;
-		}
-
-		trackCourseDashboardEvent({
-			eventName: 'course_fullscreen_toggled',
-			courseId,
-			courseTitle: enrollment?.course.title,
-			userId: currentUser?.id,
-			displayMode: 'fullscreen',
-			sourcePage: currentPath
-		});
-		await workspaceRoot.requestFullscreen();
-	}, [courseId, currentPath, currentUser?.id, enrollment?.course.title]);
-
-	useEffect(() => {
-		setIsBrowserFullscreenSupported(document.fullscreenEnabled);
-
-		const handleFullscreenChange = () => {
-			setIsBrowserFullscreen(Boolean(document.fullscreenElement));
-		};
-
-		document.addEventListener('fullscreenchange', handleFullscreenChange);
-		return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-	}, []);
-
-	useEffect(() => {
-		if (isFocusMode) {
-			exitFocusModeButtonRef.current?.focus({ preventScroll: true });
-		} else if (wasFocusModeRef.current) {
-			focusModeButtonRef.current?.focus({ preventScroll: true });
-		}
-
-		wasFocusModeRef.current = isFocusMode;
-	}, [isFocusMode]);
-
-	useEffect(() => {
-		if (!isFocusMode) {
-			return undefined;
-		}
-
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape' && !document.fullscreenElement) {
-				handleExitFocusMode();
+			try {
+				window.sessionStorage.setItem(LESSON_NAVIGATION_PINNED_SESSION_KEY, String(nextValue));
+			} catch {
+				// Keep the in-memory session preference when browser storage is unavailable.
 			}
-		};
 
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [handleExitFocusMode, isFocusMode]);
-
-	useEffect(() => {
-		if (isFocusMode && activeTab !== 'lessons') {
-			handleExitFocusMode();
-		}
-	}, [activeTab, handleExitFocusMode, isFocusMode]);
+			return nextValue;
+		});
+	}, []);
 
 	const handleCompleteLesson = useCallback(async () => {
 		const lessons = lessonsResult?.lessons ?? null;
@@ -533,7 +545,7 @@ export const useCourseLearningPage = (courseId: string) => {
 			destination: nextLesson ? 'lesson' : 'assignment',
 			completionPercentage: enrollment.progressPercent,
 			enrollmentStatus: enrollment.status,
-			sourcePage: currentPath
+			sourcePage: currentPathRef.current
 		});
 
 		setIsCompletingLesson(true);
@@ -544,6 +556,7 @@ export const useCourseLearningPage = (courseId: string) => {
 			setLessonsResult(result);
 			setEnrollment(result.enrollment);
 			setHasReachedLessonBottom(result.lessons.hasAdminAccess);
+			const nextActiveContext = getActiveLessonContext(result.lessons);
 
 			trackCourseDashboardEvent({
 				eventName: 'course_lesson_completed',
@@ -556,34 +569,35 @@ export const useCourseLearningPage = (courseId: string) => {
 				moduleTitle: courseModule.title,
 				completionPercentage: result.enrollment.progressPercent,
 				enrollmentStatus: result.enrollment.status,
-				sourcePage: currentPath
+				sourcePage: currentPathRef.current
 			});
 
 			if (!nextLesson && !result.lessons.hasAdminAccess) {
 				setActiveTab('assignment');
+				navigateToRoute(getCourseWorkspaceRoute('assignment'));
+			} else if (nextActiveContext) {
+				navigateToRoute(
+					getCourseWorkspaceRoute('lessons', {
+						moduleId: nextActiveContext.courseModule.id,
+						subsectionId: nextActiveContext.subsection.id
+					})
+				);
 			}
 		} catch {
 			setLessonErrorMessage('Unable to mark this lesson complete right now. Please try again.');
 		} finally {
 			setIsCompletingLesson(false);
 		}
-	}, [courseId, currentPath, currentUser?.id, enrollment, lessonsResult]);
+	}, [courseId, currentUser?.id, enrollment, lessonsResult, navigateToRoute]);
 
 	const activeTabLabel = useMemo(() => courseTabs.find(tab => tab.id === activeTab)?.label ?? 'Overview', [activeTab]);
-	const activeLessonContext = useMemo(
-		() => getActiveLessonContext(lessonsResult?.lessons ?? null),
-		[lessonsResult?.lessons]
-	);
 	const shouldShowUnlockedOverviewRail =
 		activeTab === 'overview' && Boolean(enrollment?.accessUnlockedAt && dashboard && !isDashboardLoading);
 	const shouldShowLessonRail = activeTab === 'lessons' && canOpenLearningTabs;
 	const shouldShowOverviewRail = activeTab === 'overview' || shouldShowLessonRail;
-	const workspaceGridColumns = isFocusMode
-		? 'minmax(0, 1fr)'
-		: getCourseWorkspaceGridColumns(shouldShowOverviewRail, isLearningRailCollapsed);
+	const workspaceGridColumns = getCourseWorkspaceGridColumns(shouldShowOverviewRail, isLearningRailCollapsed);
 
 	return {
-		activeLessonContext,
 		activeTab,
 		activeTabLabel,
 		canBypassProgression,
@@ -592,24 +606,20 @@ export const useCourseLearningPage = (courseId: string) => {
 		dashboardErrorMessage,
 		enrollment,
 		errorMessage,
-		exitFocusModeButtonRef,
-		focusModeButtonRef,
 		handleAskDoubt,
 		handleCompleteLesson,
 		handleCourseUnlocked,
-		handleEnterFocusMode,
-		handleExitFocusMode,
 		handleLessonBottomReached,
 		handleLessonSelect,
 		handleTabChange,
-		handleToggleBrowserFullscreen,
+		handleToggleContentWidth,
+		handleToggleLessonNavigationPinned,
 		hasReachedLessonBottom,
-		isBrowserFullscreen,
-		isBrowserFullscreenSupported,
 		isCompletingLesson,
+		isContentExpanded,
 		isDashboardLoading,
-		isFocusMode,
 		isLearningRailCollapsed,
+		isLessonNavigationPinned,
 		isLessonsLoading,
 		isLoading,
 		isMobileNavOpen,
@@ -625,7 +635,6 @@ export const useCourseLearningPage = (courseId: string) => {
 		shouldShowLessonRail,
 		shouldShowOverviewRail,
 		shouldShowUnlockedOverviewRail,
-		workspaceGridColumns,
-		workspaceRootRef
+		workspaceGridColumns
 	};
 };

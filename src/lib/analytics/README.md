@@ -1,6 +1,6 @@
 # Analytics Integration Guide
 
-This project uses client-only analytics integrations with centralized helpers for Mixpanel and Meta Pixel.
+This project uses centralized Mixpanel, Meta Pixel, and server-side Meta Conversions API integrations.
 
 Custom properties follow the `#property_name` convention.
 
@@ -19,6 +19,7 @@ Event names follow the `[Page Name] - [Section Name] - [Event Name]` convention.
 - Safe browser-only initialization (`initMixpanel`)
 - Mixpanel auto page view tracking via autocapture
 - Meta Pixel initialization and `PageView` tracking across App Router transitions
+- Deduplicated Meta Pixel and Conversions API signup/enrollment conversions
 - Analytics collection for all users
 - Session replay ensured across all pages and App Router transitions
 - Temporary anonymous identify/profile sync (until real auth is added)
@@ -44,7 +45,7 @@ Examples:
 - `Course - App - Client Error Captured`
 - `Login - Student Login - Google Login Succeeded`
 - `Home - Google One Tap - Google Login Succeeded`
-- `Onboarding - Mobile Onboarding - Mobile Number Skipped`
+- `Onboarding - Mobile Onboarding - Mobile Number Submitted`
 - `Onboarding - Education Onboarding - Education Profile Submitted`
 - `Profile - Learning Profile - Learning Profile Update Succeeded`
 - `Course - Hero - Free Course Enroll Button Clicked`
@@ -52,6 +53,9 @@ Examples:
 - `Course - Hero - Free Course Enrollment Successful`
 - `Course - Hero - Go To Course Clicked`
 - `Profile - Enrolled Courses - Enrolled Courses Section Viewed`
+- `Profile - Enrolled Courses - View All Courses Clicked`
+- `My Courses - Enrolled Courses - All Enrolled Courses Viewed`
+- `My Courses - Enrolled Courses - Go To Course Clicked`
 - `Admin - Admin Enrollments - Course Enrollment Counts Viewed`
 - `Admin - Admin Enrollments - Course Enrollment Details Viewed`
 - `course_whatsapp_join_verified`
@@ -61,13 +65,12 @@ Examples:
 - `course_progress_clicked`
 - `course_whatsapp_opened`
 - `course_certificate_earned`
+- `course_feedback_submitted`
 - `course_lesson_opened`
 - `course_lesson_next_clicked`
 - `course_lesson_completed`
 - `course_doubt_clicked`
-- `course_focus_mode_entered`
-- `course_focus_mode_exited`
-- `course_fullscreen_toggled`
+- `course_content_width_toggled`
 - `course_pdf_viewer_toggled`
 
 All tracked events automatically include current page context:
@@ -89,6 +92,8 @@ Set these in `.env` and deployment environments:
 - `NEXT_PUBLIC_META_PIXEL_ID`
 - `NEXT_PUBLIC_META_PIXEL_ENABLED`
 - `NEXT_PUBLIC_META_PIXEL_TRACK_LOCALHOST`
+
+The matching server-side Meta dataset id and access token are configured only in `Shattak.Api`; never expose the CAPI access token through a `NEXT_PUBLIC_` variable.
 
 For QA or full capture across pages, set `NEXT_PUBLIC_MIXPANEL_REPLAY_PERCENT=100`.
 
@@ -125,6 +130,15 @@ Free-course enrollment events use the existing Mixpanel helpers and include cour
 
 Admin enrollment events are limited to aggregate/count viewing and selected course inspection. Do not track internal course upload/edit operations, invitation management, or other admin-only workflow actions unless they directly affect a student-facing experience.
 
+## Meta Conversion Tracking
+
+- A newly created Shattak user sends the standard `CompleteRegistration` event.
+- A newly created free-course enrollment sends the standard `Lead` event.
+- Existing-user logins and already-existing enrollments do not send conversion events.
+- The browser supplies one event id to the API. Pixel and CAPI use that same id for Meta deduplication.
+- CAPI user matching uses SHA-256-normalized email and internal user id, plus request IP/user-agent and `_fbp`/`_fbc` identifiers when available.
+- Browser blocking never prevents CAPI delivery, and Meta delivery failure never blocks signup or enrollment.
+
 ## Course Dashboard Tracking
 
 Unlocked course workspace events use exact snake_case event names so product funnel reports can query these milestones directly:
@@ -136,6 +150,7 @@ Unlocked course workspace events use exact snake_case event names so product fun
 - `course_progress_clicked`
 - `course_whatsapp_opened`
 - `course_certificate_earned`
+- `course_feedback_submitted`
 
 These events should include the available course/user state without sending extra PII:
 
@@ -162,9 +177,7 @@ Student lesson consumption is tracked from the course workspace only. These even
 - `course_lesson_next_clicked`: fired when the learner uses the lesson Next action.
 - `course_lesson_completed`: fired after the backend marks the lesson complete.
 - `course_doubt_clicked`: fired when the learner uses Ask Doubt to open the course WhatsApp community.
-- `course_focus_mode_entered`: fired when a learner hides the course navigation and progress rail to focus on lesson content.
-- `course_focus_mode_exited`: fired when a learner returns to the standard course workspace.
-- `course_fullscreen_toggled`: fired when a learner enters or exits browser fullscreen from focus mode.
+- `course_content_width_toggled`: fired when a learner switches between the reading and expanded lesson widths.
 - `course_pdf_viewer_toggled`: fired when a learner expands or restores the inline PDF viewer.
 
 Lesson events can include:

@@ -1,5 +1,6 @@
 import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react';
-import { FiBookOpen, FiCheckCircle, FiChevronLeft, FiChevronRight, FiLock, FiTrendingUp } from 'react-icons/fi';
+import dynamic from 'next/dynamic';
+import { FiBookOpen, FiChevronLeft, FiChevronRight, FiLock, FiTrendingUp } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import type {
@@ -9,12 +10,72 @@ import type {
 	CourseLessonsState
 } from '~/lib/api/enrollments';
 
-import { courseNextSteps, workspaceBoundaryColor } from './constants';
-import { CourseLessonsTab, LessonProgressSidebar } from './CourseLessons';
-import { CourseNextStepsPanel, CourseOverviewContent, CourseUnlockedOverviewRail } from './CourseOverview';
+import { workspaceActiveTextColor, workspaceBoundaryColor } from './constants';
+import {
+	CourseNextLearningAction,
+	CourseNextStepsPanel,
+	CourseOverviewContent,
+	CourseUnlockedOverviewRail
+} from './CourseOverview';
+import { buildCourseWorkspacePath, getCourseWorkspaceRoute } from './routes';
 import type { CourseTabId } from './types';
 
-const CoursePlaceholderTab = ({ label }: { label: string }) => (
+const CourseLessonsTab = dynamic(() => import('./CourseLessons').then(module => module.CourseLessonsTab), {
+	loading: () => (
+		<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={6}>
+			<Text color="text.muted">Loading lesson workspace...</Text>
+		</Box>
+	)
+});
+
+const LessonProgressSidebar = dynamic(() => import('./CourseLessons').then(module => module.LessonProgressSidebar), {
+	loading: () => <Text color="text.muted">Loading lesson progress...</Text>
+});
+
+const CourseCertificateTab = dynamic(
+	() => import('./certificate/CourseCertificateTab').then(module => module.CourseCertificateTab),
+	{
+		loading: () => (
+			<Box border="1px solid" borderColor={workspaceBoundaryColor} borderRadius="card" bg="bg.card" p={6}>
+				<Text color="text.muted">Loading certificate section...</Text>
+			</Box>
+		)
+	}
+);
+
+type CourseLockedSectionProps = {
+	actionLabel?: string;
+	actionTab?: CourseTabId;
+	activeTab: CourseTabId;
+	courseId: string;
+	currentUser: AuthenticatedUser | null;
+	dashboard: CourseLearningDashboard | null;
+	dashboardErrorMessage: string;
+	description?: string;
+	enrollment: CourseEnrollment;
+	isDashboardLoading: boolean;
+	label: string;
+	onDashboardRetry: () => void;
+	onLessonSelect: (subsectionId: string) => void;
+	onTabChange: (tabId: CourseTabId) => void;
+};
+
+const CourseLockedSection = ({
+	actionLabel,
+	actionTab,
+	activeTab,
+	courseId,
+	currentUser,
+	dashboard,
+	dashboardErrorMessage,
+	description = 'Complete the course lessons to unlock this section.',
+	enrollment,
+	isDashboardLoading,
+	label,
+	onDashboardRetry,
+	onLessonSelect,
+	onTabChange
+}: CourseLockedSectionProps) => (
 	<Box
 		border="1px solid"
 		borderColor={workspaceBoundaryColor}
@@ -25,7 +86,7 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 		display="grid"
 		placeItems="center"
 	>
-		<Stack gap={{ base: 6, md: 8 }} align="center" maxW="760px" w="full">
+		<Stack gap={{ base: 5, md: 7 }} align="center" maxW="900px" w="full">
 			<Box
 				borderRadius="card"
 				bg="bg.subtle"
@@ -53,32 +114,62 @@ const CoursePlaceholderTab = ({ label }: { label: string }) => (
 							{label}
 						</Text>
 						<Heading mt={2} size={{ base: 'lg', md: 'xl' }}>
-							This Section Is Locked
+							This section is locked
 						</Heading>
 						<Text mt={2} color="text.muted" fontSize={{ base: 'md', md: 'lg' }}>
-							To unlock, please follow the steps below.
+							{description}
 						</Text>
+						{actionLabel && actionTab ? (
+							<Button
+								mt={5}
+								borderRadius="full"
+								bg="primary"
+								color={workspaceActiveTextColor}
+								_hover={{ bg: 'primaryHover' }}
+								onClick={() => onTabChange(actionTab)}
+							>
+								{actionLabel}
+								<FiChevronRight />
+							</Button>
+						) : null}
 					</Box>
 				</HStack>
 			</Box>
 
-			<Stack gap={5} w="full" maxW="560px">
-				<Heading size="lg" textAlign="center">
-					Your next steps
-				</Heading>
-				<Stack gap={3}>
-					{courseNextSteps.map((step, index) => (
-						<HStack key={step} align="start" gap={3}>
-							<Box color="primary" pt={0.5}>
-								<FiCheckCircle />
-							</Box>
-							<Text color="text.muted" fontSize="sm" lineHeight="tall">
-								{index + 1}. {step}
-							</Text>
-						</HStack>
-					))}
+			{!actionTab && dashboard && dashboard.completion.completedSubsections < dashboard.completion.totalSubsections ? (
+				<Box w="full">
+					<CourseNextLearningAction
+						courseId={courseId}
+						currentUser={currentUser}
+						dashboard={dashboard}
+						enrollment={enrollment}
+						onLessonSelect={onLessonSelect}
+						onTabChange={onTabChange}
+						sourcePage={buildCourseWorkspacePath(courseId, getCourseWorkspaceRoute(activeTab))}
+					/>
+				</Box>
+			) : null}
+
+			{!actionTab && dashboard && dashboard.completion.completedSubsections >= dashboard.completion.totalSubsections ? (
+				<Button borderRadius="full" variant="outline" onClick={() => onTabChange('overview')}>
+					Back to course overview
+				</Button>
+			) : null}
+
+			{!actionTab && !dashboard && isDashboardLoading ? (
+				<Text color="text.muted">Loading your next learning action...</Text>
+			) : null}
+
+			{!actionTab && !dashboard && dashboardErrorMessage ? (
+				<Stack align="center" gap={3}>
+					<Text color="text.muted" textAlign="center">
+						{dashboardErrorMessage}
+					</Text>
+					<Button borderRadius="full" variant="outline" onClick={onDashboardRetry}>
+						Retry dashboard
+					</Button>
 				</Stack>
-			</Stack>
+			) : null}
 		</Stack>
 	</Box>
 );
@@ -92,8 +183,6 @@ type CourseLearningMainContentProps = {
 	dashboard: CourseLearningDashboard | null;
 	dashboardErrorMessage: string;
 	enrollment: CourseEnrollment;
-	hasReachedLessonBottom: boolean;
-	isCompletingLesson: boolean;
 	isDashboardLoading: boolean;
 	isLessonsLoading: boolean;
 	learnerName: string;
@@ -102,7 +191,6 @@ type CourseLearningMainContentProps = {
 	onCourseUnlocked: (enrollment: CourseEnrollment) => void;
 	onDashboardRetry: () => void;
 	onLessonBottomReached: () => void;
-	onLessonComplete: () => void;
 	onLessonRetry: () => void;
 	onLessonSelect: (subsectionId: string) => void;
 	onTabChange: (tabId: CourseTabId) => void;
@@ -117,8 +205,6 @@ export const CourseLearningMainContent = ({
 	dashboard,
 	dashboardErrorMessage,
 	enrollment,
-	hasReachedLessonBottom,
-	isCompletingLesson,
 	isDashboardLoading,
 	isLessonsLoading,
 	learnerName,
@@ -127,11 +213,12 @@ export const CourseLearningMainContent = ({
 	onCourseUnlocked,
 	onDashboardRetry,
 	onLessonBottomReached,
-	onLessonComplete,
 	onLessonRetry,
 	onLessonSelect,
 	onTabChange
 }: CourseLearningMainContentProps) => {
+	const courseCompleted = Boolean(enrollment.completedAt) || (dashboard?.completion.percentage ?? 0) === 100;
+
 	if (activeTab === 'overview') {
 		return (
 			<CourseOverviewContent
@@ -143,6 +230,7 @@ export const CourseLearningMainContent = ({
 				isDashboardLoading={isDashboardLoading}
 				learnerName={learnerName}
 				onDashboardRetry={onDashboardRetry}
+				onLessonSelect={onLessonSelect}
 				onTabChange={onTabChange}
 				onUnlocked={onCourseUnlocked}
 			/>
@@ -153,20 +241,64 @@ export const CourseLearningMainContent = ({
 		return (
 			<CourseLessonsTab
 				canBypassProgression={canBypassProgression}
-				hasReachedBottom={hasReachedLessonBottom}
-				isCompletingLesson={isCompletingLesson}
 				isLoading={isLessonsLoading}
 				lessonsResult={lessonsResult}
 				lessonErrorMessage={lessonErrorMessage}
-				onCompleteLesson={onLessonComplete}
-				onPreviousLesson={onLessonSelect}
 				onRetry={onLessonRetry}
 				onScrollBottomReached={onLessonBottomReached}
 			/>
 		);
 	}
 
-	return <CoursePlaceholderTab label={activeTabLabel} />;
+	if (activeTab === 'certificate') {
+		if (!courseCompleted && !canBypassProgression) {
+			return (
+				<CourseLockedSection
+					actionLabel="Submit Assignment"
+					actionTab="assignment"
+					activeTab={activeTab}
+					courseId={courseId}
+					currentUser={currentUser}
+					dashboard={dashboard}
+					dashboardErrorMessage={dashboardErrorMessage}
+					description="To unlock your certificate, please submit your course assignment."
+					enrollment={enrollment}
+					isDashboardLoading={isDashboardLoading}
+					label={activeTabLabel}
+					onDashboardRetry={onDashboardRetry}
+					onLessonSelect={onLessonSelect}
+					onTabChange={onTabChange}
+				/>
+			);
+		}
+
+		return (
+			<CourseCertificateTab
+				courseCompleted={courseCompleted}
+				courseId={courseId}
+				currentPath={`/my-courses/${encodeURIComponent(courseId)}/certificate`}
+				enrollment={enrollment}
+				isAdmin={canBypassProgression}
+				userId={currentUser?.id}
+			/>
+		);
+	}
+
+	return (
+		<CourseLockedSection
+			activeTab={activeTab}
+			courseId={courseId}
+			currentUser={currentUser}
+			dashboard={dashboard}
+			dashboardErrorMessage={dashboardErrorMessage}
+			enrollment={enrollment}
+			isDashboardLoading={isDashboardLoading}
+			label={activeTabLabel}
+			onDashboardRetry={onDashboardRetry}
+			onLessonSelect={onLessonSelect}
+			onTabChange={onTabChange}
+		/>
+	);
 };
 
 type CourseLearningRailProps = {
@@ -222,6 +354,7 @@ export const CourseLearningRail = ({
 
 		return (
 			<Stack
+				display={{ base: 'none', xl: 'flex' }}
 				align="center"
 				gap={3}
 				justifySelf="end"
@@ -265,7 +398,7 @@ export const CourseLearningRail = ({
 	}
 
 	return (
-		<Stack gap={2} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
+		<Stack display={{ base: 'none', xl: 'flex' }} gap={2} position={{ xl: 'sticky' }} top={{ xl: '96px' }}>
 			<HStack justify="space-between" px={2}>
 				<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
 					Course panel

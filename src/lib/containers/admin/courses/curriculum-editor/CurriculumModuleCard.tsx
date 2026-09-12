@@ -99,13 +99,7 @@ export const CurriculumModuleCard = ({
 				</HStack>
 			</HStack>
 
-			{isCollapsed ? (
-				<Box borderTop="1px solid" borderColor="border.default" pt={4}>
-					<Text fontSize="sm" color="text.muted">
-						Module details are collapsed. Expand this module to edit its title, description, and subsections.
-					</Text>
-				</Box>
-			) : (
+			{isCollapsed ? null : (
 				<>
 					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
 						<Box>

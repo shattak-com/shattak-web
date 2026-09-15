@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge, Box, Button, HStack, Stack, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, HStack, Image, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
-import { FiCheckCircle, FiEdit3 } from 'react-icons/fi';
+import { FiBookOpen, FiCheckCircle, FiEdit3 } from 'react-icons/fi';
 
 import { courseEditorStepGroups, courseEditorSteps } from './course-editor/constants';
 import { CourseEditorStepFields } from './course-editor/CourseEditorSteps';
@@ -27,28 +27,64 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 		);
 	}
 
+	const courseTitle = editor.watchedValues.title.trim() || (editor.isEditMode ? 'Untitled course' : 'New course');
+	const courseThumbnail = editor.watchedValues.thumbnailImage.trim();
+
 	return (
 		<form onSubmit={handleSubmit(editor.handleSave, editor.handleInvalidSave)}>
 			<Stack gap={4}>
 				<Box border="1px solid" borderColor="gray.500" borderRadius="xl" bg="bg.card" p={4}>
-					<HStack justify="space-between" gap={3} flexWrap="wrap">
-						<Box>
-							<HStack gap={2} flexWrap="wrap">
-								<Text fontSize="md" fontWeight="bold">
-									{editor.isEditMode ? 'Edit course' : 'Add course'}
+					<Stack
+						direction={{ base: 'column', lg: 'row' }}
+						justify="space-between"
+						align={{ base: 'stretch', lg: 'center' }}
+						gap={3}
+					>
+						<HStack gap={3} align="center" minW={0}>
+							{courseThumbnail ? (
+								<Image
+									src={courseThumbnail}
+									alt=""
+									boxSize={{ base: '44px', md: '52px' }}
+									borderRadius="lg"
+									objectFit="cover"
+									border="1px solid"
+									borderColor="border.default"
+									flexShrink={0}
+								/>
+							) : (
+								<Box
+									boxSize={{ base: '44px', md: '52px' }}
+									borderRadius="lg"
+									bg="bg.subtle"
+									border="1px solid"
+									borderColor="border.default"
+									display="grid"
+									placeItems="center"
+									color="icon.brand"
+									flexShrink={0}
+								>
+									<FiBookOpen size={22} aria-hidden />
+								</Box>
+							)}
+							<Box minW={0}>
+								<HStack gap={2} flexWrap="wrap">
+									<Text fontSize="md" fontWeight="bold">
+										{editor.isEditMode ? 'Edit course' : 'Add course'}
+									</Text>
+									<Badge colorPalette={editor.watchedValues.status === 'PUBLISHED' ? 'green' : 'gray'} gap={1}>
+										{editor.watchedValues.status === 'PUBLISHED' ? <FiCheckCircle /> : <FiEdit3 />}
+										{editor.watchedValues.status}
+									</Badge>
+									{editor.isDirty ? <Badge colorPalette="orange">Course details unsaved</Badge> : null}
+									{editor.dirtyCurriculumSection ? <Badge colorPalette="orange">Curriculum unsaved</Badge> : null}
+								</HStack>
+								<Text mt={1} fontSize="sm" fontWeight="semibold" lineClamp={2} overflowWrap="anywhere">
+									{courseTitle}
 								</Text>
-								<Badge colorPalette={editor.watchedValues.status === 'PUBLISHED' ? 'green' : 'gray'} gap={1}>
-									{editor.watchedValues.status === 'PUBLISHED' ? <FiCheckCircle /> : <FiEdit3 />}
-									{editor.watchedValues.status}
-								</Badge>
-								{editor.isDirty ? <Badge colorPalette="orange">Course details unsaved</Badge> : null}
-								{editor.dirtyCurriculumSection ? <Badge colorPalette="orange">Curriculum unsaved</Badge> : null}
-							</HStack>
-							<Text mt={1} fontSize="xs" color="text.muted">
-								Split into focused sections so long course details stay manageable.
-							</Text>
-						</Box>
-						<HStack gap={2}>
+							</Box>
+						</HStack>
+						<HStack gap={2} flexWrap="wrap" justify={{ base: 'flex-start', lg: 'flex-end' }}>
 							{editor.courseViewHref ? (
 								<Button asChild variant="outline" borderRadius="full">
 									<Link href={editor.courseViewHref} target="_blank" rel="noopener noreferrer">
@@ -67,7 +103,7 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								{editor.isSaving ? 'Saving details...' : 'Save course details'}
 							</Button>
 						</HStack>
-					</HStack>
+					</Stack>
 				</Box>
 
 				<Box
@@ -154,6 +190,8 @@ const CourseEditorPage = ({ courseId }: CourseEditorPageProps) => {
 								control={control}
 								register={register}
 								errors={errors}
+								onSlugChange={editor.handleSlugChange}
+								onTitleChange={editor.handleTitleChange}
 								summaryItems={editor.summaryItems}
 								course={editor.course}
 								courseId={courseId}

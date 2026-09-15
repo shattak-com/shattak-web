@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from '~/lib/api/config';
 import type { CourseDetails, CourseLevel } from '~/lib/containers/course/types';
+import { normalizeCourseDetails } from '~/lib/containers/course/utils/normalize-course';
 
 export type CourseTool = {
 	id: string;
@@ -93,5 +94,5 @@ export const getCourseById = async (id: string): Promise<CourseDetails | null> =
 		throw new Error(`Shattak API request failed with status ${response.status}`);
 	}
 
-	return readApiData<CourseDetails>(response);
+	return normalizeCourseDetails(await readApiData<CourseDetails>(response));
 };

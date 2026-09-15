@@ -24,7 +24,7 @@ export const navLinks: NavLink[] = [
 	{ id: 'about', label: 'About', href: '/about' },
 	{ id: 'courses', label: 'Courses', href: '/#courses' },
 	{ id: 'testimonials', label: 'Testimonials', href: '/#testimonials' },
-	{ id: 'instructor', label: 'Become an Instructor', href: '/#instructor' }
+	{ id: 'notes', label: 'Notes', href: '/notes' }
 ];
 
 export { courseCategories } from '~/lib/constants/course-categories';

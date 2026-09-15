@@ -41,11 +41,44 @@ export const getSafeExternalUrl = (value: string) => {
 	}
 };
 
+const getGoogleSlidesEmbedUrl = (sourceUrl: string) => {
+	try {
+		const url = new URL(sourceUrl);
+		const hostname = url.hostname.replace(/^www\./, '');
+
+		if (hostname !== 'docs.google.com') {
+			return '';
+		}
+
+		const standardPresentation = url.pathname.match(
+			/^\/presentation\/d\/([A-Za-z0-9_-]+)(?:\/(?:edit|embed|present|preview|pub|view))?\/?$/
+		);
+
+		if (standardPresentation?.[1]) {
+			return `https://docs.google.com/presentation/d/${standardPresentation[1]}/embed`;
+		}
+
+		const publishedPresentation = url.pathname.match(/^\/presentation\/d\/e\/([A-Za-z0-9_-]+)(?:\/(?:embed|pub))?\/?$/);
+
+		return publishedPresentation?.[1]
+			? `https://docs.google.com/presentation/d/e/${publishedPresentation[1]}/embed`
+			: '';
+	} catch {
+		return '';
+	}
+};
+
 export const getSafePresentationViewerUrl = (value: string) => {
 	const sourceUrl = getSafeExternalUrl(value);
 
 	if (!sourceUrl) {
 		return '';
+	}
+
+	const googleSlidesEmbedUrl = getGoogleSlidesEmbedUrl(sourceUrl);
+
+	if (googleSlidesEmbedUrl) {
+		return googleSlidesEmbedUrl;
 	}
 
 	return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(sourceUrl)}`;
@@ -61,12 +94,13 @@ export const getSafeIframeUrl = (value: string) => {
 	try {
 		const url = new URL(value);
 		const hostname = url.hostname.replace(/^www\./, '');
+		const googleSlidesEmbedUrl = getGoogleSlidesEmbedUrl(url.toString());
 
-		if (hostname === 'player.vimeo.com' && /^\/video\/\d+\/?$/.test(url.pathname)) {
-			return url.toString();
+		if (googleSlidesEmbedUrl) {
+			return googleSlidesEmbedUrl;
 		}
 
-		if (hostname === 'docs.google.com' && /\/(embed|preview)\/?$/.test(url.pathname)) {
+		if (hostname === 'player.vimeo.com' && /^\/video\/\d+\/?$/.test(url.pathname)) {
 			return url.toString();
 		}
 

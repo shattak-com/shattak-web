@@ -16,6 +16,11 @@ type AdminShellProps = {
 
 const adminNavItems = [
 	{
+		id: 'notes',
+		label: 'Notes',
+		href: '/admin/notes'
+	},
+	{
 		id: 'courses',
 		label: 'Courses',
 		href: '/admin/courses'
@@ -50,6 +55,10 @@ export const useAdminShellUser = () => {
 };
 
 const getActiveSection = (pathname: string) => {
+	if (pathname.startsWith('/admin/notes')) {
+		return 'notes';
+	}
+
 	if (pathname.startsWith('/admin/courses')) {
 		return 'courses';
 	}
@@ -75,6 +84,7 @@ const AdminShell = ({ children }: AdminShellProps) => {
 	const roleLabel = useMemo(() => adminUser?.roles.join(', ') ?? '', [adminUser]);
 	const activeSection = getActiveSection(pathname);
 	const activeTitle = {
+		notes: 'Notes Management',
 		courses: 'Course Management',
 		enrollments: 'Enrollment Management',
 		invitations: 'Admin Invitations',

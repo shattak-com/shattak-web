@@ -1,10 +1,47 @@
 'use client';
 
-import { Badge, Box, Button, HStack, Input, Stack, Table, Text } from '@chakra-ui/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Badge, Box, Button, HStack, Stack, Table, Text } from '@chakra-ui/react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FiCalendar, FiClock, FiPhone, FiTrendingUp, FiUsers } from 'react-icons/fi';
 
-import { deleteAdminUser, listAdminUsers, type AdminManagedUser } from '~/lib/api/auth';
+import {
+	deleteAdminUser,
+	listAdminUsers,
+	type AdminManagedUser,
+	type AdminUserFilterOptions,
+	type AdminUserPagination,
+	type AdminUserStats
+} from '~/lib/api/admin-users';
+import AdminMetricsGrid from '~/lib/containers/admin/components/AdminMetricsGrid';
 import { useAdminShellUser } from '~/lib/containers/admin/components/AdminShell';
+import AdminUserFilters, { type AdminUserFilterValues } from '~/lib/containers/admin/users/AdminUserFilters';
+import { formatMonthKey } from '~/lib/containers/admin/utils/monthly-metrics';
+
+const createDefaultFilters = (): AdminUserFilterValues => ({
+	q: '',
+	college: '',
+	department: '',
+	passoutYear: '',
+	interest: '',
+	joinedOrder: 'desc'
+});
+
+const emptyFilterOptions: AdminUserFilterOptions = {
+	colleges: [],
+	departments: [],
+	passoutYears: [],
+	interests: []
+};
+
+const adminUserPageSize = 25;
+const defaultPagination: AdminUserPagination = {
+	page: 1,
+	pageSize: adminUserPageSize,
+	total: 0,
+	totalPages: 1,
+	hasNextPage: false,
+	hasPreviousPage: false
+};
 
 const formatDate = (value: string | null) => {
 	if (!value) {
@@ -43,29 +80,39 @@ const getDeleteDisabledReason = (adminUserId: string, adminRoles: string[], user
 export const AdminUsersContent = () => {
 	const adminUser = useAdminShellUser();
 	const [users, setUsers] = useState<AdminManagedUser[]>([]);
-	const [query, setQuery] = useState('');
+	const [filters, setFilters] = useState<AdminUserFilterValues>(createDefaultFilters);
+	const [appliedFilters, setAppliedFilters] = useState<AdminUserFilterValues>(createDefaultFilters);
+	const [filterOptions, setFilterOptions] = useState<AdminUserFilterOptions>(emptyFilterOptions);
+	const [stats, setStats] = useState<AdminUserStats | null>(null);
+	const [pagination, setPagination] = useState<AdminUserPagination>(defaultPagination);
 	const [isLoading, setIsLoading] = useState(true);
 	const [deletingUserId, setDeletingUserId] = useState('');
 	const [userPendingDeletionId, setUserPendingDeletionId] = useState('');
 	const [message, setMessage] = useState('');
 	const adminRoles = useMemo(() => adminUser.roles, [adminUser.roles]);
 
-	const loadUsers = useCallback(async (searchQuery: string) => {
+	const loadUsers = useCallback(async (nextFilters: AdminUserFilterValues, nextPage = 1) => {
 		setIsLoading(true);
 		setMessage('');
 
 		try {
-			const result = await listAdminUsers(searchQuery);
+			const result = await listAdminUsers({ ...nextFilters, page: nextPage, pageSize: adminUserPageSize });
 			setUsers(result.users);
+			setStats(result.stats);
+			setFilterOptions(result.filterOptions);
+			setPagination(result.pagination);
 		} catch {
 			setMessage('Unable to load users.');
+			setUsers([]);
+			setStats(null);
+			setPagination(defaultPagination);
 		} finally {
 			setIsLoading(false);
 		}
 	}, []);
 
 	useEffect(() => {
-		loadUsers('').catch(() => undefined);
+		loadUsers(createDefaultFilters()).catch(() => undefined);
 	}, [loadUsers]);
 
 	const handleDeleteUser = async (user: AdminManagedUser) => {
@@ -74,7 +121,7 @@ export const AdminUsersContent = () => {
 
 		try {
 			await deleteAdminUser(user.id);
-			await loadUsers(query);
+			await loadUsers(appliedFilters, pagination.page);
 			setMessage('User deleted.');
 			setUserPendingDeletionId('');
 		} catch {
@@ -83,6 +130,56 @@ export const AdminUsersContent = () => {
 			setDeletingUserId('');
 		}
 	};
+	const applyFilters = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		const nextFilters = { ...filters, q: filters.q.trim() };
+		setAppliedFilters(nextFilters);
+		setUserPendingDeletionId('');
+		loadUsers(nextFilters, 1).catch(() => undefined);
+	};
+	const resetFilters = () => {
+		const defaults = createDefaultFilters();
+		setFilters(defaults);
+		setAppliedFilters(defaults);
+		setUserPendingDeletionId('');
+		loadUsers(defaults, 1).catch(() => undefined);
+	};
+	const appliedFilterCount = useMemo(
+		() =>
+			[
+				appliedFilters.q,
+				appliedFilters.college,
+				appliedFilters.department,
+				appliedFilters.passoutYear,
+				appliedFilters.interest
+			].filter(Boolean).length,
+		[appliedFilters]
+	);
+	const metricItems = useMemo(
+		() => [
+			{ label: 'Total users', value: stats?.totalUserCount ?? 0, icon: <FiUsers /> },
+			{ label: 'Users with phone numbers', value: stats?.usersWithPhoneCount ?? 0, icon: <FiPhone /> },
+			{
+				label: `New signups · ${stats ? formatMonthKey(stats.currentMonthKey, false) : 'current month'}`,
+				value: stats?.currentMonthSignupCount ?? 0,
+				helperText: stats ? formatMonthKey(stats.currentMonthKey) : undefined,
+				icon: <FiCalendar />
+			},
+			{
+				label: `New signups · ${stats ? formatMonthKey(stats.previousMonthKey, false) : 'previous month'}`,
+				value: stats?.previousMonthSignupCount ?? 0,
+				helperText: stats ? formatMonthKey(stats.previousMonthKey) : undefined,
+				icon: <FiClock />
+			},
+			{
+				label: 'Average signups / month',
+				value: stats?.averageSignupsPerMonth ?? 0,
+				helperText: stats ? `Since ${formatMonthKey(stats.baselineMonthKey)}` : undefined,
+				icon: <FiTrendingUp />
+			}
+		],
+		[stats]
+	);
 
 	return (
 		<Stack gap={4}>
@@ -96,43 +193,20 @@ export const AdminUsersContent = () => {
 							View account, role, onboarding, profile, and session details.
 						</Text>
 					</Box>
-					<HStack gap={3} flexWrap="wrap">
-						<Input
-							value={query}
-							onChange={event => setQuery(event.target.value)}
-							placeholder="Search by name or email"
-							maxW={{ base: '100%', md: '420px' }}
-							h="40px"
-						/>
-						<Button
-							bg="primary"
-							color="text.inverse"
-							borderRadius="full"
-							h="40px"
-							px={5}
-							onClick={() => {
-								loadUsers(query).catch(() => undefined);
-							}}
-						>
-							Search
-						</Button>
-						<Button
-							variant="outline"
-							borderRadius="full"
-							h="40px"
-							px={5}
-							onClick={() => {
-								setQuery('');
-								setUserPendingDeletionId('');
-								loadUsers('').catch(() => undefined);
-							}}
-						>
-							Reset
-						</Button>
-					</HStack>
+					<AdminUserFilters
+						appliedFilterCount={appliedFilterCount}
+						filters={filters}
+						filterOptions={filterOptions}
+						isLoading={isLoading}
+						onChange={setFilters}
+						onReset={resetFilters}
+						onSubmit={applyFilters}
+					/>
 					{message ? <Text color="text.muted">{message}</Text> : null}
 				</Stack>
 			</Box>
+
+			<AdminMetricsGrid items={metricItems} isLoading={isLoading} />
 
 			<Box border="1px solid" borderColor="border.default" borderRadius="xl" bg="bg.card" overflowX="auto">
 				{isLoading ? (
@@ -140,12 +214,13 @@ export const AdminUsersContent = () => {
 						Loading users...
 					</Text>
 				) : (
-					<Table.Root size="sm" minW="1040px">
+					<Table.Root size="sm" minW="1320px">
 						<Table.Header>
 							<Table.Row>
 								<Table.ColumnHeader minW="250px">User</Table.ColumnHeader>
 								<Table.ColumnHeader minW="160px">Roles</Table.ColumnHeader>
 								<Table.ColumnHeader minW="360px">Profile</Table.ColumnHeader>
+								<Table.ColumnHeader minW="280px">Enrolled courses</Table.ColumnHeader>
 								<Table.ColumnHeader minW="180px">Activity</Table.ColumnHeader>
 								<Table.ColumnHeader minW="140px" textAlign="right">
 									Action
@@ -153,6 +228,16 @@ export const AdminUsersContent = () => {
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
+							{users.length === 0 ? (
+								<Table.Row>
+									<Table.Cell colSpan={6} py={10} textAlign="center">
+										<Text fontWeight="semibold">No users match these filters</Text>
+										<Text mt={1} fontSize="xs" color="text.muted">
+											Reset one or more filters to broaden the results.
+										</Text>
+									</Table.Cell>
+								</Table.Row>
+							) : null}
 							{users.map(user => {
 								const deleteDisabledReason = getDeleteDisabledReason(adminUser.id, adminRoles, user);
 								const { profile } = user;
@@ -255,6 +340,29 @@ export const AdminUsersContent = () => {
 											</Stack>
 										</Table.Cell>
 										<Table.Cell>
+											<Stack gap={1.5} fontSize="xs" maxW="260px">
+												<Text fontWeight="semibold">
+													{user.enrollmentCount} {user.enrollmentCount === 1 ? 'course' : 'courses'}
+												</Text>
+												{user.recentCourseEnrollments.length ? (
+													<Stack as="ul" gap={1} listStyleType="none">
+														{user.recentCourseEnrollments.map(course => (
+															<Text as="li" key={course.id} color="text.muted" lineClamp={1} title={course.title}>
+																{course.title}
+															</Text>
+														))}
+													</Stack>
+												) : (
+													<Text color="text.muted">No course enrollments</Text>
+												)}
+												{user.enrollmentCount > user.recentCourseEnrollments.length ? (
+													<Text color="text.brand" fontWeight="semibold">
+														+{user.enrollmentCount - user.recentCourseEnrollments.length} more
+													</Text>
+												) : null}
+											</Stack>
+										</Table.Cell>
+										<Table.Cell>
 											<Stack gap={1} fontSize="xs">
 												<Text>{user.activeSessionCount} active sessions</Text>
 												<Text>{user.mentorApplicationCount} mentor apps</Text>
@@ -270,6 +378,30 @@ export const AdminUsersContent = () => {
 					</Table.Root>
 				)}
 			</Box>
+
+			<HStack justify="space-between" gap={3} flexWrap="wrap">
+				<Text fontSize="sm" color="text.muted">
+					Page {pagination.page} of {pagination.totalPages} · {pagination.total} users
+				</Text>
+				<HStack gap={2}>
+					<Button
+						variant="outline"
+						borderRadius="full"
+						disabled={isLoading || !pagination.hasPreviousPage}
+						onClick={() => loadUsers(appliedFilters, Math.max(1, pagination.page - 1)).catch(() => undefined)}
+					>
+						Previous
+					</Button>
+					<Button
+						variant="outline"
+						borderRadius="full"
+						disabled={isLoading || !pagination.hasNextPage}
+						onClick={() => loadUsers(appliedFilters, pagination.page + 1).catch(() => undefined)}
+					>
+						Next
+					</Button>
+				</HStack>
+			</HStack>
 		</Stack>
 	);
 };

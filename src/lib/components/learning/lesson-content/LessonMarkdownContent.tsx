@@ -10,6 +10,7 @@ import remarkMath from 'remark-math';
 
 import { getSafeExternalUrl, getSafeIframeUrl } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 import { lessonMarkdownSanitizeSchema } from '~/lib/components/learning/lesson-content/lesson-markdown-sanitize';
+import { LessonCodeBlock } from '~/lib/components/learning/lesson-content/LessonCodeBlock';
 import { MermaidDiagram } from '~/lib/components/learning/lesson-content/MermaidDiagram';
 import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
 
@@ -17,39 +18,50 @@ type LessonMarkdownContentProps = {
 	value: string;
 };
 
+type MarkdownAstNode = Record<string, unknown>;
+
+const asMarkdownAstNode = (value: unknown): MarkdownAstNode | null =>
+	value && typeof value === 'object' ? (value as MarkdownAstNode) : null;
+
+const getCodeNode = (node: unknown) => {
+	const rootNode = asMarkdownAstNode(node);
+	const firstChild = Array.isArray(rootNode?.children) ? asMarkdownAstNode(rootNode.children[0]) : null;
+
+	return firstChild?.type === 'element' && firstChild.tagName === 'code' ? firstChild : null;
+};
+
+const getNodeText = (node: MarkdownAstNode): string => {
+	if (node.type === 'text' && typeof node.value === 'string') {
+		return node.value;
+	}
+
+	return Array.isArray(node.children)
+		? node.children
+				.map(child => asMarkdownAstNode(child))
+				.filter(child => child !== null)
+				.map(getNodeText)
+				.join('')
+		: '';
+};
+
+const getCodeClassNames = (codeNode: MarkdownAstNode) => {
+	const properties = asMarkdownAstNode(codeNode.properties);
+
+	return Array.isArray(properties?.className)
+		? properties.className.filter(className => typeof className === 'string')
+		: [];
+};
+
+const getCodeBlockText = (node: unknown) => {
+	const codeNode = getCodeNode(node);
+
+	return codeNode ? getNodeText(codeNode).replace(/\r\n/g, '\n').replace(/^\n/, '').replace(/\n$/, '') : '';
+};
+
 const getMermaidChart = (node: unknown) => {
-	if (!node || typeof node !== 'object' || !('children' in node) || !Array.isArray(node.children)) {
-		return '';
-	}
+	const codeNode = getCodeNode(node);
 
-	const [codeNode] = node.children;
-
-	if (!codeNode || typeof codeNode !== 'object' || !('type' in codeNode) || codeNode.type !== 'element') {
-		return '';
-	}
-
-	if (!('tagName' in codeNode) || codeNode.tagName !== 'code' || !('properties' in codeNode)) {
-		return '';
-	}
-
-	const { properties } = codeNode;
-	const classNames =
-		properties && typeof properties === 'object' && 'className' in properties && Array.isArray(properties.className)
-			? properties.className
-			: [];
-
-	if (!classNames.includes('language-mermaid')) {
-		return '';
-	}
-
-	if (!('children' in codeNode) || !Array.isArray(codeNode.children)) {
-		return '';
-	}
-
-	return codeNode.children
-		.filter(child => child && typeof child === 'object' && 'type' in child && child.type === 'text')
-		.map(child => ('value' in child && typeof child.value === 'string' ? child.value : ''))
-		.join('');
+	return codeNode && getCodeClassNames(codeNode).includes('language-mermaid') ? getNodeText(codeNode) : '';
 };
 
 export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => {
@@ -64,10 +76,11 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 	return (
 		<Box
 			color="text.secondary"
-			lineHeight="tall"
+			fontSize="md"
+			lineHeight="relaxed"
 			overflowWrap="anywhere"
 			css={{
-				'& > * + *': { marginTop: '1rem' },
+				'& > * + *': { marginTop: '1.125rem' },
 				'& audio, & video': { maxWidth: '100%', width: '100%' },
 				'& button, & input, & select, & textarea': {
 					background: 'var(--chakra-colors-bg-card)',
@@ -75,11 +88,14 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 					borderRadius: 'var(--chakra-radii-md)',
 					color: 'var(--chakra-colors-text-primary)',
 					font: 'inherit',
+					fontSize: '1rem',
+					minHeight: '44px',
 					padding: '0.625rem 0.75rem'
 				},
 				'& button': { cursor: 'pointer' },
 				'& input[type="checkbox"], & input[type="range"]': { padding: 0 },
-				'& svg': { height: 'auto', maxWidth: '100%' }
+				'& svg': { height: 'auto', maxWidth: '100%' },
+				'&:focus-within': { scrollMarginTop: '9rem' }
 			}}
 		>
 			<ReactMarkdown
@@ -111,7 +127,7 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 						</Heading>
 					),
 					p: ({ children }) => (
-						<Text color="text.secondary" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
+						<Text color="text.secondary" fontSize={{ base: 'md', md: 'lg' }} lineHeight="relaxed">
 							{children}
 						</Text>
 					),
@@ -281,17 +297,24 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 						</button>
 					),
 					blockquote: ({ children }) => (
-						<Box borderLeft="4px solid" borderColor="primary" bg="bg.subtle" borderRadius="md" px={4} py={3}>
+						<Box
+							borderLeft="4px solid"
+							borderColor="primary"
+							bg="bg.subtle"
+							borderRadius="md"
+							px={{ base: 3, md: 4 }}
+							py={3}
+						>
 							{children}
 						</Box>
 					),
 					ul: ({ children }) => (
-						<Box as="ul" ps={6}>
+						<Box as="ul" ps={{ base: 5, md: 6 }}>
 							{children}
 						</Box>
 					),
 					ol: ({ children }) => (
-						<Box as="ol" ps={6}>
+						<Box as="ol" ps={{ base: 5, md: 6 }}>
 							{children}
 						</Box>
 					),
@@ -305,30 +328,25 @@ export const LessonMarkdownContent = ({ value }: LessonMarkdownContentProps) => 
 							{children}
 						</Box>
 					),
-					pre: ({ node, children }) => {
+					pre: ({ node }) => {
 						const mermaidChart = getMermaidChart(node);
 
 						return mermaidChart ? (
 							<MermaidDiagram chart={mermaidChart} />
 						) : (
-							<Box
-								as="pre"
-								bg="bg.subtle"
-								border="1px solid"
-								borderColor="border.default"
-								borderRadius="lg"
-								color="text.primary"
-								fontSize="sm"
-								overflowX="auto"
-								p={4}
-							>
-								{children}
-							</Box>
+							<LessonCodeBlock code={getCodeBlockText(node)} />
 						);
 					},
 					hr: () => <Box borderTop="1px solid" borderColor="border.default" />,
 					table: ({ children }) => (
-						<Box overflowX="auto" border="1px solid" borderColor="border.default" borderRadius="lg">
+						<Box
+							overflowX="auto"
+							overscrollBehaviorX="contain"
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="lg"
+							WebkitOverflowScrolling="touch"
+						>
 							<Box as="table" w="full" minW="520px" borderCollapse="collapse">
 								{children}
 							</Box>

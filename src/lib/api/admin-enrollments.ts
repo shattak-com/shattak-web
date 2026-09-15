@@ -11,6 +11,7 @@ export type AdminEnrollmentCourseSummary = {
 	mode: AdminCourseMode;
 	price: number;
 	thumbnailImage: string;
+	publishedAt: string | null;
 	enrollmentCount: number;
 	displayEnrollmentCount: number;
 };
@@ -38,7 +39,21 @@ export type AdminCourseEnrollment = {
 	enrolledAt: string;
 	lastAccessedAt: string | null;
 	completedAt: string | null;
+	whatsappVerified: boolean;
+	course?: {
+		id: string;
+		slug: string;
+		title: string;
+	};
 	user: AdminCourseEnrollmentUser;
+};
+
+export type AdminEnrollmentOverviewItem = AdminCourseEnrollment & {
+	course: {
+		id: string;
+		slug: string;
+		title: string;
+	};
 };
 
 export type AdminEnrollmentPagination = {
@@ -48,6 +63,19 @@ export type AdminEnrollmentPagination = {
 	totalPages: number;
 	hasNextPage: boolean;
 	hasPreviousPage: boolean;
+};
+
+export type AdminEnrollmentStats = {
+	totalEnrollmentCount: number;
+	uniqueLearnerCount: number;
+	currentMonthEnrollmentCount: number;
+	previousMonthEnrollmentCount: number;
+	averageEnrollmentsPerMonth: number;
+	currentMonthKey: string;
+	previousMonthKey: string;
+	baselineMonthKey: string;
+	monthCountFromBaseline: number;
+	timeZone: string;
 };
 
 export type AdminEnrollmentCourseListParams = {
@@ -62,7 +90,12 @@ export type AdminEnrollmentCourseListParams = {
 	pageSize?: number;
 };
 
-export const listAdminEnrollmentCourses = (params: AdminEnrollmentCourseListParams = {}) => {
+export type AdminEnrollmentListParams = Pick<
+	AdminEnrollmentCourseListParams,
+	'q' | 'status' | 'categories' | 'level' | 'mode' | 'page' | 'pageSize'
+>;
+
+const buildAdminEnrollmentQuery = (params: AdminEnrollmentCourseListParams | AdminEnrollmentListParams) => {
 	const searchParams = new URLSearchParams();
 
 	Object.entries(params).forEach(([key, value]) => {
@@ -77,11 +110,26 @@ export const listAdminEnrollmentCourses = (params: AdminEnrollmentCourseListPara
 		}
 	});
 
-	const query = searchParams.toString();
+	return searchParams.toString();
+};
+
+export const listAdminEnrollmentCourses = (params: AdminEnrollmentCourseListParams = {}) => {
+	const query = buildAdminEnrollmentQuery(params);
 
 	return getJson<{ courses: AdminEnrollmentCourseSummary[]; pagination: AdminEnrollmentPagination }>(
 		query ? `/admin/enrollments/courses?${query}` : '/admin/enrollments/courses'
 	);
+};
+
+export const listAdminEnrollments = (params: AdminEnrollmentListParams = {}) => {
+	const query = buildAdminEnrollmentQuery(params);
+
+	return getJson<{
+		enrollments: AdminEnrollmentOverviewItem[];
+		uniqueLearnerCount: number;
+		stats: AdminEnrollmentStats;
+		pagination: AdminEnrollmentPagination;
+	}>(query ? `/admin/enrollments?${query}` : '/admin/enrollments');
 };
 
 export const listAdminCourseEnrollments = (courseId: string) =>

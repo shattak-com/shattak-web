@@ -13,7 +13,7 @@ import { collegeOptions, departmentOptions, interestOptions } from '~/lib/consta
 import InterestSelector from '~/lib/containers/onboarding/components/InterestSelector';
 import OnboardingFrame from '~/lib/containers/onboarding/components/OnboardingFrame';
 import SearchableSelect from '~/lib/containers/onboarding/components/SearchableSelect';
-import { hasMobileGateAccess, isEducationProfileComplete } from '~/lib/utils/onboarding';
+import { isEducationProfileComplete } from '~/lib/utils/onboarding';
 import { readCachedOnboardingStatus, writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
 import { getPassoutYearValidationMessage } from '~/lib/utils/passout-year';
 
@@ -35,12 +35,7 @@ const EducationPage = () => {
 
 	const applyOnboardingStatus = useCallback(
 		(status: OnboardingStatus) => {
-			if (!status.profile.mobileNumberE164 && status.profile.mobileSkipCount === 0) {
-				router.replace('/onboarding/mobile');
-				return true;
-			}
-
-			if (!hasMobileGateAccess(status.profile)) {
+			if (!status.profile.mobileNumberE164) {
 				router.replace('/onboarding/mobile');
 				return true;
 			}
@@ -66,9 +61,7 @@ const EducationPage = () => {
 					hasCollege: Boolean(status.profile.college),
 					hasDepartment: Boolean(status.profile.department),
 					hasPassoutYear: Boolean(status.profile.passoutYear),
-					interestsCount: status.profile.interests.length,
-					mobileSkipCount: status.profile.mobileSkipCount,
-					mobileSkipLimit: status.profile.mobileSkipLimit
+					interestsCount: status.profile.interests.length
 				});
 			}
 

@@ -23,6 +23,24 @@ export const getFeedbackTextColor = (tone: CourseEditorFeedback['tone']) => {
 
 export const createRowId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+export const createCourseSlug = (value: string) => {
+	if (!value.trim()) {
+		return '';
+	}
+
+	const slug = value
+		.toLowerCase()
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.replace(/-{2,}/g, '-')
+		.slice(0, 160)
+		.replace(/-+$/g, '');
+
+	return slug || 'course';
+};
+
 const textLinesToArray = (value: string) =>
 	value
 		.split(/\r?\n/)
@@ -284,32 +302,12 @@ export const formValuesToPayload = (values: CourseEditorFormValues): AdminCourse
 		thumbnailImage: values.thumbnailImage.trim(),
 		promoImage: values.promoImage.trim(),
 		promoImageBrand: values.promoImageBrand.trim(),
-		paymentLink: values.paymentLink.trim(),
 		whatsappGroupUrl: values.whatsappGroupUrl.trim(),
 		accessCode: values.accessCode.trim(),
 		status: values.status,
 		about: values.about.trim(),
 		liveUrl: values.liveUrl.trim(),
 		requirements: textLinesToArray(values.requirementsText),
-		completion: {
-			...(values.completionCertificateImage.trim()
-				? {
-						certificateImage: values.completionCertificateImage.trim()
-					}
-				: {}),
-			benefits: textLinesToArray(values.completionBenefitsText)
-		},
-		highlights: values.highlights
-			.filter(item => hasAnyValue([item.label, item.value]))
-			.map(item => ({ id: item.id || createRowId('highlight'), label: item.label.trim(), value: item.value.trim() })),
-		schedule: values.schedule
-			.filter(item => hasAnyValue([item.time, item.duration]))
-			.map((item, index) => ({
-				id: item.id || createRowId('schedule'),
-				label: `Session ${index + 1}`,
-				time: item.time.trim(),
-				...(item.duration.trim() ? { duration: item.duration.trim() } : {})
-			})),
 		projectGallery: values.projectGallery
 			.filter(item => hasAnyValue([item.image, item.alt]))
 			.map(item => ({ id: item.id || createRowId('gallery'), image: item.image.trim(), alt: item.alt.trim() })),

@@ -6,9 +6,6 @@ export type OnboardingStep = 'MOBILE' | 'EDUCATION' | 'COMPLETE';
 export type OnboardingProfile = {
 	mobileNumberE164: string | null;
 	mobileCountryCode: string | null;
-	mobileSkipCount: number;
-	mobileSkipLimit: number;
-	canSkipMobile: boolean;
 	college: string | null;
 	department: string | null;
 	passoutYear: string | null;
@@ -29,8 +26,6 @@ export const submitMobileNumber = (mobileNumber: string, countryCode = 'IN') =>
 		mobileNumber,
 		countryCode
 	});
-
-export const skipMobileNumber = () => postJson<OnboardingStatus>('/onboarding/mobile/skip');
 
 export const submitEducationProfile = (college: string, department: string, passoutYear: string, interests: string[]) =>
 	postJson<OnboardingStatus>('/onboarding/education', {

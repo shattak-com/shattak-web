@@ -136,6 +136,24 @@ export type AdminCourse = {
 	updatedAt: string;
 };
 
+export type AdminCourseSummary = Pick<
+	AdminCourse,
+	| 'id'
+	| 'slug'
+	| 'title'
+	| 'categories'
+	| 'level'
+	| 'price'
+	| 'mode'
+	| 'enrollmentCount'
+	| 'rating'
+	| 'thumbnailImage'
+	| 'promoImage'
+	| 'status'
+	| 'publishedAt'
+	| 'updatedAt'
+>;
+
 export type AdminCourseInput = Partial<
 	Pick<
 		AdminCourse,
@@ -204,6 +222,7 @@ export type AdminCoursePagination = {
 
 export const listAdminCourses = (params: AdminCourseListParams = {}) => {
 	const searchParams = new URLSearchParams();
+	searchParams.set('view', 'summary');
 
 	Object.entries(params).forEach(([key, value]) => {
 		if (value !== undefined && value !== '') {
@@ -221,7 +240,7 @@ export const listAdminCourses = (params: AdminCourseListParams = {}) => {
 
 	const query = searchParams.toString();
 
-	return getJson<{ courses: AdminCourse[]; pagination: AdminCoursePagination }>(
+	return getJson<{ courses: AdminCourseSummary[]; pagination: AdminCoursePagination }>(
 		query ? `/admin/courses?${query}` : '/admin/courses'
 	);
 };

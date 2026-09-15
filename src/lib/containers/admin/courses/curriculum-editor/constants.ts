@@ -20,11 +20,11 @@ export const sectionLabelByKey: Record<CurriculumSectionKey, string> = {
 
 export const contentBlockTypeOptions: Array<{ label: string; value: AdminCurriculumContentBlockType }> = [
 	{ label: 'Text', value: 'TEXT' },
-	{ label: 'Uploaded video', value: 'VIDEO_UPLOAD' },
-	{ label: 'YouTube video', value: 'VIDEO_YOUTUBE' },
-	{ label: 'Uploaded PDF', value: 'PDF_UPLOAD' },
+	{ label: 'Upload video', value: 'VIDEO_UPLOAD' },
+	{ label: 'YouTube link', value: 'VIDEO_YOUTUBE' },
+	{ label: 'Upload PDF', value: 'PDF_UPLOAD' },
 	{ label: 'PDF link', value: 'PDF_LINK' },
-	{ label: 'Uploaded PPT', value: 'PPT_UPLOAD' },
+	{ label: 'Upload PPT', value: 'PPT_UPLOAD' },
 	{ label: 'PPT link', value: 'PPT_LINK' }
 ];
 

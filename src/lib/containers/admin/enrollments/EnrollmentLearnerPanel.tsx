@@ -1,7 +1,11 @@
-import { Badge, Box, HStack, Stack, Table, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, HStack, Stack, Table, Text } from '@chakra-ui/react';
 import { FiClock, FiUsers } from 'react-icons/fi';
 
-import type { AdminCourseEnrollment, AdminEnrollmentCourseSummary } from '~/lib/api/admin-enrollments';
+import type {
+	AdminCourseEnrollment,
+	AdminEnrollmentCourseSummary,
+	AdminEnrollmentPagination
+} from '~/lib/api/admin-enrollments';
 import { SkeletonBlock } from '~/lib/components/feedback/LoadingStates';
 import {
 	formatEnrollmentDateTime,
@@ -13,6 +17,9 @@ type EnrollmentLearnerPanelProps = {
 	enrollments: AdminCourseEnrollment[];
 	errorMessage: string;
 	isLoading: boolean;
+	onNextPage?: () => void;
+	onPreviousPage?: () => void;
+	pagination?: AdminEnrollmentPagination;
 	selectedCourse: AdminEnrollmentCourseSummary | null;
 };
 
@@ -64,6 +71,15 @@ const ProgressIndicator = ({ value }: { value: number }) => (
 	</Stack>
 );
 
+const EnrollmentStatusBadges = ({ enrollment }: { enrollment: AdminCourseEnrollment }) => (
+	<HStack gap={2} flexWrap="wrap">
+		<Badge colorPalette={getStatusPalette(enrollment.status)}>{enrollment.status}</Badge>
+		<Badge variant="outline" colorPalette={enrollment.whatsappVerified ? 'green' : 'gray'}>
+			{enrollment.whatsappVerified ? 'WhatsApp joined' : 'WhatsApp pending'}
+		</Badge>
+	</HStack>
+);
+
 const LearnerPanelSkeleton = () => (
 	<Stack gap={3} p={4}>
 		{Array.from({ length: 4 }, (_, index) => (
@@ -78,7 +94,7 @@ const LearnerPanelSkeleton = () => (
 	</Stack>
 );
 
-const LearnerMobileCard = ({ enrollment }: { enrollment: AdminCourseEnrollment }) => {
+const LearnerMobileCard = ({ enrollment, showCourse }: { enrollment: AdminCourseEnrollment; showCourse: boolean }) => {
 	const { profile } = enrollment.user;
 
 	return (
@@ -94,8 +110,18 @@ const LearnerMobileCard = ({ enrollment }: { enrollment: AdminCourseEnrollment }
 							{enrollment.user.email}
 						</Text>
 					</Box>
-					<Badge colorPalette={getStatusPalette(enrollment.status)}>{enrollment.status}</Badge>
+					<EnrollmentStatusBadges enrollment={enrollment} />
 				</HStack>
+				{showCourse && enrollment.course ? (
+					<Box bg="bg.subtle" borderRadius="md" px={3} py={2}>
+						<Text fontSize="xs" color="text.muted">
+							Course
+						</Text>
+						<Text mt={0.5} fontSize="sm" fontWeight="semibold">
+							{enrollment.course?.title ?? 'Course unavailable'}
+						</Text>
+					</Box>
+				) : null}
 				<Stack gap={1} fontSize="sm" color="text.secondary">
 					<Text>{profile?.mobileNumberE164 ?? 'No mobile number'}</Text>
 					<Text>{[profile?.college, profile?.department].filter(Boolean).join(' / ') || 'No education profile'}</Text>
@@ -111,14 +137,15 @@ const LearnerMobileCard = ({ enrollment }: { enrollment: AdminCourseEnrollment }
 	);
 };
 
-const LearnerTable = ({ enrollments }: { enrollments: AdminCourseEnrollment[] }) => (
+const LearnerTable = ({ enrollments, showCourse }: { enrollments: AdminCourseEnrollment[]; showCourse: boolean }) => (
 	<Box display={{ base: 'none', md: 'block' }} overflowX="auto">
-		<Table.Root size="sm" minW="880px">
+		<Table.Root size="sm" minW={showCourse ? '1080px' : '880px'}>
 			<Table.Header>
 				<Table.Row>
 					<Table.ColumnHeader minW="220px">Learner</Table.ColumnHeader>
+					{showCourse ? <Table.ColumnHeader minW="220px">Course</Table.ColumnHeader> : null}
 					<Table.ColumnHeader minW="280px">Profile</Table.ColumnHeader>
-					<Table.ColumnHeader minW="160px">Progress</Table.ColumnHeader>
+					<Table.ColumnHeader minW="220px">Progress</Table.ColumnHeader>
 					<Table.ColumnHeader minW="180px">Activity</Table.ColumnHeader>
 				</Table.Row>
 			</Table.Header>
@@ -141,6 +168,13 @@ const LearnerTable = ({ enrollments }: { enrollments: AdminCourseEnrollment[] })
 									</Box>
 								</HStack>
 							</Table.Cell>
+							{showCourse ? (
+								<Table.Cell>
+									<Text fontWeight="semibold" overflowWrap="anywhere">
+										{enrollment.course?.title ?? 'Course unavailable'}
+									</Text>
+								</Table.Cell>
+							) : null}
 							<Table.Cell>
 								<Stack gap={1} fontSize="xs" color="text.secondary">
 									<Text>{profile?.mobileNumberE164 ?? 'No mobile number'}</Text>
@@ -152,9 +186,7 @@ const LearnerTable = ({ enrollments }: { enrollments: AdminCourseEnrollment[] })
 							</Table.Cell>
 							<Table.Cell>
 								<Stack gap={2}>
-									<Badge alignSelf="flex-start" colorPalette={getStatusPalette(enrollment.status)}>
-										{enrollment.status}
-									</Badge>
+									<EnrollmentStatusBadges enrollment={enrollment} />
 									<ProgressIndicator value={enrollment.progressPercent} />
 								</Stack>
 							</Table.Cell>
@@ -176,8 +208,34 @@ const EnrollmentLearnerPanel = ({
 	enrollments,
 	errorMessage,
 	isLoading,
+	onNextPage,
+	onPreviousPage,
+	pagination,
 	selectedCourse
 }: EnrollmentLearnerPanelProps) => {
+	const showCourse = !selectedCourse;
+	const headerSummary = (() => {
+		if (selectedCourse) {
+			return (
+				<HStack gap={2} flexWrap="wrap">
+					<Badge colorPalette={selectedCourse.status === 'PUBLISHED' ? 'green' : 'gray'}>{selectedCourse.status}</Badge>
+					<Badge variant="outline" colorPalette="orange">
+						{enrollments.length} {enrollments.length === 1 ? 'learner' : 'learners'}
+					</Badge>
+				</HStack>
+			);
+		}
+
+		if (pagination) {
+			return (
+				<Badge variant="outline" colorPalette="orange">
+					{pagination.total} {pagination.total === 1 ? 'enrollment' : 'enrollments'}
+				</Badge>
+			);
+		}
+
+		return null;
+	})();
 	const content = (() => {
 		if (isLoading) {
 			return <LearnerPanelSkeleton />;
@@ -191,28 +249,17 @@ const EnrollmentLearnerPanel = ({
 			);
 		}
 
-		if (!selectedCourse) {
-			return (
-				<Stack align="center" justify="center" gap={3} minH="360px" px={5} py={10} textAlign="center">
-					<Box color="icon.brand" fontSize="3xl">
-						<FiUsers aria-hidden="true" />
-					</Box>
-					<Text fontSize="lg" fontWeight="bold">
-						Select a course
-					</Text>
-					<Text maxW="360px" color="text.muted">
-						Choose a course from the list to review its enrolled learners, profiles, and progress.
-					</Text>
-				</Stack>
-			);
-		}
-
 		if (!enrollments.length) {
 			return (
 				<Stack align="center" justify="center" gap={2} minH="280px" px={5} py={10} textAlign="center">
-					<Text fontWeight="semibold">No enrolled learners yet</Text>
+					<Box color="icon.brand" fontSize="3xl">
+						<FiUsers aria-hidden="true" />
+					</Box>
+					<Text fontWeight="semibold">{selectedCourse ? 'No enrolled learners yet' : 'No matching enrollments'}</Text>
 					<Text maxW="360px" fontSize="sm" color="text.muted">
-						Enrollment details will appear here when a learner joins this course.
+						{selectedCourse
+							? 'Enrollment details will appear here when a learner joins this course.'
+							: 'New enrollments across courses will appear here, with the most recent learners first.'}
 					</Text>
 				</Stack>
 			);
@@ -222,10 +269,10 @@ const EnrollmentLearnerPanel = ({
 			<>
 				<Stack display={{ base: 'flex', md: 'none' }} gap={3} p={3}>
 					{enrollments.map(enrollment => (
-						<LearnerMobileCard key={enrollment.id} enrollment={enrollment} />
+						<LearnerMobileCard key={enrollment.id} enrollment={enrollment} showCourse={showCourse} />
 					))}
 				</Stack>
-				<LearnerTable enrollments={enrollments} />
+				<LearnerTable enrollments={enrollments} showCourse={showCourse} />
 			</>
 		);
 	})();
@@ -243,26 +290,44 @@ const EnrollmentLearnerPanel = ({
 			>
 				<Box minW={0}>
 					<Text fontSize="md" fontWeight="bold" overflowWrap="anywhere">
-						{selectedCourse?.title ?? 'Enrolled learners'}
+						{selectedCourse?.title ?? 'All enrolled learners'}
 					</Text>
 					<Text mt={1} fontSize="xs" color="text.muted">
 						{selectedCourse
 							? 'Review learner profiles, enrollment state, and current course progress.'
-							: 'Course details will appear here after you make a selection.'}
+							: 'Review enrollments across matching courses, ordered with the newest learners first.'}
 					</Text>
 				</Box>
-				{selectedCourse ? (
-					<HStack gap={2} flexWrap="wrap">
-						<Badge colorPalette={selectedCourse.status === 'PUBLISHED' ? 'green' : 'gray'}>
-							{selectedCourse.status}
-						</Badge>
-						<Badge variant="outline" colorPalette="orange">
-							{enrollments.length} {enrollments.length === 1 ? 'learner' : 'learners'}
-						</Badge>
-					</HStack>
-				) : null}
+				{headerSummary}
 			</HStack>
 			{content}
+			{!selectedCourse && pagination && pagination.totalPages > 1 ? (
+				<HStack justify="space-between" gap={3} p={3} borderTop="1px solid" borderColor="border.default">
+					<Text fontSize="xs" color="text.muted">
+						Page {pagination.page} of {pagination.totalPages}
+					</Text>
+					<HStack gap={2}>
+						<Button
+							size="xs"
+							variant="outline"
+							borderRadius="full"
+							disabled={!pagination.hasPreviousPage || isLoading}
+							onClick={onPreviousPage}
+						>
+							Previous
+						</Button>
+						<Button
+							size="xs"
+							variant="outline"
+							borderRadius="full"
+							disabled={!pagination.hasNextPage || isLoading}
+							onClick={onNextPage}
+						>
+							Next
+						</Button>
+					</HStack>
+				</HStack>
+			) : null}
 		</Box>
 	);
 };

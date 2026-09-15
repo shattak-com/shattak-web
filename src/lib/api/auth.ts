@@ -1,4 +1,5 @@
-import { deleteJson, getJson, postJson } from '~/lib/api/client';
+import { createMetaConversionContext } from '~/lib/analytics/meta-pixel';
+import { getJson, postJson } from '~/lib/api/client';
 import type { OnboardingProfile } from '~/lib/api/onboarding';
 
 export type RoleKey = 'STUDENT' | 'MENTOR' | 'ADMIN' | 'SUPER_ADMIN';
@@ -16,6 +17,8 @@ export type AuthenticatedUser = {
 export type AuthResult = {
 	user: AuthenticatedUser;
 	onboardingProfile?: OnboardingProfile;
+	isNewUser?: boolean;
+	metaEventId?: string | null;
 };
 
 export type AdminInvitation = {
@@ -31,54 +34,77 @@ export type AdminInvitation = {
 	updatedAt: string;
 };
 
-export type AdminManagedUserProfile = {
-	mobileNumberE164: string | null;
-	mobileCountryCode: string | null;
-	mobileNumberVerified: boolean;
-	mobileSkipCount: number;
-	mobileSkipLimit: number;
-	college: string | null;
-	department: string | null;
-	passoutYear: string | null;
-	interests: string[];
-	onboardingCompletedAt: string | null;
-	onboardingCompleted: boolean;
+let userBootstrapResult: AuthResult | null = null;
+let adminBootstrapResult: AuthResult | null = null;
+let currentUserRequest: Promise<AuthResult> | null = null;
+let currentAdminRequest: Promise<AuthResult> | null = null;
+
+const consumeBootstrapResult = (context: 'user' | 'admin') => {
+	const result = context === 'admin' ? adminBootstrapResult : userBootstrapResult;
+
+	if (context === 'admin') {
+		adminBootstrapResult = null;
+	} else {
+		userBootstrapResult = null;
+	}
+
+	return result;
 };
 
-export type AdminManagedUser = {
-	id: string;
-	email: string;
-	emailVerified: boolean;
-	name: string;
-	avatarUrl: string;
-	status: 'ACTIVE' | 'SUSPENDED';
-	googleLinked: boolean;
-	roles: RoleKey[];
-	lastLoginAt: string | null;
-	createdAt: string;
-	updatedAt: string;
-	activeSessionCount: number;
-	mentorApplicationCount: number;
-	profile: AdminManagedUserProfile | null;
+export const loginWithGoogleCredential = async (credential: string) => {
+	const result = await postJson<AuthResult>('/auth/google', {
+		credential,
+		conversion: createMetaConversionContext()
+	});
+	userBootstrapResult = result;
+	return result;
 };
 
-export const loginWithGoogleCredential = (credential: string) =>
-	postJson<AuthResult>('/auth/google', {
+export const loginAdminWithGoogleCredential = async (credential: string) => {
+	const result = await postJson<AuthResult>('/admin/auth/google', {
 		credential
 	});
+	adminBootstrapResult = result;
+	return result;
+};
 
-export const loginAdminWithGoogleCredential = (credential: string) =>
-	postJson<AuthResult>('/admin/auth/google', {
-		credential
+export const logout = () => {
+	userBootstrapResult = null;
+	currentUserRequest = null;
+	return postJson<null>('/auth/logout');
+};
+
+export const logoutAdmin = () => {
+	adminBootstrapResult = null;
+	currentAdminRequest = null;
+	return postJson<null>('/admin/auth/logout');
+};
+
+export const getCurrentUser = () => {
+	const bootstrapResult = consumeBootstrapResult('user');
+	if (bootstrapResult) {
+		return Promise.resolve(bootstrapResult);
+	}
+
+	currentUserRequest ??= getJson<AuthResult>('/me').finally(() => {
+		currentUserRequest = null;
 	});
 
-export const logout = () => postJson<null>('/auth/logout');
+	return currentUserRequest;
+};
 
-export const logoutAdmin = () => postJson<null>('/admin/auth/logout');
+export const getCurrentAdmin = () => {
+	const bootstrapResult = consumeBootstrapResult('admin');
+	if (bootstrapResult) {
+		return Promise.resolve(bootstrapResult);
+	}
 
-export const getCurrentUser = () => getJson<AuthResult>('/me');
+	currentAdminRequest ??= getJson<AuthResult>('/admin/me').finally(() => {
+		currentAdminRequest = null;
+	});
 
-export const getCurrentAdmin = () => getJson<AuthResult>('/admin/me');
+	return currentAdminRequest;
+};
 
 export const listAdminInvitations = () => getJson<{ invitations: AdminInvitation[] }>('/admin/invitations');
 
@@ -90,19 +116,3 @@ export const createAdminInvitation = (email: string, roleKey: 'ADMIN' | 'SUPER_A
 
 export const revokeAdminInvitation = (id: string) =>
 	postJson<{ invitation: AdminInvitation }>(`/admin/invitations/${encodeURIComponent(id)}/revoke`);
-
-export const listAdminUsers = (query = '') => {
-	const params = new URLSearchParams();
-
-	if (query.trim()) {
-		params.set('q', query.trim());
-	}
-
-	const queryString = params.toString();
-	const path = queryString ? `/admin/users?${queryString}` : '/admin/users';
-
-	return getJson<{ users: AdminManagedUser[] }>(path);
-};
-
-export const deleteAdminUser = (id: string) =>
-	deleteJson<{ deletedUser: { id: string } }>(`/admin/users/${encodeURIComponent(id)}`);

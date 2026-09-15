@@ -6,13 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { trackOnboardingEvent } from '~/lib/analytics/mixpanel';
-import { getOnboardingStatus, skipMobileNumber, submitMobileNumber } from '~/lib/api/onboarding';
+import { getOnboardingStatus, submitMobileNumber } from '~/lib/api/onboarding';
 import type { OnboardingStatus } from '~/lib/api/onboarding';
 import { BlockingProgressOverlay, OnboardingStepSkeleton } from '~/lib/components/feedback/LoadingStates';
-import { getPostMobileSkipPath, isEducationProfileComplete } from '~/lib/utils/onboarding';
+import { isEducationProfileComplete } from '~/lib/utils/onboarding';
 import { readCachedOnboardingStatus, writeCachedOnboardingStatus } from '~/lib/utils/onboarding-session';
-
-const SKIP_REVEAL_DELAY_SECONDS = 6;
 
 const getNextPathAfterMobile = (profile: Awaited<ReturnType<typeof getOnboardingStatus>>['profile']) =>
 	isEducationProfileComplete(profile) ? '/profile' : '/onboarding/education';
@@ -25,29 +23,6 @@ const normalizeIndianMobileInput = (value: string) => {
 };
 
 const isValidIndianMobileNumber = (value: string) => /^[6-9]\d{9}$/.test(normalizeIndianMobileInput(value));
-
-const useDelayedSkipReveal = (canSkipMobile: boolean, isLoading: boolean) => {
-	const [skipRevealSeconds, setSkipRevealSeconds] = useState(SKIP_REVEAL_DELAY_SECONDS);
-
-	useEffect(() => {
-		if (isLoading || !canSkipMobile) {
-			setSkipRevealSeconds(SKIP_REVEAL_DELAY_SECONDS);
-			return undefined;
-		}
-
-		const intervalId = window.setInterval(() => {
-			setSkipRevealSeconds(currentValue => Math.max(0, currentValue - 1));
-		}, 1000);
-
-		return () => {
-			window.clearInterval(intervalId);
-		};
-	}, [canSkipMobile, isLoading]);
-
-	return {
-		isSkipVisible: canSkipMobile && skipRevealSeconds === 0
-	};
-};
 
 const MobileProfileIllustration = () => (
 	<Box
@@ -140,46 +115,13 @@ const MobileProfileIllustration = () => (
 	</Box>
 );
 
-const MobileSkipAction = ({
-	canSkipMobile,
-	isSkipVisible,
-	isSubmitting,
-	onSkip
-}: {
-	canSkipMobile: boolean;
-	isSkipVisible: boolean;
-	isSubmitting: boolean;
-	onSkip: () => void;
-}) => {
-	if (!canSkipMobile || !isSkipVisible) {
-		return <Box h="32px" />;
-	}
-
-	return (
-		<Button
-			type="button"
-			variant="ghost"
-			size="sm"
-			color="text.muted"
-			borderRadius="full"
-			disabled={isSubmitting}
-			onClick={onSkip}
-		>
-			Skip for now
-		</Button>
-	);
-};
-
 const MobileNumberPage = () => {
 	const router = useRouter();
 	const hasTrackedStepViewRef = useRef(false);
 	const [mobileNumber, setMobileNumber] = useState('');
-	const [canSkipMobile, setCanSkipMobile] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState('');
-
-	const { isSkipVisible } = useDelayedSkipReveal(canSkipMobile, isLoading);
 
 	const applyOnboardingStatus = useCallback(
 		(status: OnboardingStatus) => {
@@ -191,15 +133,12 @@ const MobileNumberPage = () => {
 					eventName: 'Step Skipped By Existing Data',
 					redirectPath,
 					nextStep: status.profile.nextStep,
-					hasMobileNumber: true,
-					mobileSkipCount: status.profile.mobileSkipCount,
-					mobileSkipLimit: status.profile.mobileSkipLimit
+					hasMobileNumber: true
 				});
 				router.replace(redirectPath);
 				return true;
 			}
 
-			setCanSkipMobile(status.profile.canSkipMobile);
 			setIsLoading(false);
 
 			if (!hasTrackedStepViewRef.current) {
@@ -208,10 +147,7 @@ const MobileNumberPage = () => {
 					location: 'onboarding_mobile',
 					eventName: 'Step Viewed',
 					nextStep: status.profile.nextStep,
-					canSkipMobile: status.profile.canSkipMobile,
-					hasMobileNumber: false,
-					mobileSkipCount: status.profile.mobileSkipCount,
-					mobileSkipLimit: status.profile.mobileSkipLimit
+					hasMobileNumber: false
 				});
 			}
 
@@ -257,8 +193,7 @@ const MobileNumberPage = () => {
 				location: 'onboarding_mobile',
 				eventName: 'Mobile Submit Failed',
 				errorType: 'client_validation',
-				validationField: 'mobile_number',
-				canSkipMobile
+				validationField: 'mobile_number'
 			});
 			return;
 		}
@@ -275,9 +210,7 @@ const MobileNumberPage = () => {
 				eventName: 'Mobile Number Submitted',
 				redirectPath,
 				nextStep: status.profile.nextStep,
-				hasMobileNumber: true,
-				mobileSkipCount: status.profile.mobileSkipCount,
-				mobileSkipLimit: status.profile.mobileSkipLimit
+				hasMobileNumber: true
 			});
 			router.replace(redirectPath);
 		} catch (error) {
@@ -286,44 +219,11 @@ const MobileNumberPage = () => {
 				location: 'onboarding_mobile',
 				eventName: 'Mobile Submit Failed',
 				errorType: 'api_error',
-				validationField: 'mobile_number',
-				canSkipMobile
+				validationField: 'mobile_number'
 			});
 			setIsSubmitting(false);
 		}
 	};
-
-	const handleSkip = useCallback(async () => {
-		setIsSubmitting(true);
-		setErrorMessage('');
-
-		try {
-			const status = await skipMobileNumber();
-			const redirectPath = getPostMobileSkipPath(status.profile);
-
-			writeCachedOnboardingStatus(status);
-			trackOnboardingEvent({
-				location: 'onboarding_mobile',
-				eventName: 'Mobile Number Skipped',
-				redirectPath,
-				nextStep: status.profile.nextStep,
-				canSkipMobile: status.profile.canSkipMobile,
-				mobileSkipCount: status.profile.mobileSkipCount,
-				mobileSkipLimit: status.profile.mobileSkipLimit
-			});
-			router.replace(redirectPath);
-		} catch (error) {
-			setErrorMessage(error instanceof Error ? error.message : 'Unable to skip this step.');
-			trackOnboardingEvent({
-				location: 'onboarding_mobile',
-				eventName: 'Mobile Skip Failed',
-				errorType: 'api_error',
-				canSkipMobile: false
-			});
-			setCanSkipMobile(false);
-			setIsSubmitting(false);
-		}
-	}, [router]);
 
 	return (
 		<>
@@ -378,10 +278,8 @@ const MobileNumberPage = () => {
 												maxLength={10}
 											/>
 										</HStack>
-										<Text fontSize="xs" color={canSkipMobile ? 'text.muted' : 'red.500'}>
-											{canSkipMobile
-												? 'Use your active number so important course updates can reach you.'
-												: 'A valid mobile number is required to continue.'}
+										<Text fontSize="xs" color="text.muted">
+											A valid mobile number is required to continue.
 										</Text>
 									</Stack>
 
@@ -407,19 +305,7 @@ const MobileNumberPage = () => {
 								</Stack>
 							</Box>
 
-							<Stack gap={3}>
-								<MobileProfileIllustration />
-								<Box minH="42px" textAlign="right">
-									<MobileSkipAction
-										canSkipMobile={canSkipMobile}
-										isSkipVisible={isSkipVisible}
-										isSubmitting={isSubmitting}
-										onSkip={() => {
-											handleSkip().catch(() => undefined);
-										}}
-									/>
-								</Box>
-							</Stack>
+							<MobileProfileIllustration />
 						</SimpleGrid>
 					</form>
 				)}

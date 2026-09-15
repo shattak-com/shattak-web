@@ -25,10 +25,11 @@ export const parseDurationMinutes = (value?: string) => {
 	return Number.isFinite(plainNumber) ? plainNumber : 0;
 };
 
-export const getCurriculumDurationMinutes = (sections: CourseSessionSection[]) =>
-	sections.reduce(
+export const getCurriculumDurationMinutes = (sections?: CourseSessionSection[]) =>
+	(sections ?? []).reduce(
 		(total, section) =>
-			total + section.subsections.reduce((sectionTotal, item) => sectionTotal + parseDurationMinutes(item.time), 0),
+			total +
+			(section.subsections ?? []).reduce((sectionTotal, item) => sectionTotal + parseDurationMinutes(item.time), 0),
 		0
 	);
 

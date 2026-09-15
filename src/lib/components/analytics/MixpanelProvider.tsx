@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
 	ensureMixpanelSessionReplay,
@@ -12,25 +12,37 @@ import {
 
 const MixpanelProvider = () => {
 	const pathname = usePathname();
-	const hasInitialized = useRef(false);
+	const [isInitialized, setIsInitialized] = useState(false);
 
 	useEffect(() => {
-		hasInitialized.current = initMixpanel();
-		if (hasInitialized.current) {
-			identifyAnonymousMixpanelUser();
-		}
+		let isMounted = true;
+
+		initMixpanel()
+			.then(initialized => {
+				if (!isMounted || !initialized) {
+					return;
+				}
+
+				identifyAnonymousMixpanelUser();
+				setIsInitialized(true);
+			})
+			.catch(() => undefined);
+
+		return () => {
+			isMounted = false;
+		};
 	}, []);
 
 	useEffect(() => {
-		if (!hasInitialized.current || !pathname) {
+		if (!isInitialized || !pathname) {
 			return;
 		}
 
 		ensureMixpanelSessionReplay();
-	}, [pathname]);
+	}, [isInitialized, pathname]);
 
 	useEffect(() => {
-		if (!hasInitialized.current) {
+		if (!isInitialized) {
 			return undefined;
 		}
 
@@ -68,7 +80,7 @@ const MixpanelProvider = () => {
 			window.removeEventListener('error', handleError);
 			window.removeEventListener('unhandledrejection', handleUnhandledRejection);
 		};
-	}, []);
+	}, [isInitialized]);
 
 	return null;
 };

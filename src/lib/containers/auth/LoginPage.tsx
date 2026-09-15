@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { trackMetaPixelSignupConversion } from '~/lib/analytics/meta-pixel';
 import { identifyAuthenticatedMixpanelUser, trackAuthEvent } from '~/lib/analytics/mixpanel';
 import type { AuthResult } from '~/lib/api/auth';
 import { getOnboardingStatus, type OnboardingStatus } from '~/lib/api/onboarding';
@@ -99,6 +100,9 @@ const LoginPage = () => {
 	const handleSuccess = useCallback(
 		async (result: AuthResult) => {
 			setLoginProgressMessage('Preparing your learning profile...');
+			if (result.isNewUser && result.metaEventId) {
+				trackMetaPixelSignupConversion(result.metaEventId);
+			}
 
 			const onboardingStatus = result.onboardingProfile
 				? {

@@ -1,7 +1,7 @@
 import { Box, Button, HStack, Image, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiLock, FiX } from 'react-icons/fi';
 
 import type { AuthenticatedUser } from '~/lib/api/auth';
 import type { CourseEnrollment } from '~/lib/api/enrollments';
@@ -41,7 +41,16 @@ const CourseWorkspaceSidebarHeader = ({
 
 	if (onClose) {
 		sidebarControl = (
-			<Button variant="ghost" size="sm" borderRadius="full" onClick={onClose} aria-label="Close course navigation">
+			<Button
+				autoFocus
+				variant="ghost"
+				size="sm"
+				borderRadius="full"
+				boxSize="44px"
+				minW="44px"
+				onClick={onClose}
+				aria-label="Close course navigation"
+			>
 				<FiX />
 			</Button>
 		);
@@ -91,27 +100,26 @@ type CourseWorkspaceNavigationProps = Pick<
 	'activeTab' | 'isCollapsed' | 'onClose' | 'onTabChange'
 > & {
 	canOpenLearningTabs: boolean;
-	courseTitle: string;
 };
 
 const CourseWorkspaceNavigation = ({
 	activeTab,
 	canOpenLearningTabs,
-	courseTitle,
 	isCollapsed = false,
 	onClose,
 	onTabChange
 }: CourseWorkspaceNavigationProps) => (
-	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5}>
-		<Box display={isCollapsed ? 'none' : 'block'} px={2} pb={2}>
-			<Text color="text.muted" fontSize="xs" fontWeight="bold" textTransform="uppercase">
-				Course dashboard
-			</Text>
-			<Text mt={1} color="text.muted" fontSize="sm" lineClamp={2}>
-				{courseTitle}
-			</Text>
-		</Box>
-
+	<Stack flex="1" gap={3} px={isCollapsed ? 2 : 4} py={5} overflowY="auto" overscrollBehavior="contain">
+		{onClose ? (
+			<Button asChild justifyContent="flex-start" borderRadius="lg" variant="ghost" minH="48px" px={4}>
+				<Link href="/my-courses/" onClick={onClose}>
+					<FiArrowLeft />
+					<Text as="span" fontWeight="semibold">
+						Back to Course
+					</Text>
+				</Link>
+			</Button>
+		) : null}
 		{courseTabs.map(tab => {
 			const Icon = tab.icon;
 			const isActive = activeTab === tab.id;
@@ -233,7 +241,6 @@ export const CourseWorkspaceSidebar = ({
 			<CourseWorkspaceNavigation
 				activeTab={activeTab}
 				canOpenLearningTabs={canOpenLearningTabs}
-				courseTitle={enrollment.course.title}
 				isCollapsed={isCollapsed}
 				onClose={onClose}
 				onTabChange={onTabChange}

@@ -57,15 +57,15 @@ export const getPreviousUnlockedLessonRow = (lessons: CourseLessonsState, subsec
 };
 
 export const getLessonStateLabel = (subsection: CourseLessonsState['modules'][number]['subsections'][number]) => {
-	if (subsection.isActive) {
-		return 'Current';
-	}
-
 	if (subsection.isCompleted) {
 		return 'Completed';
 	}
 
-	return subsection.isLocked ? 'Locked' : 'Available';
+	if (subsection.isLocked) {
+		return 'Locked';
+	}
+
+	return subsection.isCurrent ? 'Continue learning' : 'Ready';
 };
 
 const streakWeekdayFormatter = new Intl.DateTimeFormat('en-US', {
@@ -79,31 +79,54 @@ const streakDateFormatter = new Intl.DateTimeFormat('en-US', {
 	timeZone: 'UTC'
 });
 
-const getStreakWindowEnd = (lastActiveDate: string | null) => {
-	const datePart = lastActiveDate?.slice(0, 10) ?? '';
-	if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-		const [year, month, day] = datePart.split('-').map(Number);
-		return new Date(Date.UTC(year, month - 1, day));
-	}
+const getCalendarDateInTimeZone = (date: Date, timeZone: string) => {
+	const dateParts = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).formatToParts(date);
+	const calendarParts = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
 
-	const now = new Date();
-	return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+	return new Date(Date.UTC(Number(calendarParts.year), Number(calendarParts.month) - 1, Number(calendarParts.day)));
 };
 
-export const getStreakTiles = (currentStreak: number, lastActiveDate: string | null) => {
-	const windowEnd = getStreakWindowEnd(lastActiveDate);
-	const activeTileCount = Math.min(Math.max(currentStreak, 0), 10);
+const getStreakWindowEnd = (lastActiveDate: string | null, timeZone: string) => {
+	const lastActive = lastActiveDate ? new Date(lastActiveDate) : null;
+	const windowEnd = lastActive && !Number.isNaN(lastActive.getTime()) ? lastActive : new Date();
 
-	return Array.from({ length: 10 }, (_, index) => {
-		const date = new Date(windowEnd);
-		date.setUTCDate(windowEnd.getUTCDate() - (9 - index));
+	return getCalendarDateInTimeZone(windowEnd, timeZone);
+};
+
+const getUtcDateKey = (date: Date) =>
+	`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+
+export const getStreakTiles = (
+	currentStreak: number,
+	lastActiveDate: string | null,
+	timeZone: string,
+	targetDays: number,
+	cycleDays: number
+) => {
+	const cycleLength = Math.max(1, cycleDays);
+	const normalizedStreak = Math.min(Math.max(currentStreak, 1), cycleLength);
+	const cycleStart = getStreakWindowEnd(lastActiveDate, timeZone);
+	cycleStart.setUTCDate(cycleStart.getUTCDate() - (normalizedStreak - 1));
+
+	return Array.from({ length: cycleLength }, (_, index) => {
+		const date = new Date(cycleStart);
+		const dayNumber = index + 1;
+		date.setUTCDate(cycleStart.getUTCDate() + index);
 
 		return {
-			dateKey: date.toISOString().slice(0, 10),
-			dayLabel: streakWeekdayFormatter.format(date),
+			dateKey: getUtcDateKey(date),
+			dayNumber,
+			dayLabel: `Day ${dayNumber}`,
+			weekdayLabel: streakWeekdayFormatter.format(date),
 			dateLabel: streakDateFormatter.format(date),
-			isActive: index >= 10 - activeTileCount,
-			isLatest: index === 9
+			isCompleted: dayNumber < normalizedStreak,
+			isCurrent: dayNumber === normalizedStreak,
+			isBuffer: dayNumber > targetDays
 		};
 	});
 };

@@ -52,6 +52,8 @@ export type CourseEditorSummaryItem = {
 
 export type CourseEditorStepFieldsProps = CourseEditorSectionProps & {
 	activeStepId: CourseEditorStepId;
+	onSlugChange: () => void;
+	onTitleChange: (title: string) => void;
 	summaryItems: CourseEditorSummaryItem[];
 	course: AdminCourse | null;
 	courseId?: string;

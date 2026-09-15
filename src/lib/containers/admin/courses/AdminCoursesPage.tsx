@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
 	listAdminCourses,
-	type AdminCourse,
+	type AdminCourseSummary,
 	type AdminCourseLevel,
 	type AdminCourseListParams,
 	type AdminCourseMode,
@@ -61,7 +61,7 @@ const defaultPagination: AdminCoursePagination = {
 
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleDateString() : 'Not published');
 
-const formatPrice = (course: AdminCourse) => {
+const formatPrice = (course: AdminCourseSummary) => {
 	if (course.price <= 0) {
 		return 'Free';
 	}
@@ -107,7 +107,7 @@ const NativeSelect = ({
 );
 
 const AdminCoursesPage = () => {
-	const [courses, setCourses] = useState<AdminCourse[]>([]);
+	const [courses, setCourses] = useState<AdminCourseSummary[]>([]);
 	const [pagination, setPagination] = useState(defaultPagination);
 	const [query, setQuery] = useState('');
 	const [status, setStatus] = useState<AdminCourseStatus | ''>(defaultCourseStatusFilter);

@@ -211,7 +211,9 @@ export const CurriculumModuleCard = ({
 												{subsection.title.trim() || 'Untitled subsection'}
 											</Text>
 											<Text fontSize="xs" color="text.muted" textAlign="left">
-												{subsection.durationLabel.trim() || 'No duration set'}
+												{subsection.durationMinutes === null
+													? 'Public fallback duration will be used'
+													: `${subsection.durationMinutes} min`}
 											</Text>
 											<HStack gap={1} color="brand.600">
 												<FiEdit3 aria-hidden />

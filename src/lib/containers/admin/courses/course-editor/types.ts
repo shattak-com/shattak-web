@@ -18,8 +18,6 @@ export type CourseEditorStepId =
 	| 'gallery'
 	| 'reviews'
 	| 'lessons'
-	| 'liveSessions'
-	| 'postSessionMaterials'
 	| 'review';
 
 export type CourseEditorStep = {

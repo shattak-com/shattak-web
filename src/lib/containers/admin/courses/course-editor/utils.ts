@@ -119,8 +119,6 @@ export const countErrorsByStep = (errorPaths: string[]) =>
 			gallery: 0,
 			reviews: 0,
 			lessons: 0,
-			liveSessions: 0,
-			postSessionMaterials: 0,
 			review: 0
 		}
 	);

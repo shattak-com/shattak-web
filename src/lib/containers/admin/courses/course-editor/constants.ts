@@ -20,12 +20,6 @@ export const courseEditorSteps: CourseEditorStep[] = [
 	{ id: 'gallery', label: 'Project Gallery', description: 'Project overview, live link, gallery, and student proof.' },
 	{ id: 'reviews', label: 'Reviews & FAQs', description: 'Testimonials and common course questions.' },
 	{ id: 'lessons', label: 'Lessons', description: 'Course lessons and learning materials.' },
-	{ id: 'liveSessions', label: 'Live Sessions', description: 'Live class sections and session items.' },
-	{
-		id: 'postSessionMaterials',
-		label: 'Post Session',
-		description: 'Materials learners receive after sessions.'
-	},
 	{ id: 'review', label: 'Review', description: 'Confirm status and save the course.' }
 ];
 
@@ -36,7 +30,7 @@ export const courseEditorStepGroups: CourseEditorStepGroup[] = [
 	},
 	{
 		label: 'Curriculum',
-		stepIds: ['lessons', 'liveSessions', 'postSessionMaterials']
+		stepIds: ['lessons']
 	},
 	{
 		label: 'Final check',
@@ -53,8 +47,6 @@ export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]>
 	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],
 	lessons: ['lessons'],
-	liveSessions: ['liveSessions'],
-	postSessionMaterials: ['postSessionMaterials'],
 	review: ['durationHours', 'durationMinutes']
 };
 

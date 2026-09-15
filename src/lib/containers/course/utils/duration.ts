@@ -34,10 +34,7 @@ export const getCurriculumDurationMinutes = (sections?: CourseSessionSection[]) 
 	);
 
 export const getCourseContentDurationMinutes = (course: CourseDetails) => {
-	const curriculumDuration =
-		getCurriculumDurationMinutes(course.lessons) +
-		getCurriculumDurationMinutes(course.liveSessions) +
-		getCurriculumDurationMinutes(course.postSessionMaterials);
+	const curriculumDuration = getCurriculumDurationMinutes(course.lessons);
 
 	return curriculumDuration || course.durationHours * 60 + course.durationMinutes;
 };

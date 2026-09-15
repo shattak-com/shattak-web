@@ -23,11 +23,7 @@ const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProp
 	<>
 		<CourseHero course={course} />
 		<CourseOutcomes outcomes={course.outcomes} />
-		<CourseCurriculum
-			lessons={course.lessons}
-			liveSessions={course.liveSessions}
-			postSessionMaterials={course.postSessionMaterials}
-		/>
+		<CourseCurriculum lessons={course.lessons} />
 		<CourseRequirements items={course.requirements} />
 		<CourseInstructor instructors={course.instructors} />
 		<CourseAudience audience={course.audience} />

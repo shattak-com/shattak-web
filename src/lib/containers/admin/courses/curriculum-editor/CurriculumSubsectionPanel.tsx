@@ -246,7 +246,9 @@ export const CurriculumSubsectionPanel = ({
 																	{subsection.title.trim() || 'Untitled subsection'}
 																</Text>
 																<Text fontSize="xs" color="text.muted" textAlign="left">
-																	{subsection.durationLabel.trim() || 'No duration set'}
+																	{subsection.durationMinutes === null
+																		? 'Public fallback duration will be used'
+																		: `${subsection.durationMinutes} min`}
 																</Text>
 															</Stack>
 														</Button>
@@ -337,7 +339,7 @@ export const CurriculumSubsectionPanel = ({
 										</Stack>
 
 										<SimpleGrid columns={{ base: 1, md: 2, '2xl': 4 }} gap={3}>
-											<Box>
+											<Box gridColumn={{ base: 'auto', md: 'span 2' }}>
 												<FieldLabel>Subsection title</FieldLabel>
 												<Input
 													value={selectedSubsection.title}
@@ -368,21 +370,6 @@ export const CurriculumSubsectionPanel = ({
 												/>
 											</Box>
 											<Box>
-												<FieldLabel>Duration label</FieldLabel>
-												<Input
-													value={selectedSubsection.durationLabel}
-													onChange={event => {
-														const nextDurationLabel = event.currentTarget.value ?? '';
-
-														onUpdateSubsection(moduleIndex, subsectionIndex, currentSubsection => ({
-															...currentSubsection,
-															durationLabel: nextDurationLabel
-														}));
-													}}
-													placeholder="20 min"
-												/>
-											</Box>
-											<Box>
 												<FieldLabel>Duration minutes</FieldLabel>
 												<Input
 													type="number"
@@ -393,7 +380,8 @@ export const CurriculumSubsectionPanel = ({
 
 														onUpdateSubsection(moduleIndex, subsectionIndex, currentSubsection => ({
 															...currentSubsection,
-															durationMinutes: nextDurationMinutes
+															durationMinutes: nextDurationMinutes,
+															durationLabel: nextDurationMinutes === null ? '' : `${nextDurationMinutes} min`
 														}));
 													}}
 													placeholder="20"

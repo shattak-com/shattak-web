@@ -12,7 +12,6 @@ export type CourseEditorPageProps = {
 export type CourseEditorStepId =
 	| 'basics'
 	| 'media'
-	| 'highlights'
 	| 'outcomes'
 	| 'audienceTools'
 	| 'instructors'

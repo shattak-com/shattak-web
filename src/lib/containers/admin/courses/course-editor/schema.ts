@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-const textRecordSchema = z.object({
-	id: z.string(),
-	label: z.string(),
-	value: z.string()
-});
-
 export const courseEditorSchema = z.object({
 	slug: z
 		.union([
@@ -40,15 +34,6 @@ export const courseEditorSchema = z.object({
 	requirementsText: z.string(),
 	completionCertificateImage: z.string(),
 	completionBenefitsText: z.string(),
-	highlights: z.array(textRecordSchema),
-	schedule: z.array(
-		z.object({
-			id: z.string(),
-			label: z.string(),
-			time: z.string(),
-			duration: z.string()
-		})
-	),
 	projectGallery: z.array(
 		z.object({
 			id: z.string(),

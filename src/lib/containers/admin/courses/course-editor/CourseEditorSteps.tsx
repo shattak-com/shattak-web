@@ -9,12 +9,10 @@ import {
 	AudienceEditor,
 	FaqsEditor,
 	GalleryEditor,
-	HighlightsEditor,
 	InstructorsEditor,
 	OutcomesEditor,
 	ProjectsEditor,
 	ReviewsEditor,
-	ScheduleEditor,
 	ToolsEditor
 } from './ArrayEditors';
 import { courseLevelOptions, courseModeOptions, courseStatusOptions } from './constants';
@@ -123,14 +121,6 @@ const MediaStep = ({ control, register, errors }: CourseEditorSectionProps) => (
 			<ImageField label="Promo image" name="promoImage" control={control} errors={errors} />
 			<ImageField label="Promo brand image" name="promoImageBrand" control={control} errors={errors} />
 		</SimpleGrid>
-	</Stack>
-);
-
-// TODO: Restore this step when highlights and schedules are admin-managed again.
-const HighlightsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={5}>
-		<HighlightsEditor control={control} register={register} errors={errors} />
-		<ScheduleEditor control={control} register={register} errors={errors} />
 	</Stack>
 );
 
@@ -274,8 +264,6 @@ export const CourseEditorStepFields = ({
 			);
 		case 'media':
 			return <MediaStep control={control} register={register} errors={errors} />;
-		case 'highlights':
-			return <HighlightsStep control={control} register={register} errors={errors} />;
 		case 'outcomes':
 			return <OutcomesStep control={control} register={register} errors={errors} />;
 		case 'audienceTools':

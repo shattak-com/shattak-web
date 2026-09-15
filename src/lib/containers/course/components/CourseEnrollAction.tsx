@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Stack, Text } from '@chakra-ui/react';
+import { Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -9,6 +9,7 @@ import { trackMetaPixelCourseEnrollmentConversion } from '~/lib/analytics/meta-p
 import { trackEnrollmentEvent, trackEnrollClicked } from '~/lib/analytics/mixpanel';
 import { ApiRequestError } from '~/lib/api/client';
 import { enrollInFreeCourse, getCourseEnrollmentStatus, type CourseEnrollment } from '~/lib/api/enrollments';
+import ShineButton from '~/lib/components/actions/ShineButton';
 import type { CourseDetails } from '~/lib/containers/course/types';
 
 type CourseEnrollActionProps = {
@@ -38,7 +39,7 @@ const PaidCourseEnrollAction = ({ course, location, size, fullWidth }: CourseEnr
 	const openExternal = isExternalLink(paidDestination);
 
 	return (
-		<Button asChild size={size} {...getButtonStyles(fullWidth)}>
+		<ShineButton asChild size={size} {...getButtonStyles(fullWidth)}>
 			<Link
 				href={paidDestination}
 				target={openExternal ? '_blank' : undefined}
@@ -54,7 +55,7 @@ const PaidCourseEnrollAction = ({ course, location, size, fullWidth }: CourseEnr
 			>
 				Enroll Now
 			</Link>
-		</Button>
+		</ShineButton>
 	);
 };
 
@@ -78,7 +79,7 @@ const EnrolledCourseAction = ({
 	size
 }: EnrolledCourseActionProps) => (
 	<Stack gap={2} w={fullWidth ? 'full' : undefined}>
-		<Button asChild size={size} {...getButtonStyles(fullWidth)}>
+		<ShineButton asChild size={size} {...getButtonStyles(fullWidth)}>
 			<Link
 				href={learningDestination}
 				onClick={() =>
@@ -96,7 +97,7 @@ const EnrolledCourseAction = ({
 			>
 				Go to Course
 			</Link>
-		</Button>
+		</ShineButton>
 		{message ? (
 			<Text fontSize="xs" color="text.muted" textAlign="center">
 				{message}
@@ -238,7 +239,7 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 
 	return (
 		<Stack gap={2} w={fullWidth ? 'full' : undefined}>
-			<Button
+			<ShineButton
 				size={size}
 				{...getButtonStyles(fullWidth)}
 				loading={isCheckingEnrollment || isSubmitting}
@@ -248,7 +249,7 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 				}}
 			>
 				Enroll Now
-			</Button>
+			</ShineButton>
 			{message ? (
 				<Text fontSize="xs" color="red.500" textAlign="center">
 					{message}

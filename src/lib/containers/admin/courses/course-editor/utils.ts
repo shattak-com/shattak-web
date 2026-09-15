@@ -71,48 +71,6 @@ export const formatDurationFromMinutes = (totalMinutes: number) => {
 	return parts.length ? parts.join(' ') : '0m';
 };
 
-export const formatDurationParts = (hours: number, minutes: number) => {
-	const normalizedDuration = normalizeDurationParts(hours, minutes);
-
-	return formatDurationFromMinutes(normalizedDuration.hours * 60 + normalizedDuration.minutes);
-};
-
-export const parseDurationToMinutes = (value: string) => {
-	const normalizedValue = value.toLowerCase().replace(/\s+/g, ' ').trim();
-
-	if (!normalizedValue) {
-		return 0;
-	}
-
-	const colonMatch = normalizedValue.match(/^(\d+)\s*:\s*([0-5]?\d)$/);
-
-	if (colonMatch) {
-		return Number.parseInt(colonMatch[1] ?? '0', 10) * 60 + Number.parseInt(colonMatch[2] ?? '0', 10);
-	}
-
-	const hourMatch = normalizedValue.match(/(\d+)\s*(?:hours?|hrs?|h)/);
-	const minuteMatch = normalizedValue.match(/(\d+)\s*(?:minutes?|mins?|m)/);
-
-	if (hourMatch || minuteMatch) {
-		return Number.parseInt(hourMatch?.[1] ?? '0', 10) * 60 + Number.parseInt(minuteMatch?.[1] ?? '0', 10);
-	}
-
-	const plainNumber = Number.parseInt(normalizedValue, 10);
-
-	return Number.isFinite(plainNumber) ? plainNumber : 0;
-};
-
-export const parseDurationParts = (value: string) => normalizeDurationParts(0, parseDurationToMinutes(value));
-
-export const getScheduleTotalMinutes = (schedule: CourseEditorFormValues['schedule']) =>
-	schedule.reduce((total, item) => total + parseDurationToMinutes(item.duration), 0);
-
-export const parseDurationInputValue = (value: string) => {
-	const parsedValue = Number.parseInt(value, 10);
-
-	return Number.isFinite(parsedValue) ? Math.max(0, parsedValue) : 0;
-};
-
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === 'object' && value !== null;
 
@@ -155,7 +113,6 @@ export const countErrorsByStep = (errorPaths: string[]) =>
 		{
 			basics: 0,
 			media: 0,
-			highlights: 0,
 			outcomes: 0,
 			audienceTools: 0,
 			instructors: 0,
@@ -212,17 +169,6 @@ export const courseToFormValues = (course: AdminCourse): CourseEditorFormValues 
 	requirementsText: course.requirements.join('\n'),
 	completionCertificateImage: getString(course.completion.certificateImage),
 	completionBenefitsText: (course.completion.benefits ?? []).join('\n'),
-	highlights: course.highlights.map(item => ({
-		id: item.id || createRowId('highlight'),
-		label: item.label,
-		value: item.value
-	})),
-	schedule: course.schedule.map((item, index) => ({
-		id: item.id || createRowId('schedule'),
-		label: `Session ${index + 1}`,
-		time: item.time,
-		duration: item.duration ?? ''
-	})),
 	projectGallery: course.projectGallery.map(item => ({
 		id: item.id || createRowId('gallery'),
 		image: item.image,

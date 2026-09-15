@@ -6,8 +6,6 @@ import type { CourseEditorStep, CourseEditorStepGroup, CourseEditorStepId } from
 export const courseEditorSteps: CourseEditorStep[] = [
 	{ id: 'basics', label: 'Basics', description: 'Public identity, categories, and course positioning.' },
 	{ id: 'media', label: 'Pricing & Media', description: 'Commercial details, images, and visible metrics.' },
-	// TODO: Restore the Highlights step when highlights and schedules are admin-managed again.
-	// { id: 'highlights', label: 'Highlights', description: 'Key stats and schedule items shown near the course overview.' },
 	{
 		id: 'outcomes',
 		label: 'Outcomes',
@@ -49,7 +47,6 @@ export const courseEditorStepGroups: CourseEditorStepGroup[] = [
 export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
 	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status', 'whatsappGroupUrl', 'accessCode'],
 	media: ['price', 'originalPrice', 'rating', 'enrollmentCount', 'thumbnailImage', 'promoImage', 'promoImageBrand'],
-	highlights: ['highlights', 'schedule'],
 	outcomes: ['requirementsText', 'outcomes'],
 	audienceTools: ['audience', 'tools'],
 	instructors: ['instructors'],
@@ -112,8 +109,6 @@ export const defaultFormValues: CourseEditorFormValues = {
 	requirementsText: '',
 	completionCertificateImage: '',
 	completionBenefitsText: '',
-	highlights: [],
-	schedule: [],
 	projectGallery: [],
 	outcomes: [],
 	audience: [],

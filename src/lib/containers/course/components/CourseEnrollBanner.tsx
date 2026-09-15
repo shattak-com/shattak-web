@@ -1,12 +1,11 @@
 'use client';
 
 import { Box, Container, HStack, Stack, Text } from '@chakra-ui/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import CourseEnrollAction from '~/lib/containers/course/components/CourseEnrollAction';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';
-import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 
 type CourseEnrollBannerProps = {
 	course: CourseDetails;
@@ -14,6 +13,7 @@ type CourseEnrollBannerProps = {
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN').format(value);
 const formatRupee = (value: number) => `\u20B9${formatCurrency(value)}`;
+const formatLearners = (value: number) => `${new Intl.NumberFormat('en-IN').format(value)}${value > 0 ? '+' : ''}`;
 
 const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 	const [isVisible, setIsVisible] = useState(false);
@@ -32,16 +32,6 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 		course.originalPrice > course.price
 			? Math.floor(((course.originalPrice - course.price) / course.originalPrice) * 100)
 			: 0;
-
-	const startingSession = useMemo(() => {
-		const items = buildScheduleDisplayItems(course.schedule.slice(0, 1), 0, 0);
-		if (!items.length) {
-			return null;
-		}
-		const [item] = items;
-		const startTime = item.timeRange.split(' to ')[0] ?? item.timeRange;
-		return `${item.badge.day} ${item.badge.month} - ${startTime}`;
-	}, [course]);
 
 	const courseContentDuration = formatCourseDuration(getCourseContentDurationMinutes(course));
 
@@ -73,9 +63,9 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 							<HStack gap={6} flex="1" minW="0">
 								<Stack gap={1} flex="1" minW="0">
 									<Text fontSize="xs" color="text.muted">
-										Starting From
+										Learners
 									</Text>
-									<Text fontWeight="semibold">{startingSession ?? 'TBD'}</Text>
+									<Text fontWeight="semibold">{formatLearners(course.enrollmentCount)}</Text>
 								</Stack>
 								<Box w="1px" h="40px" bg="border.default" />
 								<Stack gap={1} flex="1" minW="0">

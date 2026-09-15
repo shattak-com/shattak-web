@@ -11,7 +11,6 @@ import CourseOutcomes from '~/lib/containers/course/components/CourseOutcomes';
 import CourseProjects from '~/lib/containers/course/components/CourseProjects';
 import CourseRequirements from '~/lib/containers/course/components/CourseRequirements';
 import CourseReviews from '~/lib/containers/course/components/CourseReviews';
-import CourseTools from '~/lib/containers/course/components/CourseTools';
 import type { CourseDetails } from '~/lib/containers/course/types';
 
 type CourseDetailsPageProps = {
@@ -30,7 +29,6 @@ const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProp
 			postSessionMaterials={course.postSessionMaterials}
 		/>
 		<CourseRequirements items={course.requirements} />
-		<CourseTools tools={course.tools} />
 		<CourseInstructor instructors={course.instructors} />
 		<CourseAudience audience={course.audience} />
 		<CourseCompletion completion={course.completion} />

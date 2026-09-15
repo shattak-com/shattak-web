@@ -6,7 +6,6 @@ import { platformFaqs } from '~/lib/constants/platform-faqs';
 import CourseDetailsPage from '~/lib/containers/course';
 import CourseUnavailable from '~/lib/containers/course/components/CourseUnavailable';
 import type { CourseDetails } from '~/lib/containers/course/types';
-import { buildScheduleDisplayItems } from '~/lib/containers/course/utils/schedule';
 import { createFaqPageStructuredData, mergeFaqs } from '~/lib/utils/faqs';
 
 export const revalidate = 60;
@@ -114,11 +113,6 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 	const canonicalUrl = new URL(`/course/${encodeURIComponent(course.id)}/`, SITE_URL).toString();
 	const description = formatDescription(course);
 	const duration = formatIsoDuration(course.durationHours, course.durationMinutes);
-	const startSession = buildScheduleDisplayItems(
-		course.schedule.slice(0, 1),
-		course.durationHours,
-		course.durationMinutes
-	)[0];
 	const visibleReviews = course.reviews.filter(review => review.show);
 	const ratingValue = course.rating > 0 ? Number(course.rating.toFixed(1)) : undefined;
 	const mergedFaqs = mergeFaqs(course.faqs, platformFaqs);
@@ -147,21 +141,6 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 			availability: 'https://schema.org/InStock'
 		},
 		...(duration ? { timeRequired: duration } : {}),
-		...(startSession
-			? {
-					hasCourseInstance: [
-						{
-							'@type': 'CourseInstance',
-							courseMode: course.mode,
-							startDate: startSession.startDate.toISOString(),
-							location: {
-								'@type': 'VirtualLocation',
-								url: canonicalUrl
-							}
-						}
-					]
-				}
-			: {}),
 		...(ratingValue && visibleReviews.length
 			? {
 					aggregateRating: {

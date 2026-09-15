@@ -1,14 +1,12 @@
 import { Button, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import { useFieldArray } from 'react-hook-form';
 
-import { toneOptions } from './constants';
 import {
 	EditorCard,
 	EditorSectionHeader,
 	EmptyEditorState,
 	FormField,
 	ImageField,
-	SelectField,
 	TextareaField
 } from './FormControls';
 import type { CourseEditorSectionProps } from './types';
@@ -42,45 +40,6 @@ export const OutcomesEditor = ({ control, register, errors }: CourseEditorSectio
 						errors={errors}
 						maxLength={120}
 						minH="48px"
-					/>
-				</EditorCard>
-			))}
-		</Stack>
-	);
-};
-
-export const AudienceEditor = ({ control, register, errors }: CourseEditorSectionProps) => {
-	const { fields, append, remove } = useFieldArray({ control, name: 'audience' });
-
-	return (
-		<Stack gap={3}>
-			<EditorSectionHeader
-				title="Audience"
-				action={
-					<Button
-						size="sm"
-						variant="outline"
-						borderRadius="full"
-						onClick={() => append({ id: createRowId('audience'), title: '', tone: '', bulletsText: '' })}
-					>
-						Add audience
-					</Button>
-				}
-			/>
-			{fields.length ? null : <EmptyEditorState label="audience cards" />}
-			{fields.map((field, index) => (
-				<EditorCard key={field.id} title={`Audience card ${index + 1}`} onRemove={() => remove(index)}>
-					<SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
-						<FormField label="Title" name={`audience.${index}.title`} register={register} errors={errors} />
-						<SelectField label="Tone" name={`audience.${index}.tone`} register={register} options={toneOptions} />
-					</SimpleGrid>
-					<TextareaField
-						label="Bullets"
-						name={`audience.${index}.bulletsText`}
-						register={register}
-						errors={errors}
-						minH="90px"
-						placeholder="One bullet per line"
 					/>
 				</EditorCard>
 			))}

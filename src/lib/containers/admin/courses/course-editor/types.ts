@@ -13,7 +13,7 @@ export type CourseEditorStepId =
 	| 'basics'
 	| 'media'
 	| 'outcomes'
-	| 'audienceTools'
+	| 'tools'
 	| 'instructors'
 	| 'gallery'
 	| 'reviews'

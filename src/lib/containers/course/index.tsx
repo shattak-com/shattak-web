@@ -26,7 +26,7 @@ const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProp
 		<CourseCurriculum lessons={course.lessons} />
 		<CourseRequirements items={course.requirements} />
 		<CourseInstructor instructors={course.instructors} />
-		<CourseAudience audience={course.audience} />
+		<CourseAudience />
 		<CourseCompletion completion={course.completion} />
 		<CourseReviews reviews={course.reviews} />
 		<CourseProjects projects={course.projects} />

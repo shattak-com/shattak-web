@@ -12,9 +12,9 @@ export const courseEditorSteps: CourseEditorStep[] = [
 		description: 'Requirements and learning outcomes shown on the course page.'
 	},
 	{
-		id: 'audienceTools',
-		label: 'Audience & Tools',
-		description: 'Audience cards and tools shown on the public course page.'
+		id: 'tools',
+		label: 'Tools',
+		description: 'Tools and technologies shown on the public course page.'
 	},
 	{ id: 'instructors', label: 'Instructors', description: 'Mentor profile details shown on the course page.' },
 	{ id: 'gallery', label: 'Project Gallery', description: 'Project overview, live link, gallery, and student proof.' },
@@ -26,7 +26,7 @@ export const courseEditorSteps: CourseEditorStep[] = [
 export const courseEditorStepGroups: CourseEditorStepGroup[] = [
 	{
 		label: 'Course details',
-		stepIds: ['basics', 'media', 'outcomes', 'audienceTools', 'instructors', 'gallery', 'reviews']
+		stepIds: ['basics', 'media', 'outcomes', 'tools', 'instructors', 'gallery', 'reviews']
 	},
 	{
 		label: 'Curriculum',
@@ -42,7 +42,7 @@ export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]>
 	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status', 'whatsappGroupUrl', 'accessCode'],
 	media: ['price', 'originalPrice', 'rating', 'enrollmentCount', 'thumbnailImage', 'promoImage', 'promoImageBrand'],
 	outcomes: ['requirementsText', 'outcomes'],
-	audienceTools: ['audience', 'tools'],
+	tools: ['tools'],
 	instructors: ['instructors'],
 	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],
@@ -65,14 +65,6 @@ export const courseModeOptions: Array<{ label: string; value: AdminCourseMode }>
 export const courseStatusOptions: Array<{ label: string; value: AdminCourseStatus }> = [
 	{ label: 'Draft', value: 'DRAFT' },
 	{ label: 'Published', value: 'PUBLISHED' }
-];
-
-export const toneOptions = [
-	{ label: 'Default', value: '' },
-	{ label: 'Success', value: 'success' },
-	{ label: 'Accent', value: 'accent' },
-	{ label: 'Warning', value: 'warning' },
-	{ label: 'Info', value: 'info' }
 ];
 
 export const defaultFormValues: CourseEditorFormValues = {

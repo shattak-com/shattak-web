@@ -6,7 +6,6 @@ import MultiSelectDropdown from '~/lib/components/forms/MultiSelectDropdown';
 import { courseCategories } from '~/lib/constants/course-categories';
 
 import {
-	AudienceEditor,
 	FaqsEditor,
 	GalleryEditor,
 	InstructorsEditor,
@@ -139,11 +138,8 @@ const OutcomesStep = ({ control, register, errors }: CourseEditorSectionProps) =
 	</Stack>
 );
 
-const AudienceToolsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={5}>
-		<AudienceEditor control={control} register={register} errors={errors} />
-		<ToolsEditor control={control} register={register} errors={errors} />
-	</Stack>
+const ToolsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
+	<ToolsEditor control={control} register={register} errors={errors} />
 );
 
 const InstructorsStep = ({ control, register, errors }: CourseEditorSectionProps) => (
@@ -240,8 +236,8 @@ export const CourseEditorStepFields = ({
 			return <MediaStep control={control} register={register} errors={errors} />;
 		case 'outcomes':
 			return <OutcomesStep control={control} register={register} errors={errors} />;
-		case 'audienceTools':
-			return <AudienceToolsStep control={control} register={register} errors={errors} />;
+		case 'tools':
+			return <ToolsStep control={control} register={register} errors={errors} />;
 		case 'instructors':
 			return <InstructorsStep control={control} register={register} errors={errors} />;
 		case 'gallery':

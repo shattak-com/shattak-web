@@ -28,7 +28,13 @@ export const metadata: Metadata = {
 
 const emptyLanding: NotesLandingData = { departments: [], popularSubjects: [] };
 
+const NOTES_UNDER_MAINTENANCE = true;
+
 const NotesHomePage = async () => {
+	if (NOTES_UNDER_MAINTENANCE) {
+		return null;
+	}
+
 	const [landingResult, featuredCourses] = await Promise.all([
 		getNotesLanding().catch(() => emptyLanding),
 		loadFeaturedCourses()

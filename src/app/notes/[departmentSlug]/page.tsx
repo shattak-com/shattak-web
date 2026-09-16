@@ -30,7 +30,13 @@ export const generateMetadata = async ({ params }: DepartmentPageProps): Promise
 	}
 };
 
+const NOTES_UNDER_MAINTENANCE = true;
+
 const NotesDepartmentPage = async ({ params }: DepartmentPageProps) => {
+	if (NOTES_UNDER_MAINTENANCE) {
+		return null;
+	}
+
 	const { departmentSlug } = await params;
 	const slug = decodeURIComponent(departmentSlug);
 	let data;

@@ -40,7 +40,11 @@ export const generateMetadata = async ({ params }: SubjectPageProps): Promise<Me
 	}
 };
 
+const NOTES_UNDER_MAINTENANCE = true;
 const NotesSubjectPage = async ({ params, searchParams }: SubjectPageProps) => {
+	if (NOTES_UNDER_MAINTENANCE) {
+		return null;
+	}
 	const [{ departmentSlug, subjectSlug }, query] = await Promise.all([params, searchParams]);
 	const category = parseCategory(query.category);
 	const rawPage = Number(query.page ?? '1');

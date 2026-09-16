@@ -5,13 +5,16 @@ import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
 
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
-import type { CourseCompletion as CourseCompletionData } from '~/lib/containers/course/types';
 
-type CourseCompletionProps = {
-	completion: CourseCompletionData;
-};
+const certificationBenefits = [
+	'Receive an official course completion certificate',
+	'Live verification URL with PDF and downloadable option',
+	'Signed by your course designer and the Director of Shattak',
+	'Carries your name, course title, and completion date',
+	'Recruiters can check it in seconds from your LinkedIn or resume'
+];
 
-const CourseCompletion = ({ completion }: CourseCompletionProps) => (
+const CourseCompletion = () => (
 	<Box as="section" py={{ base: 10, md: 14 }} bg="bg.surface">
 		<Container maxW="7xl">
 			<Stack gap={6}>
@@ -44,24 +47,15 @@ const CourseCompletion = ({ completion }: CourseCompletionProps) => (
 							borderRadius="panel"
 							overflow="hidden"
 							bg="bg.subtle"
-							display="flex"
-							alignItems="center"
-							justifyContent="center"
 							minH={{ base: '180px', md: '200px' }}
 						>
-							{completion.certificateImage ? (
-								<Image
-									src={completion.certificateImage}
-									alt="Completion certificate"
-									fill
-									sizes="480px"
-									style={{ objectFit: 'contain' }}
-								/>
-							) : (
-								<Text fontWeight="semibold" color="text.muted">
-									Certificate Preview
-								</Text>
-							)}
+							<Image
+								src="/images/courses/course-2.svg"
+								alt="Illustration of a verified course completion certificate"
+								fill
+								sizes="(min-width: 62em) 560px, 90vw"
+								style={{ objectFit: 'cover' }}
+							/>
 						</Box>
 					</Box>
 					<Box
@@ -85,8 +79,8 @@ const CourseCompletion = ({ completion }: CourseCompletionProps) => (
 							bgGradient="var(--chakra-gradients-hero-warm-orb)"
 							opacity={{ base: 0.28, _dark: 0.16 }}
 						/>
-						<Stack gap={3} position="relative">
-							{completion.benefits.map(benefit => (
+						<Stack gap={3} position="relative" h="full">
+							{certificationBenefits.map(benefit => (
 								<HStack key={benefit} gap={3} align="start">
 									<Box
 										w="24px"
@@ -105,10 +99,17 @@ const CourseCompletion = ({ completion }: CourseCompletionProps) => (
 									<Text color="text.secondary">{benefit}</Text>
 								</HStack>
 							))}
-							<Box bg="bg.subtle" borderRadius="soft" border="1px solid" borderColor="border.subtle" p={4}>
-								<Text fontWeight="semibold">Completion bonus</Text>
+							<Box
+								mt="auto"
+								bg="bg.accent"
+								borderRadius="soft"
+								border="1px solid"
+								borderColor="border.accentSoft"
+								p={4}
+							>
+								<Text fontWeight="semibold">Pay After Certification</Text>
 								<Text fontSize="sm" color="text.muted" mt={1}>
-									Certificate access, community showcase, and lifetime mentor guidance.
+									Pay whatever you feel it is worth, only after you get certified. No questions asked.
 								</Text>
 							</Box>
 						</Stack>

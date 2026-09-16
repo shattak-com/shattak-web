@@ -27,9 +27,9 @@ const getLearningPath = (courseId: string) => `/my-courses/${encodeURIComponent(
 
 const getButtonStyles = (fullWidth: boolean | undefined) => ({
 	borderRadius: 'full',
-	bg: 'text.primary',
-	color: 'text.inverse',
-	_hover: { bg: 'text.primary', opacity: 0.9 },
+	bg: 'ink.900',
+	color: 'white',
+	_hover: { bg: 'ink.800' },
 	w: fullWidth ? 'full' : undefined
 });
 
@@ -64,7 +64,6 @@ type EnrolledCourseActionProps = CourseEnrollButtonProps & {
 	enrollment: CourseEnrollment;
 	learningDestination: string;
 	location: CourseEnrollActionProps['location'];
-	message: string;
 	pathname: string;
 };
 
@@ -74,36 +73,28 @@ const EnrolledCourseAction = ({
 	fullWidth,
 	learningDestination,
 	location,
-	message,
 	pathname,
 	size
 }: EnrolledCourseActionProps) => (
-	<Stack gap={2} w={fullWidth ? 'full' : undefined}>
-		<ShineButton asChild size={size} {...getButtonStyles(fullWidth)}>
-			<Link
-				href={learningDestination}
-				onClick={() =>
-					trackEnrollmentEvent({
-						location,
-						eventName: 'Go To Course Clicked',
-						courseId: course.id,
-						courseTitle: course.title,
-						isFreeCourse: true,
-						enrollmentStatus: enrollment.status,
-						sourcePage: pathname,
-						destination: learningDestination
-					})
-				}
-			>
-				Go to Course
-			</Link>
-		</ShineButton>
-		{message ? (
-			<Text fontSize="xs" color="text.muted" textAlign="center">
-				{message}
-			</Text>
-		) : null}
-	</Stack>
+	<ShineButton asChild size={size} {...getButtonStyles(fullWidth)}>
+		<Link
+			href={learningDestination}
+			onClick={() =>
+				trackEnrollmentEvent({
+					location,
+					eventName: 'Go To Course Clicked',
+					courseId: course.id,
+					courseTitle: course.title,
+					isFreeCourse: true,
+					enrollmentStatus: enrollment.status,
+					sourcePage: pathname,
+					destination: learningDestination
+				})
+			}
+		>
+			Go to Course
+		</Link>
+	</ShineButton>
 );
 
 const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }: CourseEnrollActionProps) => {
@@ -173,12 +164,6 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 					value: result.enrollment.course.price
 				});
 			}
-			setEnrollment(result.enrollment);
-			setMessage(
-				result.alreadyEnrolled
-					? 'You are already enrolled in this course.'
-					: 'You have successfully enrolled in this course.'
-			);
 			trackEnrollmentEvent({
 				location,
 				eventName: 'Free Course Enrollment Successful',
@@ -186,8 +171,10 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 				courseTitle: course.title,
 				isFreeCourse: true,
 				enrollmentStatus: result.enrollment.status,
-				sourcePage: pathname
+				sourcePage: pathname,
+				destination: learningDestination
 			});
+			router.push(learningDestination);
 		} catch (error) {
 			if (error instanceof ApiRequestError && error.statusCode === 401) {
 				trackEnrollmentEvent({
@@ -216,7 +203,7 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [course.id, course.title, location, loginDestination, pathname, router]);
+	}, [course.id, course.title, learningDestination, location, loginDestination, pathname, router]);
 
 	if (!isFreeCourse) {
 		return <PaidCourseEnrollAction course={course} location={location} size={size} fullWidth={fullWidth} />;
@@ -230,7 +217,6 @@ const CourseEnrollAction = ({ course, location, size = 'sm', fullWidth = true }:
 				fullWidth={fullWidth}
 				learningDestination={learningDestination}
 				location={location}
-				message={message}
 				pathname={pathname}
 				size={size}
 			/>

@@ -133,7 +133,6 @@ const OutcomesStep = ({ control, register, errors }: CourseEditorSectionProps) =
 			minH="100px"
 			placeholder="One requirement per line"
 		/>
-		{/* TODO: Restore CompletionEditor when completion content is no longer hard-coded. */}
 		<OutcomesEditor control={control} register={register} errors={errors} />
 	</Stack>
 );

@@ -2,11 +2,10 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 
 import { getCourseById } from '~/lib/api/courses';
-import { platformFaqs } from '~/lib/constants/platform-faqs';
 import CourseDetailsPage from '~/lib/containers/course';
 import CourseUnavailable from '~/lib/containers/course/components/CourseUnavailable';
 import type { CourseDetails } from '~/lib/containers/course/types';
-import { createFaqPageStructuredData, mergeFaqs } from '~/lib/utils/faqs';
+import { createFaqPageStructuredData } from '~/lib/utils/faqs';
 
 export const revalidate = 60;
 export const dynamic = 'force-static';
@@ -115,7 +114,6 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 	const duration = formatIsoDuration(course.durationHours, course.durationMinutes);
 	const visibleReviews = course.reviews.filter(review => review.show);
 	const ratingValue = course.rating > 0 ? Number(course.rating.toFixed(1)) : undefined;
-	const mergedFaqs = mergeFaqs(course.faqs, platformFaqs);
 
 	const courseJsonLd = {
 		'@context': 'https://schema.org',
@@ -182,7 +180,7 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 			}
 		]
 	};
-	const faqJsonLd = createFaqPageStructuredData(mergedFaqs);
+	const faqJsonLd = createFaqPageStructuredData(course.faqs);
 
 	return (
 		<>
@@ -191,7 +189,7 @@ const CoursePage = async ({ params }: CoursePageProps) => {
 			{faqJsonLd ? (
 				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 			) : null}
-			<CourseDetailsPage course={course} faqs={mergedFaqs} />
+			<CourseDetailsPage course={course} />
 		</>
 	);
 };

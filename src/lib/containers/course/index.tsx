@@ -1,5 +1,4 @@
 import WhatsAppBanner from '~/lib/components/WhatsAppBanner';
-import type { FaqItem } from '~/lib/constants/platform-faqs';
 import CourseAudience from '~/lib/containers/course/components/CourseAudience';
 import CourseCompletion from '~/lib/containers/course/components/CourseCompletion';
 import CourseCurriculum from '~/lib/containers/course/components/CourseCurriculum';
@@ -15,11 +14,10 @@ import type { CourseDetails } from '~/lib/containers/course/types';
 
 type CourseDetailsPageProps = {
 	course: CourseDetails;
-	faqs?: readonly FaqItem[];
 };
 
 // TODO: Add CourseOverview back when content for this section is ready to publish.
-const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProps) => (
+const CourseDetailsPage = ({ course }: CourseDetailsPageProps) => (
 	<>
 		<CourseHero course={course} />
 		<CourseOutcomes outcomes={course.outcomes} />
@@ -27,11 +25,11 @@ const CourseDetailsPage = ({ course, faqs = course.faqs }: CourseDetailsPageProp
 		<CourseRequirements items={course.requirements} />
 		<CourseInstructor instructors={course.instructors} />
 		<CourseAudience />
-		<CourseCompletion completion={course.completion} />
+		<CourseCompletion />
 		<CourseReviews reviews={course.reviews} />
 		<CourseProjects projects={course.projects} />
 		<WhatsAppBanner title="Join Our Community, Ask Questions" />
-		<CourseFaq faqs={faqs} />
+		<CourseFaq faqs={course.faqs} />
 		<CourseEnrollBanner course={course} />
 	</>
 );

@@ -78,24 +78,6 @@ export const ToolsEditor = ({ control, register, errors }: CourseEditorSectionPr
 	);
 };
 
-// TODO: Restore this editor when completion content is no longer hard-coded.
-export const CompletionEditor = ({ control, register, errors }: CourseEditorSectionProps) => (
-	<Stack gap={3}>
-		<Text fontSize="sm" fontWeight="semibold">
-			Completion
-		</Text>
-		<ImageField label="Certificate image" name="completionCertificateImage" control={control} errors={errors} />
-		<TextareaField
-			label="Completion benefits"
-			name="completionBenefitsText"
-			register={register}
-			errors={errors}
-			minH="100px"
-			placeholder="One benefit per line"
-		/>
-	</Stack>
-);
-
 export const GalleryEditor = ({ control, register, errors }: CourseEditorSectionProps) => {
 	const { fields, append, remove } = useFieldArray({ control, name: 'projectGallery' });
 

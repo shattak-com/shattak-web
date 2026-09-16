@@ -8,8 +8,8 @@ export const courseEditorSteps: CourseEditorStep[] = [
 	{ id: 'media', label: 'Pricing & Media', description: 'Commercial details, images, and visible metrics.' },
 	{
 		id: 'outcomes',
-		label: 'Outcomes',
-		description: 'Requirements and learning outcomes shown on the course page.'
+		label: 'Requirements & Outcomes',
+		description: 'Course requirements and learning outcomes shown on the public page.'
 	},
 	{
 		id: 'tools',

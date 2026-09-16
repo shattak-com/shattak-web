@@ -46,11 +46,11 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 		>
 			<Container maxW="7xl">
 				<Box
-					bgGradient="var(--chakra-gradients-cta-surface)"
-					_dark={{ bgGradient: 'var(--chakra-gradients-cta-surface-dark)' }}
+					bgGradient="var(--chakra-gradients-brand-sunset)"
+					color="text.onDark"
 					borderRadius={{ base: 'xl', md: 'card' }}
 					border="1px solid"
-					borderColor="border.accentSoft"
+					borderColor="border.onDark"
 					boxShadow="elevated"
 					px={{ base: 4, md: 6 }}
 					py={{ base: 3, md: 3 }}
@@ -62,14 +62,14 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 						<HStack gap={6} align="center">
 							<HStack gap={6} flex="1" minW="0">
 								<Stack gap={1} flex="1" minW="0">
-									<Text fontSize="xs" color="text.muted">
+									<Text fontSize="xs" color="text.onDarkMuted">
 										Learners
 									</Text>
 									<Text fontWeight="semibold">{formatLearners(course.enrollmentCount)}</Text>
 								</Stack>
-								<Box w="1px" h="40px" bg="border.default" />
+								<Box w="1px" h="40px" bg="border.onDark" />
 								<Stack gap={1} flex="1" minW="0">
-									<Text fontSize="xs" color="text.muted">
+									<Text fontSize="xs" color="text.onDarkMuted">
 										Duration
 									</Text>
 									<Text fontWeight="semibold">{courseContentDuration}</Text>
@@ -77,16 +77,16 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 							</HStack>
 							<HStack gap={4} justify="flex-end" flex="1">
 								<Stack gap={1} flex="1" minW="0">
-									<Text fontSize="xs" color="text.muted">
+									<Text fontSize="xs" color="text.onDarkMuted">
 										Get Life Time Access
 									</Text>
 									<HStack gap={2} align="baseline">
 										<Text fontWeight="bold">{formatRupee(course.price)}</Text>
-										<Text fontSize="sm" color="text.muted" textDecoration="line-through">
+										<Text fontSize="sm" color="text.onDarkMuted" textDecoration="line-through">
 											{formatRupee(course.originalPrice)}
 										</Text>
 										{discountPercent > 0 ? (
-											<Text fontSize="xs" color="text.accent" fontWeight="semibold">
+											<Text fontSize="xs" color="text.onDark" fontWeight="semibold">
 												{discountPercent}% off
 											</Text>
 										) : null}
@@ -102,16 +102,16 @@ const CourseEnrollBanner = ({ course }: CourseEnrollBannerProps) => {
 					<Box display={{ base: 'block', md: 'none' }}>
 						<HStack justify="space-between" align="center" gap={3}>
 							<Stack gap={1}>
-								<Text fontSize="xs" color="text.muted">
+								<Text fontSize="xs" color="text.onDarkMuted">
 									Get Life Time Access
 								</Text>
 								<HStack gap={2} align="baseline">
 									<Text fontWeight="bold">{formatRupee(course.price)}</Text>
-									<Text fontSize="xs" color="text.muted" textDecoration="line-through">
+									<Text fontSize="xs" color="text.onDarkMuted" textDecoration="line-through">
 										{formatRupee(course.originalPrice)}
 									</Text>
 									{discountPercent > 0 ? (
-										<Text fontSize="xs" color="text.accent" fontWeight="semibold">
+										<Text fontSize="xs" color="text.onDark" fontWeight="semibold">
 											{discountPercent}% off
 										</Text>
 									) : null}

@@ -20,6 +20,10 @@ const CourseReviews = ({ reviews }: CourseReviewsProps) => {
 			likes: review.likes
 		}));
 
+	if (!items.length) {
+		return null;
+	}
+
 	return (
 		<Testimonials
 			items={items}

@@ -38,11 +38,7 @@ export const generateMetadata = async ({ params }: NotePageProps): Promise<Metad
 	}
 };
 
-const NOTES_UNDER_MAINTENANCE = true;
 const NotePage = async ({ params }: NotePageProps) => {
-	if (NOTES_UNDER_MAINTENANCE) {
-		return null;
-	}
 	const { departmentSlug, subjectSlug, noteSlug } = await params;
 	let data;
 	try {

@@ -25,7 +25,8 @@ export const contentBlockTypeOptions: Array<{ label: string; value: AdminCurricu
 	{ label: 'Upload PDF', value: 'PDF_UPLOAD' },
 	{ label: 'PDF link', value: 'PDF_LINK' },
 	{ label: 'Upload PPT', value: 'PPT_UPLOAD' },
-	{ label: 'PPT link', value: 'PPT_LINK' }
+	{ label: 'PPT link', value: 'PPT_LINK' },
+	{ label: 'Any link', value: 'ANY_LINK' }
 ];
 
 export const visibilityOptions: Array<{ label: string; value: AdminCurriculumContentVisibility }> = [
@@ -35,7 +36,12 @@ export const visibilityOptions: Array<{ label: string; value: AdminCurriculumCon
 
 export const uploadBlockTypes = new Set<AdminCurriculumContentBlockType>(['VIDEO_UPLOAD', 'PDF_UPLOAD', 'PPT_UPLOAD']);
 
-export const linkedBlockTypes = new Set<AdminCurriculumContentBlockType>(['VIDEO_YOUTUBE', 'PDF_LINK', 'PPT_LINK']);
+export const linkedBlockTypes = new Set<AdminCurriculumContentBlockType>([
+	'VIDEO_YOUTUBE',
+	'PDF_LINK',
+	'PPT_LINK',
+	'ANY_LINK'
+]);
 
 export const getUploadAccept = (type: AdminCurriculumContentBlockType) => {
 	if (type === 'VIDEO_UPLOAD') {

@@ -380,24 +380,16 @@ export const CourseLessonsTab = ({
 				</Stack>
 			</Box>
 
-			<Box
-				border={{ base: '0', md: '1px solid' }}
-				borderColor={workspaceBoundaryColor}
-				borderRadius={{ base: 0, md: 'card' }}
-				bg={{ base: 'transparent', md: 'bg.subtle' }}
-				p={{ base: 0, md: 5 }}
-			>
-				<Stack gap={5}>
-					{subsection.contentBlocks.length ? (
-						subsection.contentBlocks.map(block => <LessonContentBlockView key={block.id} block={block} />)
-					) : (
-						<Box border="1px dashed" borderColor={workspaceBoundaryColor} borderRadius="lg" bg="bg.card" p={6}>
-							<Text color="text.muted">No detailed content has been added to this lesson yet.</Text>
-						</Box>
-					)}
-					<Box ref={bottomSentinelRef} h="1px" aria-hidden="true" />
-				</Stack>
-			</Box>
+			<Stack gap={5}>
+				{subsection.contentBlocks.length ? (
+					subsection.contentBlocks.map(block => <LessonContentBlockView key={block.id} block={block} />)
+				) : (
+					<Box border="1px dashed" borderColor={workspaceBoundaryColor} borderRadius="lg" bg="bg.card" p={6}>
+						<Text color="text.muted">No detailed content has been added to this lesson yet.</Text>
+					</Box>
+				)}
+				<Box ref={bottomSentinelRef} h="1px" aria-hidden="true" />
+			</Stack>
 		</Stack>
 	);
 };

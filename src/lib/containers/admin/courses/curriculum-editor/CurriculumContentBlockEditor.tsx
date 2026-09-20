@@ -1,4 +1,4 @@
-import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, HStack, Input, SimpleGrid, Stack, Text, Textarea } from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
 
 import type {
@@ -7,6 +7,8 @@ import type {
 	AdminCurriculumContentVisibility,
 	AdminCurriculumSubsection
 } from '~/lib/api/admin-curriculum';
+import { resolveAdminCurriculumLink } from '~/lib/api/admin-curriculum';
+import { isResolvableEmbedShortLink } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 
 import {
 	contentBlockTypeOptions,
@@ -262,28 +264,96 @@ const LinkedBlockFields = ({
 	block,
 	onUpdateContentBlock
 }: BlockUpdateContext) => {
+	const [isResolvingLink, setIsResolvingLink] = useState(false);
+	const [linkResolutionMessage, setLinkResolutionMessage] = useState('');
+
 	if (!linkedBlockTypes.has(block.type)) {
 		return null;
 	}
 
+	const isAnyLink = block.type === 'ANY_LINK';
+	let fieldLabel = 'File URL';
+	let placeholder = 'https://example.com/file.pdf';
+
+	if (block.type === 'VIDEO_YOUTUBE') {
+		fieldLabel = 'YouTube URL';
+		placeholder = 'https://www.youtube.com/watch?v=...';
+	} else if (isAnyLink) {
+		fieldLabel = 'URL or iframe code';
+		placeholder = 'Paste an HTTPS URL or copied <iframe> embed code';
+	}
+	const updateUrl = (nextUrl: string) =>
+		onUpdateContentBlock(moduleIndex, subsectionIndex, blockIndex, currentBlock => ({
+			...currentBlock,
+			url: nextUrl
+		}));
+	const resolveShortLink = async () => {
+		if (!isAnyLink || !isResolvableEmbedShortLink(block.url) || isResolvingLink) {
+			return;
+		}
+
+		setIsResolvingLink(true);
+		setLinkResolutionMessage('');
+
+		try {
+			const result = await resolveAdminCurriculumLink(block.url);
+
+			if (result.resolved && result.url !== block.url) {
+				updateUrl(result.url);
+				setLinkResolutionMessage('Canva short link resolved for embedding.');
+			} else {
+				setLinkResolutionMessage(
+					'This Canva short link could not be resolved. Recopy the public view link or paste Canva embed code.'
+				);
+			}
+		} catch {
+			setLinkResolutionMessage('Could not check this short link right now. It will be checked again when you save.');
+		} finally {
+			setIsResolvingLink(false);
+		}
+	};
+
 	return (
 		<Stack gap={3}>
 			<Box>
-				<FieldLabel>{block.type === 'VIDEO_YOUTUBE' ? 'YouTube URL' : 'File URL'}</FieldLabel>
-				<Input
-					value={block.url}
-					onChange={event => {
-						const nextUrl = event.currentTarget.value ?? '';
-
-						onUpdateContentBlock(moduleIndex, subsectionIndex, blockIndex, currentBlock => ({
-							...currentBlock,
-							url: nextUrl
-						}));
-					}}
-					placeholder={
-						block.type === 'VIDEO_YOUTUBE' ? 'https://www.youtube.com/watch?v=...' : 'https://example.com/file.pdf'
-					}
-				/>
+				<FieldLabel>{fieldLabel}</FieldLabel>
+				{isAnyLink ? (
+					<Textarea
+						value={block.url}
+						onChange={event => {
+							setLinkResolutionMessage('');
+							updateUrl(event.currentTarget.value ?? '');
+						}}
+						onBlur={() => {
+							resolveShortLink().catch(() => undefined);
+						}}
+						placeholder={placeholder}
+						minH="104px"
+						resize="vertical"
+					/>
+				) : (
+					<Input
+						value={block.url}
+						onChange={event => updateUrl(event.currentTarget.value ?? '')}
+						placeholder={placeholder}
+					/>
+				)}
+				{isAnyLink ? (
+					<Text mt={1.5} fontSize="xs" color="text.muted">
+						Supports public Canva, Figma, Facebook, Instagram, LinkedIn and other HTTP(S) resources. Unknown providers
+						are attempted in a restricted iframe. If iframe code is pasted, only its source URL is saved.
+					</Text>
+				) : null}
+				{isResolvingLink ? (
+					<Text mt={1.5} fontSize="xs" color="text.muted">
+						Resolving Canva short link...
+					</Text>
+				) : null}
+				{!isResolvingLink && linkResolutionMessage ? (
+					<Text mt={1.5} fontSize="xs" color={linkResolutionMessage.startsWith('Canva') ? 'green.600' : 'orange.600'}>
+						{linkResolutionMessage}
+					</Text>
+				) : null}
 			</Box>
 			<CurriculumLinkPreview type={block.type} url={block.url} title={block.title} />
 		</Stack>
@@ -375,7 +445,7 @@ const UploadBlockFields = ({
 };
 
 const BlockPreviewLink = ({ block }: { block: AdminCurriculumContentBlock }) => {
-	if (!block.url) {
+	if (!uploadBlockTypes.has(block.type) || !block.url) {
 		return null;
 	}
 

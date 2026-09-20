@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { FiFileText, FiMonitor, FiPlayCircle } from 'react-icons/fi';
 
 import type { CourseLessonContentBlock } from '~/lib/api/enrollments';
+import { EmbeddedResourceCard } from '~/lib/components/learning/lesson-content/EmbeddedResourceCard';
 import { getSafeExternalUrl, getYouTubeVideoId } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 import { LessonMarkdownContent } from '~/lib/components/learning/lesson-content/LessonMarkdownContent';
 import { PdfPreview } from '~/lib/components/learning/lesson-content/PdfPreview';
@@ -143,6 +144,10 @@ const PresentationLessonBlock = ({ block }: { block: CourseLessonContentBlock })
 	);
 };
 
+const AnyLinkLessonBlock = ({ block }: { block: CourseLessonContentBlock }) => (
+	<EmbeddedResourceCard url={block.url} title={block.title} borderColor={workspaceBoundaryColor} />
+);
+
 export const LessonContentBlockView = ({ block }: { block: CourseLessonContentBlock }) => {
 	switch (block.type) {
 		case 'TEXT':
@@ -157,6 +162,8 @@ export const LessonContentBlockView = ({ block }: { block: CourseLessonContentBl
 		case 'PPT_UPLOAD':
 		case 'PPT_LINK':
 			return <PresentationLessonBlock block={block} />;
+		case 'ANY_LINK':
+			return <AnyLinkLessonBlock block={block} />;
 		default:
 			return null;
 	}

@@ -14,6 +14,7 @@ export const courseTabs: CourseTab[] = [
 
 export const workspaceBoundaryColor = 'gray.500';
 export const workspaceSelectedBoundaryColor = { _light: 'brand.600', _dark: 'brand.300' };
+export const workspaceBrandSurfaceColor = { _light: 'bg.brand', _dark: 'brandAlpha.20' };
 export const workspaceActiveTextColor = 'ink.900';
 export const shattakMarkUrl = '/assets/shattak-logo.jpg';
 

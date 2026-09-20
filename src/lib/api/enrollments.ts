@@ -10,7 +10,8 @@ export type CourseLessonContentBlockType =
 	| 'PDF_UPLOAD'
 	| 'PDF_LINK'
 	| 'PPT_UPLOAD'
-	| 'PPT_LINK';
+	| 'PPT_LINK'
+	| 'ANY_LINK';
 
 export type CourseLessonContentVisibility = 'PUBLIC_PREVIEW' | 'ENROLLED_ONLY';
 

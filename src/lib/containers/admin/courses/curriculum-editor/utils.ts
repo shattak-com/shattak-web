@@ -6,6 +6,7 @@ import type {
 	AdminCurriculumModule,
 	AdminCurriculumSubsection
 } from '~/lib/api/admin-curriculum';
+import { getSafeEmbedInputUrl } from '~/lib/components/learning/lesson-content/lesson-content-urls';
 
 import {
 	contentBlockTypeOptions,
@@ -278,6 +279,10 @@ export const getCurriculumIssues = (curriculum: AdminCourseCurriculum) => {
 
 					if ((block.type === 'PDF_LINK' || block.type === 'PPT_LINK') && !isValidUrl(block.url.trim())) {
 						issues.push(`${blockLabel} needs a valid file URL.`);
+					}
+
+					if (block.type === 'ANY_LINK' && !getSafeEmbedInputUrl(block.url)) {
+						issues.push(`${blockLabel} needs a valid HTTP(S) URL or iframe embed code.`);
 					}
 
 					if (

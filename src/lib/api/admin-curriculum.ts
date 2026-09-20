@@ -1,4 +1,4 @@
-import { getJson, putJson } from '~/lib/api/client';
+import { getJson, postJson, putJson } from '~/lib/api/client';
 
 export type AdminCurriculumSectionType = 'LESSONS' | 'LIVE_SESSIONS' | 'POST_SESSION_MATERIALS';
 
@@ -9,7 +9,8 @@ export type AdminCurriculumContentBlockType =
 	| 'PDF_UPLOAD'
 	| 'PDF_LINK'
 	| 'PPT_UPLOAD'
-	| 'PPT_LINK';
+	| 'PPT_LINK'
+	| 'ANY_LINK';
 
 export type AdminCurriculumContentVisibility = 'PUBLIC_PREVIEW' | 'ENROLLED_ONLY';
 
@@ -60,3 +61,6 @@ export const getAdminCourseCurriculum = (courseId: string) =>
 
 export const replaceAdminCourseCurriculum = (courseId: string, curriculum: AdminCourseCurriculum) =>
 	putJson<{ curriculum: AdminCourseCurriculum }>(`/admin/courses/${courseId}/curriculum`, curriculum);
+
+export const resolveAdminCurriculumLink = (url: string) =>
+	postJson<{ url: string; resolved: boolean }>('/admin/curriculum/resolve-link', { url });

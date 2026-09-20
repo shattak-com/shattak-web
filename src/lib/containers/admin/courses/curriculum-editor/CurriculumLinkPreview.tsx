@@ -1,6 +1,7 @@
 import { Box, HStack, Text } from '@chakra-ui/react';
 
 import type { AdminCurriculumContentBlockType } from '~/lib/api/admin-curriculum';
+import { EmbeddedResourceCard } from '~/lib/components/learning/lesson-content/EmbeddedResourceCard';
 
 import { getYouTubeVideoId, isValidUrl } from './utils';
 
@@ -15,6 +16,10 @@ const getLinkPreviewLabel = (type: AdminCurriculumContentBlockType) => {
 
 	if (type === 'VIDEO_YOUTUBE') {
 		return 'YouTube video';
+	}
+
+	if (type === 'ANY_LINK') {
+		return 'Embedded resource';
 	}
 
 	return 'Linked content';
@@ -35,6 +40,10 @@ export const CurriculumLinkPreview = ({
 
 	if (!trimmedUrl) {
 		return null;
+	}
+
+	if (type === 'ANY_LINK') {
+		return <EmbeddedResourceCard url={trimmedUrl} title={title} />;
 	}
 
 	const isSafeUrl = isValidUrl(trimmedUrl);

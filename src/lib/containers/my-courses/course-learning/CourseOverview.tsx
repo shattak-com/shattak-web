@@ -30,7 +30,13 @@ import UserAvatar from '~/lib/components/auth/UserAvatar';
 import QrCodePreview from '~/lib/components/forms/QrCodePreview';
 import ExperienceVideo from '~/lib/components/media/ExperienceVideo';
 
-import { courseNextSteps, shattakMarkUrl, workspaceActiveTextColor, workspaceBoundaryColor } from './constants';
+import {
+	courseNextSteps,
+	shattakMarkUrl,
+	workspaceActiveTextColor,
+	workspaceBoundaryColor,
+	workspaceBrandSurfaceColor
+} from './constants';
 import CourseDashboardSkeleton from './CourseDashboardSkeleton';
 import type { CourseTabId } from './types';
 import { getStreakTiles } from './utils';
@@ -360,14 +366,14 @@ const CourseWelcomeVideo = ({
 type StreakTile = ReturnType<typeof getStreakTiles>[number];
 
 const CourseStreakTile = ({ tile }: { tile: StreakTile }) => {
-	let background = 'bg.subtle';
+	let background: string | typeof workspaceBrandSurfaceColor = 'bg.subtle';
 	let iconBackground = 'transparent';
 	let iconColor = tile.isBuffer ? 'primary' : 'text.muted';
 	let tileColor = 'text.primary';
 	let dateColor = 'text.muted';
 
 	if (tile.isCurrent) {
-		background = 'bg.brand';
+		background = workspaceBrandSurfaceColor;
 		iconBackground = 'primary';
 		iconColor = workspaceActiveTextColor;
 	}
@@ -470,7 +476,7 @@ const CourseLearningActionRow = ({
 				<Box
 					boxSize="28px"
 					borderRadius="full"
-					bg="bg.brand"
+					bg={workspaceBrandSurfaceColor}
 					color="primary"
 					display="grid"
 					fontSize="xs"
@@ -568,7 +574,7 @@ export const CourseNextLearningAction = ({
 						<Box
 							boxSize="46px"
 							borderRadius="xl"
-							bg="bg.brand"
+							bg={workspaceBrandSurfaceColor}
 							color="primary"
 							display="grid"
 							flexShrink={0}
@@ -599,7 +605,14 @@ export const CourseNextLearningAction = ({
 
 				{learningModule ? (
 					<Box borderTop="1px solid" borderColor={workspaceBoundaryColor}>
-						<HStack justify="space-between" gap={4} bg="bg.brand" px={{ base: 4, md: 6 }} py={4} flexWrap="wrap">
+						<HStack
+							justify="space-between"
+							gap={4}
+							bg={workspaceBrandSurfaceColor}
+							px={{ base: 4, md: 6 }}
+							py={4}
+							flexWrap="wrap"
+						>
 							<HStack gap={3} minW={0}>
 								<Box color="primary" fontSize="xl">
 									<FiCode />
@@ -694,7 +707,7 @@ const CourseUnlockedOverviewTab = ({
 								<Box
 									boxSize={{ base: '48px', md: '58px' }}
 									borderRadius="xl"
-									bg="bg.brand"
+									bg={workspaceBrandSurfaceColor}
 									color="primary"
 									display="grid"
 									fontSize={{ base: '2xl', md: '3xl' }}
@@ -744,7 +757,7 @@ const CourseUnlockedOverviewTab = ({
 							</Box>
 						</Box>
 
-						<HStack borderRadius="lg" bg="bg.brand" px={4} py={3} gap={3} align="start">
+						<HStack borderRadius="lg" bg={workspaceBrandSurfaceColor} px={4} py={3} gap={3} align="start">
 							<Box color="primary" mt={0.5}>
 								<FiCalendar />
 							</Box>
@@ -1064,7 +1077,7 @@ const CourseOverviewTab = ({ enrollment, courseId, currentUser, onUnlocked }: Co
 									<Box
 										boxSize="24px"
 										borderRadius="full"
-										bg="bg.brand"
+										bg={workspaceBrandSurfaceColor}
 										color="primary"
 										display="grid"
 										flexShrink={0}

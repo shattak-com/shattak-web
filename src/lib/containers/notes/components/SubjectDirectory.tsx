@@ -3,7 +3,7 @@
 import { Box, Button, Flex, Heading, Icon, Input, InputGroup, SimpleGrid, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { FiBookOpen, FiCheck, FiSearch, FiShare2 } from 'react-icons/fi';
+import { FiCheck, FiChevronRight, FiSearch, FiShare2 } from 'react-icons/fi';
 
 import { trackNotesEvent } from '~/lib/analytics/mixpanel';
 import type { NoteSubject } from '~/lib/api/notes';
@@ -13,6 +13,36 @@ type SubjectDirectoryProps = {
 	departmentSlug?: string;
 	showShare?: boolean;
 	title?: string;
+};
+
+const subjectColorPalettes = ['purple', 'orange', 'green', 'pink', 'blue', 'teal'] as const;
+const subjectConnectorWords = new Set(['and', 'of', 'the', 'for', 'with', 'in', 'to', 'a', 'an']);
+
+const getSubjectInitials = (name: string) => {
+	const words = (name.replace(/\([^)]*\)/g, '').match(/[\p{L}\p{N}]+/gu) ?? []).filter(
+		word => !subjectConnectorWords.has(word.toLowerCase())
+	);
+
+	if (words.length > 1) {
+		return `${Array.from(words[0] ?? '')[0] ?? ''}${Array.from(words[1] ?? '')[0] ?? ''}`.toUpperCase();
+	}
+
+	return (
+		Array.from(words[0] ?? name.trim())
+			.slice(0, 2)
+			.join('')
+			.toUpperCase() || 'NA'
+	);
+};
+
+const getSubjectColorPalette = (identity: string) => {
+	let hash = 0;
+
+	for (let index = 0; index < identity.length; index += 1) {
+		hash = (hash * 31 + identity.charCodeAt(index)) % 2_147_483_647;
+	}
+
+	return subjectColorPalettes[hash % subjectColorPalettes.length];
 };
 
 const SubjectDirectory = ({
@@ -75,12 +105,13 @@ const SubjectDirectory = ({
 			</Flex>
 
 			{filteredSubjects.length ? (
-				<SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} gap={3}>
+				<SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={3}>
 					{filteredSubjects.map(subject => {
 						const selectedDepartment = departmentSlug
 							? subject.departments.find(department => department.slug === departmentSlug)
 							: subject.departments[0];
 						const href = selectedDepartment ? `/notes/${selectedDepartment.slug}/${subject.slug}` : '/notes';
+						const colorPalette = getSubjectColorPalette(subject.id);
 						return (
 							<Box
 								key={subject.id}
@@ -90,6 +121,7 @@ const SubjectDirectory = ({
 								borderColor="border.default"
 								borderRadius="tile"
 								p={4}
+								minW={0}
 								transition="all 0.2s ease"
 								_hover={{ borderColor: 'border.accentSoft', bg: 'bg.accent', transform: 'translateY(-2px)' }}
 							>
@@ -104,26 +136,42 @@ const SubjectDirectory = ({
 										})
 									}
 								>
-									<Flex gap={3} align="center">
+									<Flex gap={3} align="center" h="full">
 										<Flex
-											boxSize={9}
+											boxSize={11}
 											borderRadius="soft"
-											bg="bg.accent"
+											colorPalette={colorPalette}
+											bg="colorPalette.subtle"
 											align="center"
 											justify="center"
-											color="text.accent"
+											color="colorPalette.fg"
 											flexShrink={0}
+											aria-hidden="true"
 										>
-											<Icon as={FiBookOpen} />
+											<Text fontWeight="bold" fontSize="md" lineHeight="1">
+												{getSubjectInitials(subject.name)}
+											</Text>
 										</Flex>
-										<Stack gap={0.5} minW={0}>
-											<Text fontWeight="semibold" fontSize="sm" lineClamp={1}>
+										<Stack gap={1} minW={0} flex={1}>
+											<Text fontWeight="semibold" fontSize="sm" lineHeight="compact" overflowWrap="anywhere">
 												{subject.name}
 											</Text>
 											<Text color="text.muted" fontSize="xs">
 												{subject.noteCount} {subject.noteCount === 1 ? 'resource' : 'resources'} available
 											</Text>
 										</Stack>
+										<Flex
+											boxSize={6}
+											borderRadius="full"
+											bg="bg.surface"
+											color="text.muted"
+											align="center"
+											justify="center"
+											flexShrink={0}
+											aria-hidden="true"
+										>
+											<Icon as={FiChevronRight} boxSize={3.5} />
+										</Flex>
 									</Flex>
 								</Link>
 							</Box>

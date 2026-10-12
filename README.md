@@ -84,6 +84,18 @@ Notes:
 - Keep only the root `netlify.toml`. Remove `.netlify/netlify.toml` if it exists.
 - The deploy scripts load `.env`/`.env.local` and pass the variables to the Netlify CLI.
 
+### Build-time sitemap generation
+
+`npm run build` runs `next-sitemap` after Next.js completes. Its dynamic URL collector uses only public course and Notes metadata endpoints; it never fetches authenticated note resource links.
+
+- Set `NEXT_PUBLIC_SITE_URL` to the canonical site URL, and `SHATTAK_API_BASE_URL` (or `NEXT_PUBLIC_SHATTAK_API_BASE_URL`) to the deployed backend including `/api/v1` in Netlify's **build** environment. Do not copy the example's localhost API URL into production.
+- Dynamic discovery allows at most four simultaneous requests, with an eight-second deadline covering each response and its JSON body, and a sixty-second overall discovery budget.
+- Empty subjects are not fetched. Subjects shared between departments are fetched once, while URLs for every discovered department/subject combination are retained.
+- A failed request or expired budget does not block deployment: static and already discovered URLs are retained. Undiscovered dynamic URLs are omitted from that build's sitemap, with a warning explaining that the result is incomplete. Fix API connectivity or availability if this warning persists; it is not a successful full-catalog discovery.
+- The build logs the API origin/path (without credentials or query strings), discovery stages, a progress update every ten seconds, and a final request/URL summary.
+
+Run `npm run test:sitemap` for the collector's regression tests. To inspect actual sitemap generation after a build, run `npm run postbuild`; it writes the generated sitemap and robots files under `public/`.
+
 ## Available Scripts
 
 The following scripts are available for common development tasks:

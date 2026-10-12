@@ -1,6 +1,8 @@
 import type { LandingCourseCard } from '~/lib/api/courses';
 import type { NoteCategory, NoteResourceType } from '~/lib/api/notes';
 
+export const createNotesLoginHref = (returnPath: string) => `/login?redirect=${encodeURIComponent(returnPath)}`;
+
 export const getFeaturedCourses = (courses: LandingCourseCard[]) =>
 	courses.filter(course =>
 		course.categories.some(category => ['featured', 'futured'].includes(category.trim().toLowerCase()))

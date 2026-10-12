@@ -96,13 +96,14 @@ const NotePage = async ({ params }: NotePageProps) => {
 					</Box>
 					<ContributorBanner />
 					<NoteViewer note={data.note} />
-					{data.otherNotes.length ? (
+					{data.subjectNotes.length ? (
 						<NotesList
-							notes={data.otherNotes}
+							notes={data.subjectNotes}
 							departmentSlug={data.department.slug}
 							subjectSlug={data.subject.slug}
 							showFilters={false}
-							heading="Other Notes in This Subject"
+							heading="All Notes in This Subject"
+							currentNoteId={data.note.id}
 						/>
 					) : null}
 				</Stack>

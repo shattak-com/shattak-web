@@ -52,14 +52,14 @@ export type NotesSubjectData = {
 		total: number;
 		totalPages: number;
 	};
-	otherSubjects: NoteSubject[];
+	departmentSubjects: NoteSubject[];
 };
 
 export type NoteDetailData = {
 	department: NoteDepartment;
 	subject: NoteSubject;
 	note: PublicNote;
-	otherNotes: PublicNote[];
+	subjectNotes: PublicNote[];
 };
 
 const publicCache = { next: { revalidate: 60 } } satisfies RequestInit;

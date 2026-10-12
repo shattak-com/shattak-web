@@ -84,11 +84,11 @@ const NotesSubjectPage = async ({ params, searchParams }: SubjectPageProps) => {
 						activeCategory={category}
 						pagination={data.pagination}
 					/>
-					{data.otherSubjects.length ? (
+					{data.departmentSubjects.length ? (
 						<SubjectDirectory
-							subjects={data.otherSubjects}
+							subjects={data.departmentSubjects}
 							departmentSlug={data.department.slug}
-							title="Other Subjects in This Department"
+							title="All Subjects in This Department"
 						/>
 					) : null}
 				</Stack>

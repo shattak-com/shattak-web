@@ -68,7 +68,7 @@ const ContributorBanner = () => (
 				</Button>
 			</Stack>
 
-			<SimpleGrid columns={{ base: 1, sm: 2, lg: 1 }} gap={3} minW={{ lg: '330px' }}>
+			<SimpleGrid display={{ base: 'none', md: 'grid' }} columns={{ md: 2, lg: 1 }} gap={3} minW={{ lg: '330px' }}>
 				<HStack bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" borderRadius="tile" p={4} gap={3}>
 					<Icon as={FiUploadCloud} color="brand.200" boxSize={5} />
 					<Box>

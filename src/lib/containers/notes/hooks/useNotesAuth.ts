@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { getCurrentUser } from '~/lib/api/auth';
+import { ApiRequestError } from '~/lib/api/client';
 
-export type NotesAuthState = 'checking' | 'authenticated' | 'anonymous';
+export type NotesAuthState = 'checking' | 'authenticated' | 'anonymous' | 'error';
 
 const useNotesAuth = () => {
 	const [authState, setAuthState] = useState<NotesAuthState>('checking');
@@ -15,8 +16,10 @@ const useNotesAuth = () => {
 			.then(() => {
 				if (mounted) setAuthState('authenticated');
 			})
-			.catch(() => {
-				if (mounted) setAuthState('anonymous');
+			.catch(error => {
+				if (mounted) {
+					setAuthState(error instanceof ApiRequestError && error.statusCode === 401 ? 'anonymous' : 'error');
+				}
 			});
 
 		return () => {

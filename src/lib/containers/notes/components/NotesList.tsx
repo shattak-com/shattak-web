@@ -7,10 +7,11 @@ import { useState } from 'react';
 import { FiDownload, FiEye, FiFileText, FiFolder, FiMonitor } from 'react-icons/fi';
 
 import { trackNotesEvent } from '~/lib/analytics/mixpanel';
+import { ApiRequestError } from '~/lib/api/client';
 import { accessNote, type NoteCategory, type PublicNote } from '~/lib/api/notes';
 import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
 import useNotesAuth from '~/lib/containers/notes/hooks/useNotesAuth';
-import { formatNoteDate, getCategoryLabel, getResourceLabel } from '~/lib/containers/notes/utils';
+import { createNotesLoginHref, formatNoteDate, getCategoryLabel, getResourceLabel } from '~/lib/containers/notes/utils';
 
 type NotesListProps = {
 	notes: PublicNote[];
@@ -20,6 +21,7 @@ type NotesListProps = {
 	pagination?: { page: number; totalPages: number; total: number };
 	showFilters?: boolean;
 	heading?: string;
+	currentNoteId?: string;
 };
 
 const categoryOptions: Array<{ value?: NoteCategory; label: string }> = [
@@ -48,17 +50,19 @@ const NotesList = ({
 	activeCategory,
 	pagination,
 	showFilters = true,
-	heading = 'Available Notes'
+	heading = 'Available Notes',
+	currentNoteId
 }: NotesListProps) => {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { authState, setAuthState } = useNotesAuth();
 	const [activeAction, setActiveAction] = useState('');
-	const [notice, setNotice] = useState<{ message: string; variant: 'login' | 'error' } | null>(null);
-	const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
+	const [notice, setNotice] = useState('');
+	const noteHref = (note: PublicNote) =>
+		`/notes/${encodeURIComponent(departmentSlug)}/${encodeURIComponent(subjectSlug)}/${encodeURIComponent(note.slug)}`;
 
 	const requireLogin = (note: PublicNote, action: 'VIEW' | 'DOWNLOAD') => {
-		setNotice({ message: 'Please log in to view or download Notes resources.', variant: 'login' });
+		setNotice('');
 		trackNotesEvent({
 			eventName: 'Authentication Required',
 			location: 'notes_resources',
@@ -67,14 +71,20 @@ const NotesList = ({
 			resourceType: note.resourceType,
 			action
 		});
+		const returnPath = action === 'VIEW' ? noteHref(note) : `${pathname}${window.location.search}`;
+		router.push(createNotesLoginHref(returnPath));
 	};
 
 	const handleView = (note: PublicNote) => {
-		if (authState !== 'authenticated') {
+		if (authState === 'checking') return;
+		if (authState === 'anonymous') {
 			requireLogin(note, 'VIEW');
 			return;
 		}
-		const href = `/notes/${departmentSlug}/${subjectSlug}/${note.slug}`;
+		if (authState === 'error') {
+			setNotice('Your session could not be checked. Please refresh the page and try again.');
+			return;
+		}
 		trackNotesEvent({
 			eventName: 'Note View Requested',
 			location: 'notes_resources',
@@ -83,18 +93,23 @@ const NotesList = ({
 			resourceType: note.resourceType,
 			action: 'VIEW'
 		});
-		router.push(href);
+		router.push(noteHref(note));
 	};
 
 	const handleDownload = async (note: PublicNote) => {
-		if (authState !== 'authenticated') {
+		if (authState === 'checking') return;
+		if (authState === 'anonymous') {
 			requireLogin(note, 'DOWNLOAD');
+			return;
+		}
+		if (authState === 'error') {
+			setNotice('Your session could not be checked. Please refresh the page and try again.');
 			return;
 		}
 
 		const actionKey = `${note.id}:download`;
 		setActiveAction(actionKey);
-		setNotice(null);
+		setNotice('');
 		const resourceWindow = window.open('about:blank', '_blank');
 		if (resourceWindow) resourceWindow.opener = null;
 
@@ -115,12 +130,12 @@ const NotesList = ({
 			}
 		} catch (error) {
 			resourceWindow?.close();
-			const statusCode = typeof error === 'object' && error && 'statusCode' in error ? Number(error.statusCode) : 0;
+			const statusCode = error instanceof ApiRequestError ? error.statusCode : 0;
 			if (statusCode === 401) {
 				setAuthState('anonymous');
 				requireLogin(note, 'DOWNLOAD');
 			} else {
-				setNotice({ message: 'Please try again in a moment.', variant: 'error' });
+				setNotice('Please try again in a moment.');
 				trackNotesEvent({
 					eventName: 'Note Access Failed',
 					location: 'notes_resources',
@@ -180,12 +195,7 @@ const NotesList = ({
 
 			{notice ? (
 				<Box mb={4}>
-					<NotesAccessMessage
-						message={notice.message}
-						variant={notice.variant}
-						loginHref={notice.variant === 'login' ? loginHref : undefined}
-						onDismiss={() => setNotice(null)}
-					/>
+					<NotesAccessMessage message={notice} onDismiss={() => setNotice('')} />
 				</Box>
 			) : null}
 
@@ -193,7 +203,8 @@ const NotesList = ({
 				{notes.map(note => (
 					<Flex
 						key={note.id}
-						bg="bg.card"
+						bg={note.id === currentNoteId ? 'bg.accent' : 'bg.card'}
+						aria-current={note.id === currentNoteId ? 'true' : undefined}
 						border="1px solid"
 						borderColor="border.default"
 						borderRadius="tile"
@@ -217,6 +228,11 @@ const NotesList = ({
 								<Icon as={getResourceIcon(note.resourceType)} />
 							</Flex>
 							<Stack gap={1} minW={0}>
+								{note.id === currentNoteId ? (
+									<Badge colorPalette="blue" variant="subtle" borderRadius="full" alignSelf="flex-start">
+										Currently viewing
+									</Badge>
+								) : null}
 								<Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }} lineClamp={2}>
 									{note.title}
 								</Text>
@@ -235,10 +251,10 @@ const NotesList = ({
 								size="sm"
 								variant="subtle"
 								borderRadius="full"
-								disabled={authState === 'checking'}
+								disabled={authState === 'checking' || note.id === currentNoteId}
 								onClick={() => handleView(note)}
 							>
-								<FiEye /> View
+								<FiEye /> {note.id === currentNoteId ? 'Viewing' : 'View'}
 							</Button>
 							<Button
 								size="sm"

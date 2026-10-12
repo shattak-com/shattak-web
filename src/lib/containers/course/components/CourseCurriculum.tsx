@@ -183,16 +183,16 @@ const LessonsCurriculum = ({
 													{section.subsections.map((item, itemIndex) => (
 														<HStack key={`${section.sectionName}-${item.title}`} gap={3} align="center" minW={0}>
 															<Box
-																boxSize={7}
+																boxSize={6}
 																borderRadius="full"
-																bg="primary"
-																color="ink.900"
+																bg={{ base: 'brand.50', _dark: 'brandAlpha.20' }}
+																color="icon.brand"
 																display="grid"
 																placeItems="center"
 																flexShrink={0}
 																aria-hidden
 															>
-																<Icon as={FiPlay} boxSize={3} fill="currentColor" />
+																<Icon as={FiPlay} boxSize={3} fill="currentColor" strokeWidth={0} ml={0.5} />
 															</Box>
 															<Text color="text.secondary" flex="1" minW={0} lineHeight="short">
 																{item.title}
@@ -283,7 +283,18 @@ const LiveSessionRecordings = () => (
 							</Text>
 						</Box>
 					</HStack>
-					<Badge bg="primary" color="ink.900" borderRadius="soft" px={3} py={1.5} whiteSpace="nowrap" flexShrink={0}>
+					<Badge
+						bg="primary"
+						color="ink.900"
+						borderRadius="soft"
+						w={28}
+						justifyContent="center"
+						textAlign="center"
+						px={3}
+						py={1.5}
+						whiteSpace="nowrap"
+						flexShrink={0}
+					>
 						{item.frequency}
 					</Badge>
 				</HStack>

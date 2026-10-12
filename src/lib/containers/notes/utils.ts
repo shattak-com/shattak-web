@@ -26,21 +26,34 @@ export const getResourceLabel = (resourceType: NoteResourceType) => {
 	return resourceType;
 };
 
+export const createDriveFolderViewerUrl = (sourceUrl: string, layout: 'grid' | 'list' = 'grid') => {
+	try {
+		const url = new URL(sourceUrl);
+		if (!['https:', 'http:'].includes(url.protocol) || url.hostname.replace(/^www\./, '') !== 'drive.google.com') {
+			return '';
+		}
+
+		const [, pathFolderId] = url.pathname.match(/\/folders\/([A-Za-z0-9_-]+)/) ?? [];
+		const folderId = pathFolderId || url.searchParams.get('id');
+		if (!folderId || !/^[A-Za-z0-9_-]+$/.test(folderId)) return '';
+
+		const previewUrl = new URL('https://drive.google.com/embeddedfolderview');
+		previewUrl.searchParams.set('id', folderId);
+		const resourceKey = url.searchParams.get('resourcekey');
+		if (resourceKey) previewUrl.searchParams.set('resourcekey', resourceKey);
+		previewUrl.hash = layout;
+		return previewUrl.toString();
+	} catch {
+		return '';
+	}
+};
+
 export const createNoteViewerUrl = (sourceUrl: string, resourceType: NoteResourceType) => {
+	if (resourceType === 'FOLDER') return createDriveFolderViewerUrl(sourceUrl, 'list');
+
 	try {
 		const url = new URL(sourceUrl);
 		const { pathname } = url;
-		const hostname = url.hostname.replace(/^www\./, '');
-
-		if (resourceType === 'FOLDER') {
-			if (hostname !== 'drive.google.com') return '';
-
-			const [, pathFolderId] = pathname.match(/\/folders\/([A-Za-z0-9_-]+)/) ?? [];
-			const queryFolderId = url.searchParams.get('id');
-			const folderId = pathFolderId || queryFolderId;
-
-			return folderId ? `https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(folderId)}#list` : '';
-		}
 
 		if (resourceType === 'PPT' || pathname.includes('/presentation/d/')) {
 			const [, presentationId] = pathname.match(/\/presentation\/d\/([^/]+)/) ?? [];

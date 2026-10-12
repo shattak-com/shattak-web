@@ -1,10 +1,32 @@
 'use client';
 
-import { Box, Button, Flex, Heading, Icon, Spinner, Stack, Text } from '@chakra-ui/react';
-import { useEffect, useMemo, useState } from 'react';
-import { FiExternalLink, FiFolder } from 'react-icons/fi';
+import {
+	Badge,
+	Box,
+	Button,
+	chakra,
+	Flex,
+	Heading,
+	HStack,
+	Icon,
+	Portal,
+	Spinner,
+	Stack,
+	Text
+} from '@chakra-ui/react';
+import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react';
+import {
+	FiAlertCircle,
+	FiExternalLink,
+	FiFolder,
+	FiGrid,
+	FiList,
+	FiMaximize2,
+	FiMinimize2,
+	FiRefreshCw
+} from 'react-icons/fi';
 
-import { createNoteViewerUrl } from '~/lib/containers/notes/utils';
+import { createDriveFolderViewerUrl } from '~/lib/containers/notes/utils';
 
 type FolderResourceViewerProps = {
 	resourceUrl: string;
@@ -12,123 +34,340 @@ type FolderResourceViewerProps = {
 	onOpenExternally: () => void;
 };
 
-type FolderViewerState = 'loading' | 'ready' | 'failed';
+type FolderLayout = 'grid' | 'list';
+type FolderViewerState = 'loading' | 'ready' | 'slow' | 'failed';
 
-const FolderFallback = ({
-	resourceUrl,
-	onOpenExternally
-}: Pick<FolderResourceViewerProps, 'resourceUrl' | 'onOpenExternally'>) => (
-	<Flex
-		minH={{ base: '300px', md: '420px' }}
-		bg="bg.card"
-		border="1px solid"
-		borderColor="border.default"
-		borderRadius="panel"
-		align="center"
-		justify="center"
-		p={6}
-	>
-		<Stack align="center" textAlign="center" gap={4} maxW="480px">
-			<Flex boxSize={16} borderRadius="panel" bg="bg.accent" color="text.accent" align="center" justify="center">
-				<Icon as={FiFolder} boxSize={7} />
-			</Flex>
-			<Stack gap={1}>
-				<Heading size="lg">Open this resource folder</Heading>
-				<Text color="text.muted">
-					The embedded folder preview is unavailable. You can still open all learning resources directly in Google
-					Drive.
-				</Text>
+const previewHeight = { base: 'min(52dvh, 400px)', md: 'clamp(340px, 48dvh, 460px)' };
+const previewMinHeight = { base: '320px', md: '340px' };
+const folderLayouts = [
+	{ value: 'grid', label: 'Grid', icon: FiGrid },
+	{ value: 'list', label: 'List', icon: FiList }
+] as const;
+
+const ExpandedFolderDialog = chakra('dialog');
+
+const FolderPreviewStatus = ({
+	viewerState,
+	canRetry,
+	onRetry
+}: {
+	viewerState: FolderViewerState;
+	canRetry: boolean;
+	onRetry: () => void;
+}) => {
+	const isWaiting = viewerState === 'loading' || viewerState === 'slow';
+	const isUnavailable = viewerState === 'failed';
+	const unavailableMessage = canRetry
+		? 'Use Open in Drive above to access this folder, or reload its preview.'
+		: 'This link cannot be previewed here. Use Open in Drive above to access the original resource.';
+	return (
+		<Flex position="absolute" inset={0} bg="bg.card" direction="column" overflowY="auto" p={{ base: 5, md: 8 }}>
+			<Stack
+				align="center"
+				textAlign="center"
+				gap={3}
+				maxW="400px"
+				w="full"
+				m="auto"
+				flexShrink={0}
+				role={isUnavailable ? 'alert' : 'status'}
+			>
+				<Flex boxSize={14} borderRadius="tile" bg="bg.accent" color="text.accent" align="center" justify="center">
+					{isWaiting ? <Spinner size="lg" /> : <Icon as={FiAlertCircle} boxSize={6} />}
+				</Flex>
+				<Stack gap={1}>
+					<Text fontWeight="semibold">{isUnavailable ? 'Folder preview unavailable' : 'Loading your resources…'}</Text>
+					<Text fontSize="sm" color="text.muted">
+						{isUnavailable ? unavailableMessage : 'Browse the folder, then select a file to open it in a new tab.'}
+					</Text>
+				</Stack>
+				{viewerState === 'slow' ? (
+					<Text fontSize="sm" color="text.muted">
+						Drive is taking longer than usual. Reload the preview or open the folder in Drive.
+					</Text>
+				) : null}
+				{canRetry && (viewerState === 'slow' || isUnavailable) ? (
+					<Button variant="outline" borderRadius="full" onClick={onRetry}>
+						<FiRefreshCw /> Retry preview
+					</Button>
+				) : null}
 			</Stack>
-			<Button asChild bg="primary" color="text.inverse" borderRadius="full">
-				<a href={resourceUrl} target="_blank" rel="noopener noreferrer" onClick={onOpenExternally}>
-					<FiExternalLink /> Open Drive folder
-				</a>
-			</Button>
-		</Stack>
-	</Flex>
-);
+		</Flex>
+	);
+};
 
-const FolderResourceViewer = ({ resourceUrl, title, onOpenExternally }: FolderResourceViewerProps) => {
-	const viewerUrl = useMemo(() => createNoteViewerUrl(resourceUrl, 'FOLDER'), [resourceUrl]);
+const FolderPreview = ({
+	viewerUrl,
+	title,
+	expanded = false,
+	onRetry
+}: {
+	viewerUrl: string;
+	title: string;
+	expanded?: boolean;
+	onRetry: () => void;
+}) => {
 	const [viewerState, setViewerState] = useState<FolderViewerState>(viewerUrl ? 'loading' : 'failed');
 
 	useEffect(() => {
-		setViewerState(viewerUrl ? 'loading' : 'failed');
 		if (!viewerUrl) return undefined;
-
-		const fallbackTimer = window.setTimeout(() => {
-			setViewerState(currentState => (currentState === 'loading' ? 'failed' : currentState));
+		const timer = window.setTimeout(() => {
+			setViewerState(state => (state === 'loading' ? 'slow' : state));
 		}, 15_000);
-
-		return () => window.clearTimeout(fallbackTimer);
+		return () => window.clearTimeout(timer);
 	}, [viewerUrl]);
 
-	if (viewerState === 'failed') {
-		return <FolderFallback resourceUrl={resourceUrl} onOpenExternally={onOpenExternally} />;
-	}
+	const isWaiting = viewerState === 'loading' || viewerState === 'slow';
 
 	return (
 		<Box
-			bg="bg.card"
-			border="1px solid"
-			borderColor="border.default"
-			borderRadius="panel"
-			overflow="hidden"
-			boxShadow="card"
+			position="relative"
+			h={expanded ? '100%' : previewHeight}
+			minH={expanded ? 0 : previewMinHeight}
+			minW={0}
+			flex={expanded ? 1 : undefined}
+			bg="white"
+			aria-busy={isWaiting}
 		>
-			<Flex
-				px={{ base: 4, md: 5 }}
-				py={3}
-				align="center"
-				justify="space-between"
-				borderBottom="1px solid"
-				borderColor="border.default"
-				gap={3}
-			>
-				<Stack minW={0} gap={0}>
-					<Text fontWeight="semibold" fontSize="sm" lineClamp={1}>
-						Resource folder
-					</Text>
-					<Text color="text.muted" fontSize="xs" display={{ base: 'none', sm: 'block' }}>
-						Select a resource to open it in a new tab.
-					</Text>
-				</Stack>
-				<Button asChild size="sm" variant="outline" borderRadius="full" flexShrink={0}>
-					<a href={resourceUrl} target="_blank" rel="noopener noreferrer" onClick={onOpenExternally}>
-						<FiExternalLink /> Open folder
-					</a>
-				</Button>
-			</Flex>
-
-			<Box
-				position="relative"
-				h={{ base: 'min(68dvh, 560px)', md: '680px' }}
-				minH={{ base: '380px', md: '560px' }}
-				bg="bg.subtle"
-			>
-				{viewerState === 'loading' ? (
-					<Flex position="absolute" inset={0} zIndex={1} bg="bg.card" align="center" justify="center">
-						<Stack align="center" gap={3} role="status">
-							<Spinner color="primary" size="lg" />
-							<Text color="text.muted" fontSize="sm">
-								Loading resource folder…
-							</Text>
-						</Stack>
-					</Flex>
-				) : null}
-
+			{viewerUrl ? (
 				<iframe
 					src={viewerUrl}
 					title={`${title} resource folder`}
 					loading="eager"
 					referrerPolicy="strict-origin-when-cross-origin"
 					sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
-					style={{ border: 0, height: '100%', opacity: viewerState === 'ready' ? 1 : 0, width: '100%' }}
+					style={{ border: 0, display: 'block', height: '100%', width: '100%' }}
 					onLoad={() => setViewerState('ready')}
 					onError={() => setViewerState('failed')}
 				/>
-			</Box>
+			) : null}
+			{viewerState !== 'ready' ? (
+				<FolderPreviewStatus viewerState={viewerState} canRetry={Boolean(viewerUrl)} onRetry={onRetry} />
+			) : null}
 		</Box>
+	);
+};
+
+type FolderPanelProps = FolderResourceViewerProps & {
+	layout: FolderLayout;
+	onLayoutChange: (layout: FolderLayout) => void;
+	onReload: () => void;
+	expanded?: boolean;
+	onToggleExpanded: () => void;
+	expandButtonRef?: RefObject<HTMLButtonElement | null>;
+	headingId?: string;
+	children: ReactNode;
+};
+
+const FolderPanel = ({
+	resourceUrl,
+	title,
+	onOpenExternally,
+	layout,
+	onLayoutChange,
+	onReload,
+	expanded = false,
+	onToggleExpanded,
+	expandButtonRef,
+	headingId,
+	children
+}: FolderPanelProps) => {
+	const titleElement = (
+		<Heading id={headingId} as="h2" size={{ base: 'md', md: 'lg' }} color="text.primary" overflowWrap="anywhere">
+			{title}
+		</Heading>
+	);
+
+	return (
+		<Flex direction="column" h={expanded ? '100%' : undefined} minH={0} minW={0} bg="bg.card">
+			<Flex
+				p={{ base: 4, md: 5 }}
+				gap={4}
+				align={{ base: 'stretch', sm: 'center' }}
+				justify="space-between"
+				direction={{ base: 'column', sm: 'row' }}
+				flexShrink={0}
+			>
+				<Flex gap={3} align="center" minW={0} flex={1}>
+					<Flex
+						boxSize={12}
+						borderRadius="tile"
+						bg="bg.accent"
+						color="text.accent"
+						flexShrink={0}
+						align="center"
+						justify="center"
+					>
+						<Icon as={FiFolder} boxSize={6} aria-hidden="true" />
+					</Flex>
+					<Stack gap={1} minW={0}>
+						<HStack gap={2} flexWrap="wrap">
+							<Text fontSize="xs" color="text.muted" fontWeight="bold" letterSpacing="wider" textTransform="uppercase">
+								Resource library
+							</Text>
+							<Badge bg="bg.accent" color="text.secondary" borderRadius="full" px={2}>
+								Google Drive
+							</Badge>
+						</HStack>
+						{titleElement}
+					</Stack>
+				</Flex>
+				<Button asChild size="sm" minH={10} variant="outline" borderRadius="full" flexShrink={0}>
+					<a href={resourceUrl} target="_blank" rel="noopener noreferrer" onClick={onOpenExternally}>
+						<FiExternalLink aria-hidden="true" /> Open in Drive
+					</a>
+				</Button>
+			</Flex>
+
+			<Flex
+				px={{ base: 4, md: 5 }}
+				py={3}
+				gap={3}
+				flexWrap="wrap"
+				align="center"
+				justify="space-between"
+				bg="bg.surface"
+				borderBlock="1px solid"
+				borderColor="border.default"
+				flexShrink={0}
+			>
+				<HStack
+					role="group"
+					aria-label="Folder layout"
+					gap={1}
+					p={1}
+					border="1px solid"
+					borderColor="border.default"
+					borderRadius="full"
+				>
+					{folderLayouts.map(option => (
+						<Button
+							key={option.value}
+							size="sm"
+							minH={10}
+							variant="ghost"
+							borderRadius="full"
+							bg={layout === option.value ? 'bg.accent' : 'transparent'}
+							color={layout === option.value ? 'text.primary' : 'text.muted'}
+							aria-pressed={layout === option.value}
+							onClick={() => onLayoutChange(option.value)}
+						>
+							<Icon as={option.icon} aria-hidden="true" /> {option.label}
+						</Button>
+					))}
+				</HStack>
+				<HStack gap={2} flexWrap="wrap">
+					<Button
+						size="sm"
+						minH={10}
+						variant="ghost"
+						borderRadius="full"
+						onClick={onReload}
+						aria-label="Reload folder preview"
+					>
+						<FiRefreshCw aria-hidden="true" /> Reload
+					</Button>
+					<Button
+						ref={expandButtonRef}
+						autoFocus={expanded}
+						size="sm"
+						minH={10}
+						variant="outline"
+						borderRadius="full"
+						onClick={onToggleExpanded}
+						aria-haspopup={expanded ? undefined : 'dialog'}
+						aria-label={expanded ? 'Close expanded folder view' : 'Expand folder view'}
+					>
+						{expanded ? <FiMinimize2 aria-hidden="true" /> : <FiMaximize2 aria-hidden="true" />}
+						{expanded ? 'Close' : 'Expand'}
+					</Button>
+				</HStack>
+			</Flex>
+			{children}
+			<Text px={{ base: 4, md: 5 }} py={3} fontSize="xs" color="text.muted" bg="bg.surface" flexShrink={0}>
+				Select a file to open it in a new tab. If Drive asks for access, use Open in Drive.
+			</Text>
+		</Flex>
+	);
+};
+
+const FolderResourceViewer = ({ resourceUrl, title, onOpenExternally }: FolderResourceViewerProps) => {
+	const [layout, setLayout] = useState<FolderLayout>('grid');
+	const [isExpanded, setIsExpanded] = useState(false);
+	const [reloadCount, setReloadCount] = useState(0);
+	const expandButtonRef = useRef<HTMLButtonElement>(null);
+	const dialogRef = useRef<HTMLDialogElement>(null);
+	const expandedTitleId = useId();
+	const viewerUrl = createDriveFolderViewerUrl(resourceUrl, layout);
+	const reload = () => setReloadCount(count => count + 1);
+	const panelProps = { resourceUrl, title, onOpenExternally, layout, onLayoutChange: setLayout, onReload: reload };
+	const previewKey = `${viewerUrl}:${reloadCount}`;
+
+	useEffect(() => {
+		if (!isExpanded || !dialogRef.current) return undefined;
+		const dialog = dialogRef.current;
+		const returnFocus = expandButtonRef.current;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		if (!dialog.open) dialog.showModal();
+		return () => {
+			dialog.close();
+			document.body.style.overflow = previousOverflow;
+			returnFocus?.focus();
+		};
+	}, [isExpanded]);
+
+	return (
+		<>
+			<Box border="1px solid" borderColor="border.default" borderRadius="panel" overflow="hidden" bg="bg.card" minW={0}>
+				<FolderPanel {...panelProps} expandButtonRef={expandButtonRef} onToggleExpanded={() => setIsExpanded(true)}>
+					{isExpanded ? (
+						<Flex h={previewHeight} minH={previewMinHeight} align="center" justify="center" p={5}>
+							<Text color="text.muted" fontSize="sm">
+								Folder is open in expanded view.
+							</Text>
+						</Flex>
+					) : (
+						<FolderPreview key={previewKey} viewerUrl={viewerUrl} title={title} onRetry={reload} />
+					)}
+				</FolderPanel>
+			</Box>
+			{isExpanded ? (
+				<Portal>
+					<ExpandedFolderDialog
+						ref={dialogRef}
+						aria-labelledby={expandedTitleId}
+						aria-modal="true"
+						onCancel={event => {
+							event.preventDefault();
+							setIsExpanded(false);
+						}}
+						position="fixed"
+						inset={0}
+						m={0}
+						p={0}
+						w="full"
+						maxW="none"
+						h="100dvh"
+						maxH="100dvh"
+						border={0}
+						bg="bg.card"
+						color="text.primary"
+						overflow="hidden"
+						css={{ '&::backdrop': { bg: 'blackAlpha.700' } }}
+					>
+						<FolderPanel
+							{...panelProps}
+							headingId={expandedTitleId}
+							expanded
+							onToggleExpanded={() => setIsExpanded(false)}
+						>
+							<FolderPreview key={previewKey} viewerUrl={viewerUrl} title={title} expanded onRetry={reload} />
+						</FolderPanel>
+					</ExpandedFolderDialog>
+				</Portal>
+			) : null}
+		</>
 	);
 };
 

@@ -5,28 +5,13 @@ import Link from 'next/link';
 import { FiArrowRight, FiCheck, FiDownload, FiEdit3, FiFileText, FiShield, FiUsers } from 'react-icons/fi';
 
 import { trackCtaClicked } from '~/lib/analytics/mixpanel';
+import ShineButton from '~/lib/components/actions/ShineButton';
 import { NOTES_CONTRIBUTOR_FORM_URL } from '~/lib/containers/notes/constants';
 
 const benefits = [
 	{ icon: FiFileText, label: 'High Quality', detail: 'Notes & PDFs' },
 	{ icon: FiDownload, label: 'Free & Easy', detail: 'Downloads' },
 	{ icon: FiUsers, label: 'Verified by', detail: 'Seniors' }
-];
-
-const universities = [
-	{ short: 'IIT', name: 'IIT Kharagpur', color: 'orange.500' },
-	{ short: 'JU', name: 'Jadavpur University', color: 'blue.500' },
-	{ short: 'JIS', name: 'JIS University', color: 'purple.500' },
-	{ short: 'UEM', name: 'University of Engineering & Management', color: 'red.500' },
-	{ short: 'TIU', name: 'Techno India University', color: 'cyan.600' },
-	{ short: 'MAK', name: 'MAKAUT', color: 'blue.700' }
-];
-
-const stats = [
-	{ icon: FiFileText, value: '50K+', label: 'Notes & PDFs' },
-	{ icon: FiDownload, value: '1M+', label: 'Downloads' },
-	{ icon: FiUsers, value: '100K+', label: 'Happy Students' },
-	{ icon: FiShield, value: '100%', label: 'Free to Access' }
 ];
 
 const NoteSheet = ({
@@ -105,7 +90,7 @@ const NotesHero = () => (
 		border="1px solid"
 		borderColor="purple.200"
 		borderRadius={{ base: 'panel', md: 'surface' }}
-		p={{ base: 6, sm: 8, md: 10, lg: 12 }}
+		p={{ base: 5, sm: 6, md: 8, lg: 10 }}
 		boxShadow="glow"
 		position="relative"
 		overflow="hidden"
@@ -131,8 +116,7 @@ const NotesHero = () => (
 			direction={{ base: 'column', lg: 'row' }}
 			align="center"
 			justify="space-between"
-			gap={{ base: 10, lg: 12 }}
-			minH={{ lg: '420px' }}
+			gap={{ base: 7, lg: 8 }}
 		>
 			<Stack gap={{ base: 5, md: 6 }} maxW={{ lg: '600px' }} align="flex-start" flex="1">
 				<Badge
@@ -147,32 +131,20 @@ const NotesHero = () => (
 					<FiShield /> India&apos;s Most Trusted Notes Platform
 				</Badge>
 
-				<Stack gap={4}>
-					<Heading
-						id="notes-hero-heading"
-						as="h1"
-						fontSize={{ base: '4xl', sm: '5xl', lg: '6xl' }}
-						lineHeight="1.06"
-						letterSpacing="tight"
-						color="gray.950"
-						_dark={{ color: 'gray.50' }}
-					>
-						Get Class Notes, PDFs, &amp; PYQs from Seniors in{' '}
-						<Box as="span" color="purple.600" _dark={{ color: 'purple.300' }}>
-							One Place
-						</Box>
-					</Heading>
-					<Text
-						color="gray.600"
-						fontSize={{ base: 'md', md: 'lg' }}
-						lineHeight="body"
-						maxW="540px"
-						_dark={{ color: 'gray.300' }}
-					>
-						All branch and semester notes in one place. Find useful study materials from your university and prepare
-						smarter.
-					</Text>
-				</Stack>
+				<Heading
+					id="notes-hero-heading"
+					as="h1"
+					fontSize={{ base: '4xl', sm: '5xl', lg: '6xl' }}
+					lineHeight="1.06"
+					letterSpacing="tight"
+					color="gray.950"
+					_dark={{ color: 'gray.50' }}
+				>
+					Get Class Notes, PDFs, &amp; PYQs from Seniors in{' '}
+					<Box as="span" color="purple.600" _dark={{ color: 'purple.300' }}>
+						One Place
+					</Box>
+				</Heading>
 
 				<SimpleGrid columns={{ base: 1, sm: 3 }} gap={3} w="100%">
 					{benefits.map(item => (
@@ -212,7 +184,7 @@ const NotesHero = () => (
 				</SimpleGrid>
 
 				<HStack gap={3} flexWrap="wrap">
-					<Button
+					<ShineButton
 						asChild
 						size="lg"
 						px={7}
@@ -231,7 +203,7 @@ const NotesHero = () => (
 						>
 							Explore Notes <FiArrowRight />
 						</Link>
-					</Button>
+					</ShineButton>
 					<Button
 						asChild
 						size="lg"
@@ -260,7 +232,7 @@ const NotesHero = () => (
 			<Box
 				position="relative"
 				w={{ base: '100%', lg: '48%' }}
-				h={{ base: '300px', sm: '360px', lg: '420px' }}
+				h={{ base: '260px', sm: '320px', lg: '360px' }}
 				flexShrink={0}
 			>
 				<NoteSheet left="7%" top="18%" rotation="-8deg" zIndex={1} />
@@ -283,119 +255,6 @@ const NotesHero = () => (
 				</HStack>
 			</Box>
 		</Flex>
-
-		<Box
-			position="relative"
-			mt={{ base: 8, md: 10 }}
-			bg="whiteAlpha.800"
-			border="1px solid"
-			borderColor="purple.100"
-			borderRadius="panel"
-			px={{ base: 4, md: 6 }}
-			py={5}
-			boxShadow="soft"
-			_dark={{ bg: 'whiteAlpha.100', borderColor: 'purple.800' }}
-		>
-			<Text textAlign="center" fontWeight="semibold" color="text.secondary" mb={4}>
-				Notes Available for All Major Universities
-			</Text>
-			<Flex align="center" justify="center" gap={{ base: 3, md: 5 }} flexWrap="wrap">
-				{universities.map(university => (
-					<Stack
-						key={university.short}
-						align="center"
-						gap={1}
-						title={university.name}
-						minW={{ base: '52px', md: '68px' }}
-					>
-						<Flex
-							boxSize={{ base: 10, md: 12 }}
-							borderRadius="full"
-							border="2px solid"
-							borderColor={university.color}
-							color={university.color}
-							bg="bg.card"
-							align="center"
-							justify="center"
-							fontWeight="bold"
-							fontSize="xs"
-						>
-							{university.short}
-						</Flex>
-						<Text
-							fontSize="2xs"
-							color="text.muted"
-							display={{ base: 'none', md: 'block' }}
-							maxW="82px"
-							textAlign="center"
-							lineClamp={1}
-						>
-							{university.name}
-						</Text>
-					</Stack>
-				))}
-				<Flex
-					boxSize={{ base: 11, md: 14 }}
-					borderRadius="full"
-					border="1px dashed"
-					borderColor="purple.300"
-					color="purple.600"
-					bg="purple.50"
-					align="center"
-					justify="center"
-					direction="column"
-					fontWeight="bold"
-					fontSize="xs"
-					_dark={{ bg: 'purple.950', color: 'purple.300', borderColor: 'purple.700' }}
-				>
-					+50
-					<Text as="span" fontSize="2xs" fontWeight="medium">
-						More
-					</Text>
-				</Flex>
-			</Flex>
-		</Box>
-
-		<SimpleGrid
-			position="relative"
-			columns={{ base: 2, md: 4 }}
-			mt={6}
-			border="1px solid"
-			borderColor="purple.100"
-			borderRadius="panel"
-			overflow="hidden"
-			bg="whiteAlpha.600"
-			_dark={{ bg: 'whiteAlpha.50', borderColor: 'purple.800' }}
-		>
-			{stats.map((stat, index) => (
-				<HStack
-					key={stat.value}
-					justify="center"
-					gap={3}
-					px={4}
-					py={5}
-					borderRight={{ md: index < stats.length - 1 ? '1px solid' : 'none' }}
-					borderBottom={{ base: index < 2 ? '1px solid' : 'none', md: 'none' }}
-					borderColor="purple.100"
-					_dark={{ borderColor: 'purple.800' }}
-				>
-					<Icon as={stat.icon} color="purple.600" boxSize={6} _dark={{ color: 'purple.300' }} />
-					<Box>
-						<Text
-							color="purple.600"
-							fontWeight="bold"
-							fontSize={{ base: 'lg', md: 'xl' }}
-							_dark={{ color: 'purple.300' }}
-						>
-							{stat.value}
-						</Text>
-						<Text color="text.muted" fontSize="xs">
-							{stat.label}
-						</Text>
-					</Box>
-				</HStack>
-			))}
-		</SimpleGrid>
 	</Box>
 );
 

@@ -4,6 +4,7 @@ import {
 	Badge,
 	Box,
 	Container,
+	Flex,
 	Grid,
 	Heading,
 	HStack,
@@ -101,14 +102,7 @@ const liveSessionBenefits = [
 
 const purchaseBenefits = ['Get Full Course Access', 'Earn a Verified Certificate', 'Pay as Much as You Wish'] as const;
 
-const toolBenefits = [
-	{
-		label: 'Lifetime Access',
-		description: 'Learn at your own pace, anytime, anywhere.',
-		icon: FiAward,
-		color: 'purple.500',
-		bg: 'purple.50'
-	},
+const lifetimeAccessBenefits = [
 	{
 		label: 'Certificate',
 		description: 'Earn a verified certificate upon completion.',
@@ -122,6 +116,13 @@ const toolBenefits = [
 		icon: FiGift,
 		color: 'blue.500',
 		bg: 'blue.50'
+	},
+	{
+		label: 'Mentor Support',
+		description: 'Get guidance and clear your doubts.',
+		icon: FiMessageCircle,
+		color: 'purple.500',
+		bg: 'purple.50'
 	}
 ] as const;
 
@@ -296,98 +297,99 @@ const CourseHero = ({ course }: CourseHeroProps) => {
 						</SimpleGrid>
 					</Stack>
 
-					<Box
-						gridArea="tools"
-						bg="bg.card"
-						border="1px solid"
-						borderColor="border.default"
-						borderRadius="surface"
-						boxShadow="card"
-						p={{ base: 4, md: 5 }}
-						minW={0}
-						display="flex"
-						flexDirection="column"
-					>
-						<Text fontSize="sm" fontWeight="bold" mb={4}>
-							Tools & Technologies You&apos;ll Use
-						</Text>
-						{course.tools.length ? (
-							<SimpleGrid
-								columns={{ base: Math.min(course.tools.length, 3), sm: Math.min(course.tools.length, 6) }}
-								gap={{ base: 3, md: 4 }}
-							>
-								{course.tools.slice(0, 6).map(tool => (
-									<Stack key={tool.id} align="center" gap={2} minW={0} textAlign="center">
-										<Box
-											boxSize={{ base: '85px', md: '100px' }}
-											borderRadius="tile"
-											bg="bg.subtle"
-											border="1px solid"
-											borderColor="border.subtle"
-											display="grid"
-											placeItems="center"
-										>
-											{tool.image ? (
-												<ChakraImage src={tool.image} alt="" w="full" h="full" p={1.5} objectFit="contain" />
-											) : (
-												<Text fontWeight="bold">{tool.name.slice(0, 1).toUpperCase()}</Text>
-											)}
-										</Box>
-										<Text fontSize="2xs" color="text.muted" fontWeight="semibold" lineClamp={2}>
-											{tool.name}
-										</Text>
-									</Stack>
-								))}
-							</SimpleGrid>
-						) : (
-							<Text fontSize="sm" color="text.muted">
-								Practical tools are introduced throughout the course.
-							</Text>
-						)}
-
-						<SimpleGrid
-							columns={{ base: 1, sm: 3 }}
-							mt={{ base: 5, lg: 'auto' }}
-							gap={0}
-							borderRadius="panel"
-							bg="bg.accent"
-							overflow="hidden"
+					<Stack gridArea="tools" gap={{ base: 5, md: 6 }} alignSelf="start" minW={0}>
+						<Box
+							bg="bg.card"
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="surface"
+							boxShadow="card"
+							p={{ base: 4, md: 5 }}
 						>
-							{toolBenefits.map((benefit, index) => (
-								<HStack
-									key={benefit.label}
-									align="start"
-									gap={3}
-									px={{ base: 4, sm: 3 }}
-									py={4}
-									borderLeft={{ base: undefined, sm: index ? '1px solid' : undefined }}
-									borderTop={{ base: index ? '1px solid' : undefined, sm: undefined }}
-									borderColor="border.accentSoft"
-									minW={0}
-								>
-									<Box
-										boxSize={8}
-										borderRadius="full"
-										bg={{ base: benefit.bg, _dark: 'whiteAlpha.100' }}
-										color={benefit.color}
-										display="grid"
-										placeItems="center"
-										flexShrink={0}
-									>
-										<Icon as={benefit.icon} />
-									</Box>
-									<Stack gap={1} minW={0}>
-										<Text fontSize="xs" fontWeight="bold">
-											{benefit.label}
-										</Text>
+							<Heading as="h2" fontSize="lg" mb={4}>
+								Tools & Technologies You&apos;ll Use
+							</Heading>
+							{course.tools.length ? (
+								<Flex wrap="wrap" justify="flex-start" gap={{ base: 3, md: 4 }}>
+									{course.tools.map(tool => (
+										<Stack
+											key={tool.id}
+											w={{ base: '85px', md: '100px' }}
+											align="center"
+											gap={2}
+											minW={0}
+											textAlign="center"
+										>
+											<Box
+												boxSize={{ base: '85px', md: '100px' }}
+												borderRadius="tile"
+												bg="bg.subtle"
+												border="1px solid"
+												borderColor="border.subtle"
+												display="grid"
+												placeItems="center"
+											>
+												{tool.image ? (
+													<ChakraImage src={tool.image} alt="" w="full" h="full" p={1.5} objectFit="contain" />
+												) : (
+													<Text fontWeight="bold">{tool.name.slice(0, 1).toUpperCase()}</Text>
+												)}
+											</Box>
+											<Text fontSize="2xs" color="text.muted" fontWeight="semibold" lineClamp={2}>
+												{tool.name}
+											</Text>
+										</Stack>
+									))}
+								</Flex>
+							) : (
+								<Text fontSize="sm" color="text.muted">
+									Practical tools are introduced throughout the course.
+								</Text>
+							)}
+						</Box>
+
+						<Box
+							as="section"
+							bg="bg.card"
+							border="1px solid"
+							borderColor="border.default"
+							borderRadius="surface"
+							boxShadow="card"
+							p={{ base: 4, md: 5 }}
+						>
+							<Heading as="h2" fontSize="lg">
+								Lifetime Access
+							</Heading>
+							<Text mt={1} mb={4} fontSize="sm" color="text.muted">
+								Learn at your own pace, anytime, anywhere.
+							</Text>
+							<SimpleGrid minChildWidth="150px" gap={3}>
+								{lifetimeAccessBenefits.map(benefit => (
+									<Stack key={benefit.label} gap={2} p={3} borderRadius="tile" bg="bg.accent" minW={0}>
+										<HStack gap={2} align="center">
+											<Box
+												boxSize={7}
+												borderRadius="full"
+												bg={{ base: benefit.bg, _dark: 'whiteAlpha.100' }}
+												color={benefit.color}
+												display="grid"
+												placeItems="center"
+												flexShrink={0}
+											>
+												<Icon as={benefit.icon} />
+											</Box>
+											<Text fontSize="xs" fontWeight="bold">
+												{benefit.label}
+											</Text>
+										</HStack>
 										<Text fontSize="2xs" color="text.muted" lineHeight="relaxed">
 											{benefit.description}
 										</Text>
 									</Stack>
-								</HStack>
-							))}
-						</SimpleGrid>
-					</Box>
+								))}
+							</SimpleGrid>
+						</Box>
+					</Stack>
 
 					<Grid
 						gridArea="lower"

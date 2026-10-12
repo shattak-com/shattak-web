@@ -224,7 +224,10 @@ export const useCourseEditorPage = ({ courseId }: { courseId?: string }) => {
 			{ label: 'Mode', value: watchedValues.mode },
 			{
 				label: 'Duration',
-				value: formatDurationFromMinutes(watchedValues.durationHours * 60 + watchedValues.durationMinutes)
+				value:
+					watchedValues.durationHours || watchedValues.durationMinutes
+						? formatDurationFromMinutes(watchedValues.durationHours * 60 + watchedValues.durationMinutes)
+						: 'Use lesson durations'
 			},
 			{ label: 'Price', value: watchedValues.price > 0 ? `INR ${watchedValues.price}` : 'Free' }
 		],

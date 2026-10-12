@@ -34,9 +34,9 @@ export const getCurriculumDurationMinutes = (sections?: CourseSessionSection[]) 
 	);
 
 export const getCourseContentDurationMinutes = (course: CourseDetails) => {
-	const curriculumDuration = getCurriculumDurationMinutes(course.lessons);
+	const configuredDuration = course.durationHours * 60 + course.durationMinutes;
 
-	return curriculumDuration || course.durationHours * 60 + course.durationMinutes;
+	return configuredDuration || getCurriculumDurationMinutes(course.lessons);
 };
 
 export const formatCourseDuration = (totalMinutes: number) => {
@@ -57,5 +57,5 @@ export const formatCourseDuration = (totalMinutes: number) => {
 		parts.push(`${minutes} min`);
 	}
 
-	return parts.join(' ') || '0 min';
+	return parts.join(' ') || 'Not set';
 };

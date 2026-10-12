@@ -39,7 +39,19 @@ export const courseEditorStepGroups: CourseEditorStepGroup[] = [
 ];
 
 export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]> = {
-	basics: ['slug', 'title', 'summary', 'categories', 'level', 'mode', 'status', 'whatsappGroupUrl', 'accessCode'],
+	basics: [
+		'slug',
+		'title',
+		'summary',
+		'categories',
+		'level',
+		'mode',
+		'status',
+		'whatsappGroupUrl',
+		'accessCode',
+		'durationHours',
+		'durationMinutes'
+	],
 	media: ['price', 'originalPrice', 'rating', 'enrollmentCount', 'thumbnailImage', 'promoImage', 'promoImageBrand'],
 	outcomes: ['requirementsText', 'outcomes'],
 	tools: ['tools'],
@@ -47,7 +59,7 @@ export const courseEditorStepFieldPrefixes: Record<CourseEditorStepId, string[]>
 	gallery: ['about', 'liveUrl', 'projectGallery', 'projects'],
 	reviews: ['reviews', 'faqs'],
 	lessons: ['lessons'],
-	review: ['durationHours', 'durationMinutes']
+	review: []
 };
 
 export const courseLevelOptions: Array<{ label: string; value: AdminCourseLevel }> = [

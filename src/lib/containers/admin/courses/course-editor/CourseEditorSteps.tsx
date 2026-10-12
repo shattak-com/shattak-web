@@ -71,6 +71,35 @@ const BasicsStep = ({
 			</Stack>
 
 			<Box borderTop="1px solid" borderColor="border.default" pt={5}>
+				<Text fontSize="md" fontWeight="bold">
+					Course duration
+				</Text>
+				<Text mt={1} mb={4} fontSize="sm" color="text.muted">
+					Set the Total Content duration shown on the course page. Leave both values at 0 to use the lesson durations
+					when available.
+				</Text>
+				<SimpleGrid columns={{ base: 1, sm: 2 }} gap={4}>
+					<FormField
+						label="Duration hours"
+						name="durationHours"
+						register={register}
+						errors={errors}
+						type="number"
+						step={1}
+					/>
+					<FormField
+						label="Duration minutes"
+						name="durationMinutes"
+						register={register}
+						errors={errors}
+						type="number"
+						step={1}
+						helperText="Minutes: 0 to 59."
+					/>
+				</SimpleGrid>
+			</Box>
+
+			<Box borderTop="1px solid" borderColor="border.default" pt={5}>
 				<Stack gap={4}>
 					<Box>
 						<Text fontSize="md" fontWeight="bold">

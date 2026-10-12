@@ -17,7 +17,7 @@ export const courseEditorSchema = z.object({
 	level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
 	price: z.number().min(0),
 	originalPrice: z.number().min(0),
-	durationHours: z.number().int().min(0),
+	durationHours: z.number().int().min(0).max(10000),
 	durationMinutes: z.number().int().min(0).max(59),
 	mode: z.enum(['LIVE', 'RECORDED', 'HYBRID']),
 	enrollmentCount: z.number().int().min(0),

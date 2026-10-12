@@ -36,14 +36,16 @@ export const FormField = ({
 	const registration =
 		type === 'number' ? register(name, { valueAsNumber: true, ...handleChange }) : register(name, handleChange);
 	const descriptionId = `${String(name).replace(/\W+/g, '-')}-${error ? 'error' : 'helper'}`;
+	const inputId = `course-${String(name).replace(/\W+/g, '-')}`;
 
 	return (
 		<Box>
-			<Text fontSize="xs" color="text.muted" mb={1}>
-				{label}
+			<Text asChild display="block" fontSize="xs" color="text.muted" mb={1}>
+				<label htmlFor={inputId}>{label}</label>
 			</Text>
 			<Input
 				{...registration}
+				id={inputId}
 				type={type}
 				placeholder={placeholder}
 				step={step}

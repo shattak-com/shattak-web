@@ -240,6 +240,8 @@ export const formValuesToPayload = (values: CourseEditorFormValues): AdminCourse
 		level: values.level,
 		price: values.price,
 		originalPrice: values.originalPrice,
+		durationHours: values.durationHours,
+		durationMinutes: values.durationMinutes,
 		mode: values.mode,
 		enrollmentCount: values.enrollmentCount,
 		rating: values.rating,

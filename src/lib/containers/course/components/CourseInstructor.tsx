@@ -1,10 +1,10 @@
 'use client';
 
 import { Box, Button, Container, Heading, Icon, Separator, SimpleGrid, Stack, Text } from '@chakra-ui/react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { FiLinkedin } from 'react-icons/fi';
 
+import Image from '~/lib/components/media/PublicImage';
 import Reveal from '~/lib/components/Reveal';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
 import type { CourseInstructor as CourseInstructorData } from '~/lib/containers/course/types';

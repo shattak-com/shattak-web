@@ -11,7 +11,8 @@ import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory
 import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
 
-export const revalidate = 60;
+export const revalidate = 300;
+export const dynamic = 'force-static';
 
 type DepartmentPageProps = { params: Promise<{ departmentSlug: string }> };
 const getDepartment = cache((slug: string) => getNotesDepartment(slug));

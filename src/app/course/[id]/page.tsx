@@ -7,7 +7,7 @@ import CourseUnavailable from '~/lib/containers/course/components/CourseUnavaila
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { createFaqPageStructuredData } from '~/lib/utils/faqs';
 
-export const revalidate = 60;
+export const revalidate = 300;
 export const dynamic = 'force-static';
 
 type CoursePageProps = {

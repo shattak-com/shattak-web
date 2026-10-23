@@ -11,12 +11,12 @@ import {
 } from '@chakra-ui/react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import type { MotionProps, MotionStyle } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback } from 'react';
 import type { ComponentProps, ComponentType, ElementType, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 
 import { trackCtaClicked, trackInstructorCtaClicked } from '~/lib/analytics/mixpanel';
+import Image from '~/lib/components/media/PublicImage';
 
 type MotionCompatibleProps<T extends ElementType> = Omit<ComponentProps<T>, keyof MotionProps | 'style'> &
 	MotionProps & {

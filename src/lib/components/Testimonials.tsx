@@ -1,9 +1,9 @@
 'use client';
 
 import { Box, Container, Heading, HStack, Icon, SimpleGrid, Stack, Text, useBreakpointValue } from '@chakra-ui/react';
-import Image from 'next/image';
 import { FiHeart, FiStar } from 'react-icons/fi';
 
+import Image from '~/lib/components/media/PublicImage';
 import Reveal from '~/lib/components/Reveal';
 
 export type TestimonialItem = {

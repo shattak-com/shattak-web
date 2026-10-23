@@ -12,7 +12,7 @@ import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory
 import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 type SubjectPageProps = {
 	params: Promise<{ departmentSlug: string; subjectSlug: string }>;

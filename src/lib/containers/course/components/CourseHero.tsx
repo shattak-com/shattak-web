@@ -14,7 +14,6 @@ import {
 	Stack,
 	Text
 } from '@chakra-ui/react';
-import Image from 'next/image';
 import {
 	FiAward,
 	FiCheck,
@@ -30,6 +29,7 @@ import {
 	FiVideo
 } from 'react-icons/fi';
 
+import Image from '~/lib/components/media/PublicImage';
 import CourseEnrollAction from '~/lib/containers/course/components/CourseEnrollAction';
 import type { CourseDetails } from '~/lib/containers/course/types';
 import { formatCourseDuration, getCourseContentDurationMinutes } from '~/lib/containers/course/utils/duration';

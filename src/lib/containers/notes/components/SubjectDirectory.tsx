@@ -127,6 +127,7 @@ const SubjectDirectory = ({
 							>
 								<Link
 									href={href}
+									prefetch={false}
 									onClick={() =>
 										trackNotesEvent({
 											eventName: 'Subject Opened',

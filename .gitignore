@@ -36,6 +36,8 @@ yarn-error.log*
 .vercel
 
 **/public/workbox-*.js
+**/public/worker-*.js
+**/public/worker-*.js.map
 **/public/sw.js
 **/public/service-worker.js
 

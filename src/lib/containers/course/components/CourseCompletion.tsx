@@ -1,9 +1,9 @@
 'use client';
 
 import { Box, Container, HStack, Icon, SimpleGrid, Stack, Text } from '@chakra-ui/react';
-import Image from 'next/image';
 import { FiCheckCircle } from 'react-icons/fi';
 
+import Image from '~/lib/components/media/PublicImage';
 import SectionHeader from '~/lib/containers/course/components/SectionHeader';
 
 const certificationBenefits = [

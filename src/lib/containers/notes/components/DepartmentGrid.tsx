@@ -65,6 +65,7 @@ const DepartmentGrid = ({ departments }: { departments: NoteDepartment[] }) => {
 					>
 						<Link
 							href={href}
+							prefetch={false}
 							onClick={() =>
 								trackNotesEvent({
 									eventName: 'Department Opened',

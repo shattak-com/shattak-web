@@ -9,7 +9,7 @@ import NotesPageFrame from '~/lib/containers/notes/components/NotesPageFrame';
 import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory';
 import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '~/lib/api/config';
+import { clearBrowserPublicCache } from '~/lib/api/public-browser-cache';
 
 type ApiSuccessResponse<T> = {
 	success: true;
@@ -55,6 +56,9 @@ const fetchApi = async (path: string, init: RequestInit) => {
 	try {
 		const response = await fetch(getApiUrl(path), init);
 		logApiTiming(method, path, startedAt, response.status);
+		if (response.ok && method !== 'GET' && /^\/admin\/(courses|notes)(?:\/|$)/.test(path)) {
+			await clearBrowserPublicCache();
+		}
 		return response;
 	} catch (error) {
 		logApiTiming(method, path, startedAt, 'failed');
@@ -85,6 +89,7 @@ const readApiData = async <T>(response: Response): Promise<T> => {
 
 export const getJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 	const response = await fetchApi(path, {
+		cache: 'no-store',
 		...init,
 		method: 'GET',
 		credentials: 'include',

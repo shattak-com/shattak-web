@@ -1,4 +1,5 @@
-import { getJson, postJson } from '~/lib/api/client';
+import { postJson } from '~/lib/api/client';
+import { getPublicJson } from '~/lib/api/public-requests';
 
 export type NoteCategory = 'NOTES' | 'PYQ' | 'LAB';
 export type NoteResourceType = 'PDF' | 'PPT' | 'FOLDER';
@@ -62,12 +63,10 @@ export type NoteDetailData = {
 	subjectNotes: PublicNote[];
 };
 
-const publicCache = { next: { revalidate: 60 } } satisfies RequestInit;
-
-export const getNotesLanding = () => getJson<NotesLandingData>('/notes', publicCache);
+export const getNotesLanding = () => getPublicJson<NotesLandingData>('/notes');
 
 export const getNotesDepartment = (departmentSlug: string) =>
-	getJson<NotesDepartmentData>(`/notes/departments/${encodeURIComponent(departmentSlug)}`, publicCache);
+	getPublicJson<NotesDepartmentData>(`/notes/departments/${encodeURIComponent(departmentSlug)}`);
 
 export const getNotesSubject = (
 	departmentSlug: string,
@@ -80,16 +79,14 @@ export const getNotesSubject = (
 	if (options?.pageSize) searchParams.set('pageSize', String(options.pageSize));
 	const query = searchParams.size ? `?${searchParams.toString()}` : '';
 
-	return getJson<NotesSubjectData>(
-		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}${query}`,
-		publicCache
+	return getPublicJson<NotesSubjectData>(
+		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}${query}`
 	);
 };
 
 export const getNoteDetail = (departmentSlug: string, subjectSlug: string, noteSlug: string) =>
-	getJson<NoteDetailData>(
-		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}/notes/${encodeURIComponent(noteSlug)}`,
-		publicCache
+	getPublicJson<NoteDetailData>(
+		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}/notes/${encodeURIComponent(noteSlug)}`
 	);
 
 export const accessNote = (noteId: string, action: 'VIEW' | 'DOWNLOAD') =>

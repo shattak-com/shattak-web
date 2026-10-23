@@ -14,12 +14,12 @@ import {
 	Text,
 	VisuallyHidden
 } from '@chakra-ui/react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { FiBarChart2, FiClock, FiHeart, FiStar, FiUsers, FiVideo } from 'react-icons/fi';
 
 import { trackCourseCardClicked } from '~/lib/analytics/mixpanel';
 import type { LandingCourseCard } from '~/lib/api/courses';
+import Image from '~/lib/components/media/PublicImage';
 import Reveal from '~/lib/components/Reveal';
 
 type CourseCardProps = {

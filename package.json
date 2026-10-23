@@ -15,6 +15,8 @@
 		"netlify:env:import": "npx netlify env:import .env",
 		"postbuild": "next-sitemap --config next-sitemap.config.js",
 		"test:sitemap": "node --test scripts/sitemap-dynamic-paths.test.cjs",
+		"test:cache": "node --test scripts/cache-and-assets.test.cjs",
+		"test:cache:runtime": "node scripts/cache-runtime-smoke.cjs",
 		"start": "next start",
 		"type-check": "tsc --noEmit",
 		"check:turbo": "npm run turbo lint type-check",

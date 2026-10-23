@@ -1,6 +1,5 @@
-import Image from 'next/image';
-
 import ExperienceVideo from '~/lib/components/media/ExperienceVideo';
+import Image from '~/lib/components/media/PublicImage';
 
 type HeroMediaProps = {
 	prefersReducedMotion: boolean | null;

@@ -13,7 +13,8 @@ import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
 import { formatNoteDate, getCategoryLabel, getResourceLabel } from '~/lib/containers/notes/utils';
 
-export const revalidate = 60;
+export const revalidate = 300;
+export const dynamic = 'force-static';
 
 type NotePageProps = { params: Promise<{ departmentSlug: string; subjectSlug: string; noteSlug: string }> };
 const getNote = cache((departmentSlug: string, subjectSlug: string, noteSlug: string) =>

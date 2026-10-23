@@ -32,6 +32,11 @@
 	},
 	"overrides": [
 		{
+			"files": ["src/lib/api/public-cache-policy.js"],
+			"parserOptions": { "project": "./tsconfig.json" },
+			"env": { "node": true }
+		},
+		{
 			"files": ["src/lib/firebase/**/*.ts", "src/lib/firebase/**/*.tsx"],
 			"rules": {
 				"import/no-extraneous-dependencies": "off"

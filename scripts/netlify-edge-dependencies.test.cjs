@@ -1,0 +1,45 @@
+/* eslint-env node */
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { test } = require('node:test');
+const webpack = require('webpack');
+
+const projectRoot = path.join(__dirname, '..');
+
+test('Netlify extension SDK is an explicit runtime dependency and imports successfully', async () => {
+	const manifest = require('../package.json');
+	assert.ok(manifest.dependencies['@netlify/blobs'], 'Edge extensions must not rely on a transitive/dev-only SDK');
+	const sdk = await import('@netlify/blobs');
+	assert.equal(typeof sdk.getStore, 'function');
+	assert.equal(typeof sdk.getDeployStore, 'function');
+	// Import only: never open a store or read/write any Netlify data in tests.
+});
+
+test('Netlify Blobs namespace import bundles for an Edge-compatible web-worker target', async () => {
+	const prefix = path.join(os.tmpdir(), 'shattak-edge-bundle-test-');
+	const output = fs.mkdtempSync(prefix);
+	const compiler = webpack({
+		context: projectRoot,
+		entry: './scripts/fixtures/netlify-blobs-edge.mjs',
+		mode: 'production',
+		target: 'webworker',
+		// Netlify Edge uses Deno, which supports node:-prefixed built-ins.
+		// Keep the built-in external; never externalize the missing SDK itself.
+		externals: { process: 'module node:process' },
+		optimization: { minimize: false },
+		output: { path: output, filename: 'edge.mjs', library: { type: 'module' } },
+		experiments: { outputModule: true }
+	});
+	try {
+		const stats = await new Promise((resolve, reject) =>
+			compiler.run((error, result) => (error ? reject(error) : resolve(result)))
+		);
+		assert.equal(stats.hasErrors(), false, stats.toString({ all: false, errors: true }));
+		assert.ok(fs.statSync(path.join(output, 'edge.mjs')).size > 0);
+	} finally {
+		await new Promise(resolve => compiler.close(resolve));
+		if (path.resolve(output).startsWith(path.resolve(prefix))) fs.rmSync(output, { recursive: true, force: true });
+	}
+});

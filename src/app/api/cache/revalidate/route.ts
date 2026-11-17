@@ -28,5 +28,6 @@ export const POST = async (request: Request) => {
 	}
 	// Notes pages also contain featured courses.
 	revalidatePath('/notes', 'layout');
+	revalidatePath('/notes-browse', 'layout');
 	return reply({ revalidated: true, scope });
 };

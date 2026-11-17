@@ -8,7 +8,7 @@ const isPublicApiPath = path => publicPathPattern.test(path.split('?')[0]);
 
 module.exports = {
 	PUBLIC_API_PATH_FRAGMENT,
-	PUBLIC_CACHE_SECONDS: 300,
+	PUBLIC_CACHE_SECONDS: 3600,
 	PUBLIC_BROWSER_CACHE_SECONDS: 60,
 	isPublicApiPath
 };

@@ -19,12 +19,24 @@ const getApiBaseUrl = () => {
 const NextSitemapConfig = {
 	siteUrl: SITE_URL,
 	generateRobotsTxt: true,
-	exclude: ['/booking', '/booking/*', '/manifest.webmanifest', '/[contentSlug]'],
+	exclude: [
+		'/booking',
+		'/booking/*',
+		'/manifest.webmanifest',
+		'/[contentSlug]',
+		'/notes-browse/*',
+		'/admin',
+		'/admin/*',
+		'/my-courses',
+		'/my-courses/*',
+		'/onboarding/*',
+		'/profile',
+		'/login'
+	],
 	transform: async (config, path) => ({
 		loc: path,
 		changefreq: path === '/' ? 'daily' : 'weekly',
 		priority: path === '/' ? 1 : 0.7,
-		lastmod: new Date().toISOString(),
 		alternateRefs: config.alternateRefs ?? []
 	}),
 	additionalPaths: async config => {

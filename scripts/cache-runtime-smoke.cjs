@@ -35,6 +35,7 @@ const run = async () => {
 	let reads = 0;
 	let departmentReads = 0;
 	let noteReads = 0;
+	let subjectReads = 0;
 	let notesVersion = 'one';
 	let forwardedCookie = false;
 	const api = http.createServer((request, response) => {
@@ -51,6 +52,34 @@ const run = async () => {
 			departmentReads += 1;
 			response.end(
 				JSON.stringify({ success: true, message: 'Fixture department', data: { department, subjects: [] } })
+			);
+		} else if (request.url?.startsWith(`/api/v1/notes/departments/${id}/subjects/math?`)) {
+			subjectReads += 1;
+			const query = new URL(request.url, 'http://fixture').searchParams;
+			const page = Number(query.get('page') || 1);
+			const category = query.get('category') || 'NOTES';
+			response.end(
+				JSON.stringify({
+					success: true,
+					data: {
+						department,
+						subject: { id: 'math', slug: 'math', name: 'Math', noteCount: 41, departments: [department] },
+						notes: [
+							{
+								id: 'item',
+								slug: 'item',
+								title: `Result ${category} page ${page} version ${notesVersion}`,
+								category,
+								resourceType: 'PDF',
+								resourceDate: '2026-01-01T00:00:00.000Z',
+								viewCount: 0,
+								downloadCount: 0
+							}
+						],
+						pagination: { page, pageSize: 20, total: 41, totalPages: 3 },
+						departmentSubjects: []
+					}
+				})
 			);
 		} else if (request.url === `/api/v1/notes/departments/${id}/subjects/math/notes/sample`) {
 			noteReads += 1;
@@ -126,7 +155,7 @@ const run = async () => {
 		assert.match(html, /Cache smoke version one/);
 		assert.match(html, /f_auto,q_auto,c_limit,w_640/);
 		assert.doesNotMatch(html, /src="\/_next\/image/);
-		assert.match(first.headers.get('cache-control'), /s-maxage=300/);
+		assert.match(first.headers.get('cache-control'), /s-maxage=3600/);
 		const initialReads = reads;
 		assert.equal(initialReads, 1, 'Metadata and rendering should share one public API read');
 		course.title = 'Cache smoke version two';
@@ -158,7 +187,7 @@ const run = async () => {
 		]) {
 			const result = await get(url);
 			assert.equal(result.status, 200);
-			assert.match(result.headers.get('cache-control'), /s-maxage=300/);
+			assert.match(result.headers.get('cache-control'), /s-maxage=3600/);
 			assert.ok((await result.text()).includes(title));
 		}
 		notesVersion = 'two';
@@ -185,6 +214,47 @@ const run = async () => {
 		}
 		assert.equal(departmentReads, 2);
 		assert.equal(noteReads, 2);
+		const subjectUrl = `${base}/notes/${id}/math/`;
+		for (const [query, result] of [
+			['', 'Result NOTES page 1'],
+			['?page=2', 'Result NOTES page 2'],
+			['?category=PYQ', 'Result PYQ page 1'],
+			['?category=PYQ&page=2', 'Result PYQ page 2'],
+			['?category=lab&page=3', 'Result LAB page 3'],
+			['?category=invalid&page=-1', 'Result NOTES page 1']
+		]) {
+			const url = `${subjectUrl}${query}`;
+			const resultResponse = await get(url);
+			assert.equal(resultResponse.status, 200, url);
+			const content = await resultResponse.text();
+			assert.ok(content.includes(result), `${url} should SSR ${result}`);
+			assert.match(resultResponse.headers.get('cache-control'), /s-maxage=3600/);
+			assert.match(resultResponse.headers.get('netlify-vary'), /query=category\|page/);
+			const canonical = content.match(/<link rel="canonical" href="([^"]+)"/);
+			assert.ok(canonical, 'Public canonical URL must be present');
+			assert.equal(new URL(canonical[1]).pathname.replace(/\/$/, ''), `/notes/${id}/math`);
+			assert.ok(!content.includes('href="/notes-browse/'), 'Links must use public URLs, not rewrite destinations');
+			const count = subjectReads;
+			assert.ok((await (await get(url)).text()).includes(result));
+			assert.equal(subjectReads, count, 'Warm query variants must not read the API again');
+		}
+		// Browser back/forward revisits preserve each independently cached variant.
+		assert.ok((await (await get(`${subjectUrl}?page=2`)).text()).includes('Result NOTES page 2'));
+		const flight = await get(`${subjectUrl}?category=PYQ&page=2&_rsc=fixture`, { headers: { RSC: '1' } });
+		assert.match(flight.headers.get('content-type'), /text\/x-component/);
+		assert.ok((await flight.text()).includes('Result PYQ page 2'));
+		notesVersion = 'three';
+		await (
+			await get(`${base}/api/cache/revalidate/`, {
+				method: 'POST',
+				headers: { Authorization: `Bearer ${secret}` },
+				body: '{"scope":"notes"}'
+			})
+		).body?.cancel();
+		assert.ok(
+			(await (await get(`${subjectUrl}?category=PYQ&page=2`)).text()).includes('version three'),
+			'Notes invalidation must also expire rewritten variants'
+		);
 		assert.equal(forwardedCookie, false);
 		console.log(
 			'PASS: production ISR cache hit, request reuse, no forwarded session, authenticated invalidation, fresh content after invalidation'

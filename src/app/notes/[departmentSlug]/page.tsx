@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
-import { getNotesDepartment } from '~/lib/api/notes';
+import { getNotesDepartment, getNotesLanding } from '~/lib/api/notes';
 import ContributorBanner from '~/lib/containers/notes/components/ContributorBanner';
 import NotesBreadcrumbs from '~/lib/containers/notes/components/NotesBreadcrumbs';
 import NotesPageFrame from '~/lib/containers/notes/components/NotesPageFrame';
@@ -11,8 +11,14 @@ import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory
 import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
 
-export const revalidate = 300;
+export const revalidate = 3600;
 export const dynamic = 'force-static';
+
+// Bound build work to the small directory set, never thousands of note slugs.
+export const generateStaticParams = async () => {
+	const landing = await getNotesLanding().catch(() => null);
+	return (landing?.departments ?? []).slice(0, 24).map(({ slug }) => ({ departmentSlug: slug }));
+};
 
 type DepartmentPageProps = { params: Promise<{ departmentSlug: string }> };
 const getDepartment = cache((slug: string) => getNotesDepartment(slug));

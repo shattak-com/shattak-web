@@ -188,7 +188,7 @@ test('server public requests use tagged Next.js caching, not process-global resp
 	});
 	await client.getPublicJson('/courses');
 	assert.equal(calls[0].init.cache, 'force-cache');
-	assert.equal(calls[0].init.next.revalidate, 300);
+	assert.equal(calls[0].init.next.revalidate, 3600);
 	assert.equal(calls[0].init.next.tags[0], 'shattak-courses');
 	assert.throws(() => client.getPublicJson('/admin/courses'));
 });
@@ -237,13 +237,13 @@ test('authorized revalidation expires only public data and affected public page 
 	assert.equal(calls[0][2].expire, 0);
 	assert.deepEqual(
 		calls.slice(1).map(call => call[1]),
-		['/', '/course/[id]', '/notes']
+		['/', '/course/[id]', '/notes', '/notes-browse']
 	);
 	const notes = createRevalidationRoute(secret);
 	await notes.post(`Bearer ${secret}`, '{"scope":"notes"}');
 	assert.deepEqual(
 		notes.calls.map(call => call[1]),
-		['shattak-notes', '/notes']
+		['shattak-notes', '/notes', '/notes-browse']
 	);
 });
 

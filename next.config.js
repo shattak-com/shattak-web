@@ -1,4 +1,5 @@
 const { createRuntimeCaching } = require('./scripts/pwa-runtime-caching.cjs');
+const { notesQueryHeaders, notesQueryRewrites } = require('./scripts/notes-query-routing.cjs');
 
 const browserApiBaseUrl =
 	process.env.NEXT_PUBLIC_SHATTAK_API_BASE_URL ||
@@ -18,6 +19,8 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 module.exports = withPWA({
 	outputFileTracingRoot: __dirname,
+	headers: async () => notesQueryHeaders,
+	rewrites: async () => ({ beforeFiles: notesQueryRewrites }),
 	typescript: {
 		// !! WARN !!
 		// Dangerously allow production builds to successfully complete even if

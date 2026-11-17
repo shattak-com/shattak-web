@@ -89,6 +89,7 @@ const Footer = () => (
 								<Link
 									key={link.slug}
 									href={href}
+									prefetch={false}
 									onClick={() =>
 										trackCtaClicked({
 											label: link.label,
@@ -128,6 +129,7 @@ const Footer = () => (
 								<Link
 									key={category}
 									href={href}
+									prefetch={false}
 									onClick={() =>
 										trackCtaClicked({
 											label: category,

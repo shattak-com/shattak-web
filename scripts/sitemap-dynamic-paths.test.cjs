@@ -32,6 +32,7 @@ const makeFixture = (routes, options = {}) => {
 			apiBaseUrl: 'https://api.example/api/v1',
 			fetchImpl,
 			logger: { info: message => logs.push(message), warn: message => logs.push(message) },
+			preferCompact: false,
 			...settings
 		});
 	return { calls, logs, run, peak: () => peak };
@@ -45,6 +46,68 @@ const oneSubjectRoutes = (pages = 1) => ({
 		notes: [{ slug: 'note-1' }],
 		pagination: { totalPages: pages }
 	}
+});
+
+test('compact feed covers every department alias and empty subject with two note batches', async () => {
+	const fixture = makeFixture({
+		'/courses': [{ id: 'course' }],
+		'/notes/sitemap?limit=1000': {
+			departments: [
+				{ slug: 'a', subjects: [{ slug: 'shared' }, { slug: 'empty' }] },
+				{ slug: 'b', subjects: [{ slug: 'shared' }] }
+			],
+			notes: [{ slug: 'note one', subjectSlug: 'shared', departmentSlugs: ['a', 'b'] }],
+			nextCursor: 'cursor1'
+		},
+		'/notes/sitemap?limit=1000&cursor=cursor1': {
+			departments: [],
+			notes: [{ slug: 'two', subjectSlug: 'shared', departmentSlugs: ['a', 'b'] }],
+			nextCursor: null
+		}
+	});
+	const result = await fixture.run({ preferCompact: true });
+	assert.equal(fixture.calls.length, 3);
+	assert.equal(result.stats.failed, 0);
+	for (const department of ['a', 'b']) {
+		assert.ok(result.notesPaths.includes(`/notes/${department}/shared/note%20one`));
+		assert.ok(result.notesPaths.includes(`/notes/${department}/shared/two`));
+	}
+	assert.ok(result.notesPaths.includes('/notes/a/empty'));
+});
+
+test('compact feed retries once, stops looping cursors, and retains earlier URLs', async () => {
+	let tries = 0;
+	const fixture = makeFixture({
+		'/courses': [],
+		'/notes/sitemap?limit=1000': {
+			departments: [],
+			notes: [{ slug: 'one', subjectSlug: 's', departmentSlugs: ['d'] }],
+			nextCursor: 'again'
+		},
+		'/notes/sitemap?limit=1000&cursor=again': () =>
+			++tries === 1
+				? { ok: false, status: 503 }
+				: reply({
+						departments: [],
+						notes: [{ slug: 'two', subjectSlug: 's', departmentSlugs: ['d'] }],
+						nextCursor: 'again'
+					})
+	});
+	const result = await fixture.run({ preferCompact: true });
+	assert.equal(tries, 2);
+	assert.ok(result.notesPaths.includes('/notes/d/s/one'));
+	assert.ok(result.notesPaths.includes('/notes/d/s/two'));
+	assert.ok(result.stats.failed > 0);
+});
+
+test('old backend 404 falls back to bounded legacy discovery without losing public URLs', async () => {
+	const fixture = makeFixture({
+		...oneSubjectRoutes(),
+		'/notes/sitemap?limit=1000': () => ({ ok: false, status: 404 })
+	});
+	const result = await fixture.run({ preferCompact: true });
+	assert.ok(result.notesPaths.includes('/notes/department/subject/note-1'));
+	assert.equal(result.stats.failed, 0);
 });
 
 test('includes paginated notes under every department alias and deduplicates shared subjects', async () => {
@@ -261,6 +324,7 @@ test('real fetch cancels responses that stall before headers or during the body'
 	const result = await collectDynamicSitemapPaths({
 		apiBaseUrl: `http://127.0.0.1:${server.address().port}/api/v1`,
 		requestTimeoutMs: 100,
+		preferCompact: false,
 		budgetMs: 1_000,
 		logger: { info: () => {}, warn: () => {} }
 	});
@@ -291,6 +355,7 @@ test('real fetch cancels unread error response bodies so they cannot hold the bu
 	});
 	const result = await collectDynamicSitemapPaths({
 		apiBaseUrl: `http://127.0.0.1:${server.address().port}/api/v1`,
+		preferCompact: false,
 		logger: { info: () => {}, warn: () => {} }
 	});
 	assert.equal(result.stats.failed, 2);

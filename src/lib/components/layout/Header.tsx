@@ -81,6 +81,7 @@ const Header = () => {
 	const notesLink = (context: 'desktop' | 'mobile') => (
 		<Link
 			href="/notes"
+			prefetch={false}
 			onClick={() =>
 				trackCtaClicked({
 					label: 'Notes',
@@ -108,6 +109,7 @@ const Header = () => {
 		>
 			<Link
 				href="/login"
+				prefetch={false}
 				onClick={() =>
 					trackCtaClicked({
 						label: 'Login',

@@ -23,7 +23,7 @@ const mapConcurrent = async (items, concurrency, shouldStop, task) => {
 
 const createApiReader = ({ apiBaseUrl, fetchImpl, logger, requestTimeoutMs, deadline, stats }) => {
 	const shouldStop = () => Date.now() >= deadline;
-	const read = async path => {
+	const read = async (path, { optional = false } = {}) => {
 		if (shouldStop()) return null;
 		const controller = new AbortController();
 		const timeoutMs = Math.min(requestTimeoutMs, deadline - Date.now());
@@ -46,6 +46,10 @@ const createApiReader = ({ apiBaseUrl, fetchImpl, logger, requestTimeoutMs, dead
 					headers: { Accept: 'application/json' },
 					signal: controller.signal
 				});
+				if (optional && response.status === 404) {
+					await response.body?.cancel();
+					return { unsupported: true };
+				}
 				if (!response.ok) {
 					const error = new Error('Sitemap API request failed');
 					error.status = response.status;
@@ -71,6 +75,66 @@ const createApiReader = ({ apiBaseUrl, fetchImpl, logger, requestTimeoutMs, dead
 		}
 	};
 	return { read, shouldStop };
+};
+
+const collectCompactNotes = async (first, api, logger, stats, coursesComplete) => {
+	const notesPaths = new Set(['/notes']);
+	const cursors = new Set();
+	let data = first;
+	let complete = false;
+	while (!api.shouldStop()) {
+		if (
+			data === null ||
+			!Array.isArray(data.departments) ||
+			!Array.isArray(data.notes) ||
+			!(data.nextCursor === null || (typeof data.nextCursor === 'string' && data.nextCursor.length))
+		) {
+			stats.failed += 1;
+			logger.warn('[next-sitemap] Incomplete compact feed. Keeping discovered URLs.');
+			break;
+		}
+		for (const department of data.departments) {
+			const slug = normalizeSlug(department?.slug);
+			if (!slug || !Array.isArray(department.subjects)) continue;
+			const prefix = `/notes/${encodeURIComponent(slug)}`;
+			notesPaths.add(prefix);
+			for (const subject of department.subjects) {
+				const subjectSlug = normalizeSlug(subject?.slug);
+				if (subjectSlug) notesPaths.add(`${prefix}/${encodeURIComponent(subjectSlug)}`);
+			}
+		}
+		for (const note of data.notes) {
+			const slug = normalizeSlug(note?.slug);
+			const subject = normalizeSlug(note?.subjectSlug);
+			if (!slug || !subject || !Array.isArray(note.departmentSlugs)) continue;
+			for (const department of note.departmentSlugs) {
+				if (normalizeSlug(department))
+					notesPaths.add(
+						`/notes/${encodeURIComponent(department)}/${encodeURIComponent(subject)}/${encodeURIComponent(slug)}`
+					);
+			}
+		}
+		if (data.nextCursor === null) {
+			complete = true;
+			break;
+		}
+		if (cursors.has(data.nextCursor) || !data.notes.length) {
+			stats.failed += 1;
+			logger.warn('[next-sitemap] Compact feed cursor did not progress. Keeping discovered URLs.');
+			break;
+		}
+		cursors.add(data.nextCursor);
+		const path = `/notes/sitemap?limit=1000&cursor=${encodeURIComponent(data.nextCursor)}`;
+		data = await api.read(path);
+		// One bounded retry for a transient failure; the global budget still applies.
+		if (data === null && !api.shouldStop()) data = await api.read(path);
+	}
+	stats.budgetExceeded = api.shouldStop();
+	stats.compactComplete = complete;
+	if (!complete || !coursesComplete)
+		logger.warn('[next-sitemap] Compact discovery is incomplete; inspect build logs before publishing.');
+	logger.info(`[next-sitemap] Compact discovery: ${notesPaths.size} Notes URLs, ${stats.requests} requests.`);
+	return [...notesPaths];
 };
 
 const collectSubjects = (departments, departmentResults, logger, stats) => {
@@ -153,7 +217,8 @@ const collectDynamicSitemapPaths = async ({
 	logger = console,
 	requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
 	budgetMs = DEFAULT_BUDGET_MS,
-	concurrency = DEFAULT_CONCURRENCY
+	concurrency = DEFAULT_CONCURRENCY,
+	preferCompact = true
 }) => {
 	const started = Date.now();
 	const timeout = positiveInteger(requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS, 30_000);
@@ -178,11 +243,11 @@ const collectDynamicSitemapPaths = async ({
 		);
 	}, 10_000);
 	try {
-		const [courses = null, landing = null] = await mapConcurrent(
-			['/courses', '/notes'],
+		const [courses = null, initial = null] = await mapConcurrent(
+			['/courses', preferCompact ? '/notes/sitemap?limit=1000' : '/notes'],
 			workerCount,
 			api.shouldStop,
-			api.read
+			path => api.read(path, { optional: preferCompact && path.includes('/sitemap') })
 		);
 		const coursePaths = Array.isArray(courses)
 			? [...new Set(courses.map(course => normalizeSlug(course?.id)).filter(Boolean))].map(
@@ -193,6 +258,19 @@ const collectDynamicSitemapPaths = async ({
 			stats.failed += 1;
 			logger.warn('[next-sitemap] Invalid published course list. Keeping static URLs.');
 		}
+		if (preferCompact && !initial?.unsupported) {
+			const first = initial ?? (api.shouldStop() ? null : await api.read('/notes/sitemap?limit=1000'));
+			return {
+				coursePaths,
+				notesPaths: await collectCompactNotes(first, api, logger, stats, Array.isArray(courses)),
+				stats
+			};
+		}
+		if (preferCompact)
+			logger.warn(
+				'[next-sitemap] Compact endpoint unavailable (API not deployed yet); using bounded legacy discovery.'
+			);
+		const landing = preferCompact ? await api.read('/notes') : initial;
 		if (landing !== null && !Array.isArray(landing?.departments)) {
 			stats.failed += 1;
 			logger.warn('[next-sitemap] Invalid Notes landing response. Keeping static URLs.');

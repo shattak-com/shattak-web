@@ -2,7 +2,7 @@
 
 import { Badge, Box, Button, Flex, Heading, HStack, Icon, Stack, Text } from '@chakra-ui/react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FiDownload, FiEye, FiFileText, FiFolder, FiMonitor } from 'react-icons/fi';
 
@@ -53,7 +53,8 @@ const NotesList = ({
 	heading = 'Available Notes',
 	currentNoteId
 }: NotesListProps) => {
-	const pathname = usePathname();
+	// Stable public URL even when Next.js renders an internal query rewrite.
+	const pathname = `/notes/${encodeURIComponent(departmentSlug)}/${encodeURIComponent(subjectSlug)}/`;
 	const router = useRouter();
 	const { authState, setAuthState } = useNotesAuth();
 	const [activeAction, setActiveAction] = useState('');
@@ -71,7 +72,7 @@ const NotesList = ({
 			resourceType: note.resourceType,
 			action
 		});
-		const returnPath = action === 'VIEW' ? noteHref(note) : `${pathname}${window.location.search}`;
+		const returnPath = action === 'VIEW' ? noteHref(note) : `${window.location.pathname}${window.location.search}`;
 		router.push(createNotesLoginHref(returnPath));
 	};
 
@@ -185,7 +186,9 @@ const NotesList = ({
 									bg={selected ? 'primary' : 'bg.card'}
 									color={selected ? 'text.inverse' : 'text.primary'}
 								>
-									<Link href={categoryHref(option.value)}>{option.label}</Link>
+									<Link href={categoryHref(option.value)} prefetch={false}>
+										{option.label}
+									</Link>
 								</Button>
 							);
 						})}
@@ -285,7 +288,9 @@ const NotesList = ({
 				<HStack justify="center" mt={6}>
 					{pagination.page > 1 ? (
 						<Button asChild variant="outline" borderRadius="full">
-							<Link href={pageHref(pagination.page - 1)}>Previous</Link>
+							<Link href={pageHref(pagination.page - 1)} prefetch={false}>
+								Previous
+							</Link>
 						</Button>
 					) : (
 						<Button variant="outline" borderRadius="full" disabled>
@@ -297,7 +302,9 @@ const NotesList = ({
 					</Text>
 					{pagination.page < pagination.totalPages ? (
 						<Button asChild variant="outline" borderRadius="full">
-							<Link href={pageHref(pagination.page + 1)}>Next</Link>
+							<Link href={pageHref(pagination.page + 1)} prefetch={false}>
+								Next
+							</Link>
 						</Button>
 					) : (
 						<Button variant="outline" borderRadius="full" disabled>

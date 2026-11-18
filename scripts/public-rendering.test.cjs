@@ -8,6 +8,29 @@ const { test } = require('node:test');
 
 const readManifest = name => JSON.parse(fs.readFileSync(path.join(__dirname, '../.next', name), 'utf8'));
 
+test('the root heading and body fonts are emitted as local WOFF2 assets', () => {
+	const buildDir = path.join(__dirname, '../.next');
+	const assets = fs.readdirSync(path.join(buildDir, 'static'), { recursive: true });
+	const css = assets
+		.filter(file => file.endsWith('.css'))
+		.map(file => fs.readFileSync(path.join(buildDir, 'static', file), 'utf8'))
+		.join('\n');
+	for (const [token, family] of [
+		['heading', 'Bricolage Grotesque Variable'],
+		['body', 'Plus Jakarta Sans Variable']
+	]) {
+		assert.match(css, new RegExp(`--font-${token}:\\s*['"]?${family}`));
+		const face = Array.from(css.matchAll(/@font-face\s*\{[^}]+\}/g), match => match[0]).find(rule =>
+			rule.includes(family)
+		);
+		assert.ok(face, `Missing @font-face for ${family}`);
+		const mediaUrl = face.match(/url\(['"]?\/_next\/(static\/media\/[^)'"\s]+\.woff2)/);
+		assert.ok(mediaUrl, `Expected ${family} to load from the same origin`);
+		const binary = fs.readFileSync(path.join(buildDir, mediaUrl[1]));
+		assert.equal(binary.subarray(0, 4).toString('ascii'), 'wOF2');
+	}
+});
+
 test('public subject variants use on-demand static generation, not per-request SSR', () => {
 	const manifest = readManifest('prerender-manifest.json');
 	for (const route of [

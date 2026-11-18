@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { Bricolage_Grotesque, Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
+import '@fontsource-variable/bricolage-grotesque/wght.css';
+import '@fontsource-variable/plus-jakarta-sans/wght.css';
 import 'katex/dist/katex.min.css';
 
 import { Layout } from '~/lib/containers/layout';
@@ -26,18 +27,6 @@ const ANDROID_ICON_512 = '/assets/android-chrome-512x512.png';
 const THEME_STORAGE_KEY = 'shattak-theme';
 
 const themeInitScript = `(function(){try{var key='${THEME_STORAGE_KEY}';var root=document.documentElement;var stored=localStorage.getItem(key);var systemDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var theme=(stored==='light'||stored==='dark')?stored:(systemDark?'dark':'light');root.classList.remove('light','dark');root.classList.add(theme);}catch(e){}})();`;
-
-const headingFont = Bricolage_Grotesque({
-	subsets: ['latin'],
-	variable: '--font-heading',
-	weight: ['400', '500', '600', '700']
-});
-
-const bodyFont = Plus_Jakarta_Sans({
-	subsets: ['latin'],
-	variable: '--font-body',
-	weight: ['400', '500', '600', '700']
-});
 
 const shouldRenderMetaPixelNoscript = Boolean(META_PIXEL_ID) && META_PIXEL_ENABLED !== 'false';
 
@@ -115,7 +104,7 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = async ({ children }: RootLayoutProps) => (
-	<html lang="en" className={`${headingFont.variable} ${bodyFont.variable} light`} suppressHydrationWarning>
+	<html lang="en" className="light" suppressHydrationWarning>
 		<body>
 			<Script id="theme-init" strategy="beforeInteractive">
 				{themeInitScript}

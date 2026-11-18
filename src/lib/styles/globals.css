@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap');
 
+:root {
+	--font-heading: 'Bricolage Grotesque Variable', Arial, sans-serif;
+	--font-body: 'Plus Jakarta Sans Variable', Arial, sans-serif;
+}
+
 * {
 	box-sizing: border-box;
 }

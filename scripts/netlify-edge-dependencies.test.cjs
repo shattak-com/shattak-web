@@ -8,6 +8,18 @@ const webpack = require('webpack');
 
 const projectRoot = path.join(__dirname, '..');
 
+test('known non-app probe paths use exact static 404 rules, without a catch-all', () => {
+	const config = fs.readFileSync(path.join(projectRoot, 'netlify.toml'), 'utf8');
+	const rules = Array.from(
+		config.matchAll(/\[\[redirects\]\]\s+from = "([^"]+)"\s+to = "([^"]+)"\s+status = (\d+)/g),
+		([, from, to, status]) => ({ from, to, status })
+	);
+	const probes = rules.filter(rule => rule.to === '/probe-not-found.html');
+	assert.deepEqual(probes.map(rule => rule.from).sort(), ['/Jenkinsfile', '/index.php', '/userfiles']);
+	assert.ok(probes.every(rule => rule.status === '404'));
+	assert.match(fs.readFileSync(path.join(projectRoot, 'public/probe-not-found.html'), 'utf8'), /content="noindex"/);
+});
+
 test('Netlify extension SDK is an explicit runtime dependency and imports successfully', async () => {
 	const manifest = require('../package.json');
 	assert.ok(manifest.dependencies['@netlify/blobs'], 'Edge extensions must not rely on a transitive/dev-only SDK');

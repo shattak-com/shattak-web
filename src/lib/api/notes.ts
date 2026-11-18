@@ -58,7 +58,7 @@ export type NotesSubjectData = {
 
 export type NoteDetailData = {
 	department: NoteDepartment;
-	subject: NoteSubject;
+	subject: Omit<NoteSubject, 'departments'>;
 	note: PublicNote;
 	subjectNotes: PublicNote[];
 };
@@ -73,7 +73,7 @@ export const getNotesSubject = (
 	subjectSlug: string,
 	options?: { category?: NoteCategory; page?: number; pageSize?: number }
 ) => {
-	const searchParams = new URLSearchParams();
+	const searchParams = new URLSearchParams({ view: 'compact' });
 	if (options?.category) searchParams.set('category', options.category);
 	if (options?.page) searchParams.set('page', String(options.page));
 	if (options?.pageSize) searchParams.set('pageSize', String(options.pageSize));
@@ -86,7 +86,7 @@ export const getNotesSubject = (
 
 export const getNoteDetail = (departmentSlug: string, subjectSlug: string, noteSlug: string) =>
 	getPublicJson<NoteDetailData>(
-		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}/notes/${encodeURIComponent(noteSlug)}`
+		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}/notes/${encodeURIComponent(noteSlug)}?view=compact`
 	);
 
 export const accessNote = (noteId: string, action: 'VIEW' | 'DOWNLOAD') =>

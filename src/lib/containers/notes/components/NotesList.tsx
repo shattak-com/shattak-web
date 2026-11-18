@@ -10,7 +10,6 @@ import { trackNotesEvent } from '~/lib/analytics/mixpanel';
 import { ApiRequestError } from '~/lib/api/client';
 import { accessNote, type NoteCategory, type PublicNote } from '~/lib/api/notes';
 import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
-import useNotesAuth from '~/lib/containers/notes/hooks/useNotesAuth';
 import { createNotesLoginHref, formatNoteDate, getCategoryLabel, getResourceLabel } from '~/lib/containers/notes/utils';
 
 type NotesListProps = {
@@ -56,13 +55,12 @@ const NotesList = ({
 	// Stable public URL even when Next.js renders an internal query rewrite.
 	const pathname = `/notes/${encodeURIComponent(departmentSlug)}/${encodeURIComponent(subjectSlug)}/`;
 	const router = useRouter();
-	const { authState, setAuthState } = useNotesAuth();
 	const [activeAction, setActiveAction] = useState('');
 	const [notice, setNotice] = useState('');
 	const noteHref = (note: PublicNote) =>
 		`/notes/${encodeURIComponent(departmentSlug)}/${encodeURIComponent(subjectSlug)}/${encodeURIComponent(note.slug)}`;
 
-	const requireLogin = (note: PublicNote, action: 'VIEW' | 'DOWNLOAD') => {
+	const requireLogin = (note: PublicNote) => {
 		setNotice('');
 		trackNotesEvent({
 			eventName: 'Authentication Required',
@@ -70,22 +68,12 @@ const NotesList = ({
 			noteId: note.id,
 			category: note.category,
 			resourceType: note.resourceType,
-			action
+			action: 'DOWNLOAD'
 		});
-		const returnPath = action === 'VIEW' ? noteHref(note) : `${window.location.pathname}${window.location.search}`;
-		router.push(createNotesLoginHref(returnPath));
+		router.push(createNotesLoginHref(`${window.location.pathname}${window.location.search}`));
 	};
 
 	const handleView = (note: PublicNote) => {
-		if (authState === 'checking') return;
-		if (authState === 'anonymous') {
-			requireLogin(note, 'VIEW');
-			return;
-		}
-		if (authState === 'error') {
-			setNotice('Your session could not be checked. Please refresh the page and try again.');
-			return;
-		}
 		trackNotesEvent({
 			eventName: 'Note View Requested',
 			location: 'notes_resources',
@@ -94,20 +82,9 @@ const NotesList = ({
 			resourceType: note.resourceType,
 			action: 'VIEW'
 		});
-		router.push(noteHref(note));
 	};
 
 	const handleDownload = async (note: PublicNote) => {
-		if (authState === 'checking') return;
-		if (authState === 'anonymous') {
-			requireLogin(note, 'DOWNLOAD');
-			return;
-		}
-		if (authState === 'error') {
-			setNotice('Your session could not be checked. Please refresh the page and try again.');
-			return;
-		}
-
 		const actionKey = `${note.id}:download`;
 		setActiveAction(actionKey);
 		setNotice('');
@@ -133,8 +110,7 @@ const NotesList = ({
 			resourceWindow?.close();
 			const statusCode = error instanceof ApiRequestError ? error.statusCode : 0;
 			if (statusCode === 401) {
-				setAuthState('anonymous');
-				requireLogin(note, 'DOWNLOAD');
+				requireLogin(note);
 			} else {
 				setNotice('Please try again in a moment.');
 				trackNotesEvent({
@@ -169,7 +145,7 @@ const NotesList = ({
 					</Heading>
 					<Text color="text.muted" fontSize="sm" mt={1}>
 						{pagination?.total ?? notes.length} {(pagination?.total ?? notes.length) === 1 ? 'resource' : 'resources'} ·
-						newest first
+						{currentNoteId ? 'current note first' : 'newest first'}
 					</Text>
 				</Box>
 				{showFilters ? (
@@ -250,20 +226,21 @@ const NotesList = ({
 							</Stack>
 						</Flex>
 						<HStack w={{ base: '100%', sm: 'auto' }} gap={2} justify={{ base: 'flex-end', sm: 'initial' }}>
-							<Button
-								size="sm"
-								variant="subtle"
-								borderRadius="full"
-								disabled={authState === 'checking' || note.id === currentNoteId}
-								onClick={() => handleView(note)}
-							>
-								<FiEye /> {note.id === currentNoteId ? 'Viewing' : 'View'}
-							</Button>
+							{note.id === currentNoteId ? (
+								<Button size="sm" variant="subtle" borderRadius="full" disabled>
+									<FiEye /> Viewing
+								</Button>
+							) : (
+								<Button asChild size="sm" variant="subtle" borderRadius="full">
+									<Link href={noteHref(note)} prefetch={false} onClick={() => handleView(note)}>
+										<FiEye /> View
+									</Link>
+								</Button>
+							)}
 							<Button
 								size="sm"
 								variant="outline"
 								borderRadius="full"
-								disabled={authState === 'checking'}
 								loading={activeAction === `${note.id}:download`}
 								onClick={() => handleDownload(note)}
 							>

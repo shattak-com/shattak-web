@@ -11,10 +11,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
 
-const listen = server =>
+const listen = (server, port = 0) =>
 	new Promise((resolve, reject) => {
 		server.once('error', reject);
-		server.listen(0, '127.0.0.1', () => resolve(server.address().port));
+		server.listen(port, '127.0.0.1', () => resolve(server.address().port));
 	});
 
 const run = async () => {
@@ -36,22 +36,53 @@ const run = async () => {
 	let departmentReads = 0;
 	let noteReads = 0;
 	let subjectReads = 0;
+	let courseListReads = 0;
+	let browserFixtureReady = false;
+	let noteAvailable = true;
+	const timings = [];
+	const phase2 = process.env.NOTES_PHASE2_BASELINE !== '1';
 	let notesVersion = 'one';
 	let forwardedCookie = false;
 	const api = http.createServer((request, response) => {
 		response.setHeader('Content-Type', 'application/json');
+		if (browserFixtureReady && request.headers.origin === base) {
+			response.setHeader('Access-Control-Allow-Origin', base);
+			response.setHeader('Access-Control-Allow-Credentials', 'true');
+			response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+			response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+			if (request.method === 'OPTIONS') return response.writeHead(204).end();
+		}
 		forwardedCookie ||= Boolean(request.headers.cookie);
 		const department = { id, slug: id, name: `Department version ${notesVersion}`, icon: '', subjectCount: 1 };
-		if (request.url === `/api/v1/courses/${id}`) {
+		if (request.url === '/api/v1/notes') {
+			response.end(
+				JSON.stringify({
+					success: true,
+					data: { departments: browserFixtureReady ? [department] : [], popularSubjects: [] }
+				})
+			);
+		} else if (request.url?.startsWith('/api/v1/notes/sitemap')) {
+			response.end(JSON.stringify({ success: true, data: { departments: [], notes: [], nextCursor: null } }));
+		} else if (request.url === `/api/v1/courses/${id}`) {
 			reads += 1;
 			forwardedCookie ||= Boolean(request.headers.cookie);
 			response.end(JSON.stringify({ success: true, message: 'Fixture course', data: course }));
 		} else if (request.url === '/api/v1/courses') {
-			response.end(JSON.stringify({ success: true, message: 'Fixture catalog', data: [] }));
+			courseListReads++;
+			setTimeout(() => response.end(JSON.stringify({ success: true, message: 'Fixture catalog', data: [] })), 300);
 		} else if (request.url === `/api/v1/notes/departments/${id}`) {
 			departmentReads += 1;
 			response.end(
-				JSON.stringify({ success: true, message: 'Fixture department', data: { department, subjects: [] } })
+				JSON.stringify({
+					success: true,
+					message: 'Fixture department',
+					data: {
+						department,
+						subjects: browserFixtureReady
+							? [{ id: 'math', slug: 'math', name: 'Math', noteCount: 41, departments: [department] }]
+							: []
+					}
+				})
 			);
 		} else if (request.url?.startsWith(`/api/v1/notes/departments/${id}/subjects/math?`)) {
 			subjectReads += 1;
@@ -67,7 +98,7 @@ const run = async () => {
 						notes: [
 							{
 								id: 'item',
-								slug: 'item',
+								slug: 'sample',
 								title: `Result ${category} page ${page} version ${notesVersion}`,
 								category,
 								resourceType: 'PDF',
@@ -81,15 +112,28 @@ const run = async () => {
 					}
 				})
 			);
-		} else if (request.url === `/api/v1/notes/departments/${id}/subjects/math/notes/sample`) {
+		} else if (request.url?.split('?')[0] === `/api/v1/notes/departments/${id}/subjects/math/notes/sample`) {
 			noteReads += 1;
+			if (!noteAvailable)
+				return response.writeHead(404).end(JSON.stringify({ success: false, error: { code: 'NOTE_NOT_FOUND' } }));
+			const compact = new URL(request.url, 'http://fixture').searchParams.get('view') === 'compact';
+			const subjectNotes = Array.from({ length: compact ? 20 : 250 }, (_, i) => ({
+				id: `related-${i}`,
+				slug: `related-${i}`,
+				title: `Related study handout ${i}`,
+				category: 'NOTES',
+				resourceType: 'PDF',
+				resourceDate: '2026-01-01T00:00:00.000Z',
+				viewCount: 0,
+				downloadCount: 0
+			}));
 			response.end(
 				JSON.stringify({
 					success: true,
 					message: 'Fixture note',
 					data: {
 						department,
-						subject: { id: 'math', slug: 'math', name: 'Math', noteCount: 1, departments: [department] },
+						subject: { id: 'math', slug: 'math', name: 'Math', noteCount: 250, departments: [department] },
 						note: {
 							id: 'sample',
 							slug: 'sample',
@@ -100,31 +144,75 @@ const run = async () => {
 							viewCount: 0,
 							downloadCount: 0
 						},
-						subjectNotes: []
+						subjectNotes
 					}
 				})
 			);
+		} else if (browserFixtureReady && request.method === 'POST' && request.url === '/api/v1/notes/sample/access') {
+			response.setHeader('Cache-Control', 'private, no-store');
+			if (!request.headers.cookie?.includes('notes-fixture-user=authorized'))
+				return response.writeHead(401).end(JSON.stringify({ success: false }));
+			response.end(
+				JSON.stringify({
+					success: true,
+					data: { resourceUrl: `http://127.0.0.1:${api.address().port}/fixture-file`, resourceType: 'PDF' }
+				})
+			);
+		} else if (browserFixtureReady && request.url === '/fixture-file') {
+			response.writeHead(200, { 'Content-Type': 'text/plain' }).end('Synthetic protected preview');
 		} else {
 			response.writeHead(404).end(JSON.stringify({ success: false, message: 'Not found' }));
 		}
 	});
-	const apiPort = await listen(api);
+	const apiPort = await listen(api, Number(process.env.NOTES_FIXTURE_API_PORT || 0));
 	const reservation = net.createServer();
 	const webPort = await listen(reservation);
 	await new Promise(resolve => reservation.close(resolve));
 	const base = `http://127.0.0.1:${webPort}`;
 	const secret = 'synthetic-local-only-revalidation-test-secret';
+	const root = process.env.NOTES_FIXTURE_WEB_ROOT || path.resolve(__dirname, '..');
+	const fixtureEnv = {
+		...process.env,
+		SHATTAK_API_BASE_URL: `http://127.0.0.1:${apiPort}/api/v1`,
+		NEXT_PUBLIC_SHATTAK_API_BASE_URL: `http://127.0.0.1:${apiPort}/api/v1`,
+		PUBLIC_CACHE_REVALIDATION_SECRET: secret,
+		NEXT_TELEMETRY_DISABLED: '1'
+	};
+	if (process.env.NOTES_FIXTURE_BUILD === '1') {
+		try {
+			for (const [script, ...args] of [
+				[require.resolve('next/dist/bin/next'), 'build', '--webpack'],
+				[
+					path.join(__dirname, '../node_modules/next-sitemap/bin/next-sitemap.mjs'),
+					'--config',
+					'next-sitemap.config.js'
+				]
+			]) {
+				await new Promise((resolve, reject) => {
+					const build = spawn(process.execPath, [script, ...args], {
+						cwd: root,
+						env: fixtureEnv,
+						stdio: 'inherit',
+						windowsHide: true
+					});
+					build.once('error', reject);
+					build.once('exit', code => (code === 0 ? resolve() : reject(new Error(`Fixture build failed (${code})`))));
+				});
+			}
+		} catch (error) {
+			api.closeAllConnections();
+			await new Promise(resolve => api.close(resolve));
+			throw error;
+		}
+		courseListReads = 0;
+	}
 	const child = spawn(
 		process.execPath,
 		[require.resolve('next/dist/bin/next'), 'start', '--hostname', '127.0.0.1', '--port', String(webPort)],
 		{
-			cwd: path.resolve(__dirname, '..'),
+			cwd: root,
 			windowsHide: true,
-			env: {
-				...process.env,
-				SHATTAK_API_BASE_URL: `http://127.0.0.1:${apiPort}/api/v1`,
-				PUBLIC_CACHE_REVALIDATION_SECRET: secret
-			},
+			env: fixtureEnv,
 			stdio: ['ignore', 'pipe', 'pipe']
 		}
 	);
@@ -138,7 +226,7 @@ const run = async () => {
 	const get = (url, init = {}) => fetch(url, { ...init, signal: AbortSignal.timeout(15000) });
 	try {
 		let ready = false;
-		const deadline = Date.now() + 45000;
+		const deadline = Date.now() + 90000;
 		while (Date.now() < deadline && child.exitCode === null) {
 			try {
 				ready = (await get(`${base}/manifest.webmanifest`)).ok;
@@ -185,18 +273,44 @@ const run = async () => {
 			[departmentUrl, 'Department version one'],
 			[noteUrl, 'Note version one']
 		]) {
+			const started = performance.now();
 			const result = await get(url);
+			const ttfbMs = performance.now() - started;
 			assert.equal(result.status, 200);
 			assert.match(result.headers.get('cache-control'), /s-maxage=3600/);
-			assert.ok((await result.text()).includes(title));
+			const body = await result.text();
+			assert.ok(body.includes(title));
+			timings.push({
+				route: url === noteUrl ? 'detail' : 'department',
+				run: 'cold-html',
+				ttfbMs,
+				bytes: Buffer.byteLength(body)
+			});
+			if (phase2 && url === noteUrl) {
+				assert.ok(!body.includes('Related study handout 249'), 'Detail should not render the full subject collection');
+				assert.ok(body.includes('Browse all 250 resources'), 'Detail should link to the complete subject listing');
+			}
 		}
 		notesVersion = 'two';
 		for (const [url, title] of [
 			[departmentUrl, 'Department version one'],
 			[noteUrl, 'Note version one']
 		]) {
-			assert.ok((await (await get(url)).text()).includes(title));
+			const started = performance.now();
+			const result = await get(url);
+			const ttfbMs = performance.now() - started;
+			const body = await result.text();
+			assert.ok(body.includes(title));
+			timings.push({
+				route: url === noteUrl ? 'detail' : 'department',
+				run: 'warm-html',
+				ttfbMs,
+				bytes: Buffer.byteLength(body)
+			});
 		}
+		const noteFlight = await get(`${noteUrl}?_rsc=fixture`, { headers: { RSC: '1' } });
+		assert.match(noteFlight.headers.get('content-type'), /text\/x-component/);
+		timings.push({ route: 'detail', run: 'warm-rsc', bytes: Buffer.byteLength(await noteFlight.text()) });
 		assert.equal(departmentReads, 1);
 		assert.equal(noteReads, 1);
 		const notesInvalidation = await get(`${base}/api/cache/revalidate/`, {
@@ -224,9 +338,13 @@ const run = async () => {
 			['?category=invalid&page=-1', 'Result NOTES page 1']
 		]) {
 			const url = `${subjectUrl}${query}`;
+			const started = performance.now();
 			const resultResponse = await get(url);
+			const ttfbMs = performance.now() - started;
 			assert.equal(resultResponse.status, 200, url);
 			const content = await resultResponse.text();
+			if (query === '?category=PYQ&page=2')
+				timings.push({ route: 'filtered-page-2', run: 'first-html', ttfbMs, bytes: Buffer.byteLength(content) });
 			assert.ok(content.includes(result), `${url} should SSR ${result}`);
 			assert.match(resultResponse.headers.get('cache-control'), /s-maxage=3600/);
 			assert.match(resultResponse.headers.get('netlify-vary'), /query=category\|page/);
@@ -235,14 +353,21 @@ const run = async () => {
 			assert.equal(new URL(canonical[1]).pathname.replace(/\/$/, ''), `/notes/${id}/math`);
 			assert.ok(!content.includes('href="/notes-browse/'), 'Links must use public URLs, not rewrite destinations');
 			const count = subjectReads;
-			assert.ok((await (await get(url)).text()).includes(result));
+			const warmStarted = performance.now();
+			const warmResult = await get(url);
+			const warmTtfbMs = performance.now() - warmStarted;
+			assert.ok((await warmResult.text()).includes(result));
+			if (query === '?category=PYQ&page=2')
+				timings.push({ route: 'filtered-page-2', run: 'warm-html', ttfbMs: warmTtfbMs });
 			assert.equal(subjectReads, count, 'Warm query variants must not read the API again');
 		}
 		// Browser back/forward revisits preserve each independently cached variant.
 		assert.ok((await (await get(`${subjectUrl}?page=2`)).text()).includes('Result NOTES page 2'));
 		const flight = await get(`${subjectUrl}?category=PYQ&page=2&_rsc=fixture`, { headers: { RSC: '1' } });
 		assert.match(flight.headers.get('content-type'), /text\/x-component/);
-		assert.ok((await flight.text()).includes('Result PYQ page 2'));
+		const flightBody = await flight.text();
+		assert.ok(flightBody.includes('Result PYQ page 2'));
+		timings.push({ route: 'filtered-page-2', run: 'warm-rsc', bytes: Buffer.byteLength(flightBody) });
 		notesVersion = 'three';
 		await (
 			await get(`${base}/api/cache/revalidate/`, {
@@ -256,6 +381,40 @@ const run = async () => {
 			'Notes invalidation must also expire rewritten variants'
 		);
 		assert.equal(forwardedCookie, false);
+		if (phase2) assert.equal(courseListReads, 0, 'No Notes render should request the recommendation catalog');
+		console.log(JSON.stringify({ courseListReads, timings }));
+		if (phase2) {
+			const invalidateNotes = async () => {
+				const response = await get(`${base}/api/cache/revalidate/`, {
+					method: 'POST',
+					headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+					body: '{"scope":"notes"}'
+				});
+				assert.equal(response.status, 200);
+				await response.body?.cancel();
+			};
+			const absent = async url => {
+				const response = await get(url);
+				assert.equal(response.status, 404, url);
+				await response.body?.cancel();
+			};
+			await absent(`${base}/notes/${'a'.repeat(161)}/`);
+			await absent(`${base}/notes/unknown-department/`);
+			noteAvailable = false;
+			await invalidateNotes();
+			await absent(noteUrl);
+			noteAvailable = true;
+			browserFixtureReady = Boolean(process.env.NOTES_BROWSER_PLAYWRIGHT);
+			await invalidateNotes();
+			assert.match(await (await get(noteUrl)).text(), /Note version three/);
+			if (browserFixtureReady) {
+				await require('./notes-browser-smoke.cjs').verifyNotesBrowser({
+					base,
+					apiBase: `http://127.0.0.1:${apiPort}`,
+					department: id
+				});
+			}
+		}
 		console.log(
 			'PASS: production ISR cache hit, request reuse, no forwarded session, authenticated invalidation, fresh content after invalidation'
 		);

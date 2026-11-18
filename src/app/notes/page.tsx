@@ -7,7 +7,6 @@ import DepartmentGrid from '~/lib/containers/notes/components/DepartmentGrid';
 import NotesHero from '~/lib/containers/notes/components/NotesHero';
 import NotesPageFrame from '~/lib/containers/notes/components/NotesPageFrame';
 import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory';
-import { loadFeaturedCourses } from '~/lib/containers/notes/data';
 
 export const revalidate = 3600;
 
@@ -29,10 +28,7 @@ export const metadata: Metadata = {
 const emptyLanding: NotesLandingData = { departments: [], popularSubjects: [] };
 
 const NotesHomePage = async () => {
-	const [landingResult, featuredCourses] = await Promise.all([
-		getNotesLanding().catch(() => emptyLanding),
-		loadFeaturedCourses()
-	]);
+	const landingResult = await getNotesLanding().catch(() => emptyLanding);
 	const structuredData = {
 		'@context': 'https://schema.org',
 		'@type': 'CollectionPage',
@@ -42,7 +38,7 @@ const NotesHomePage = async () => {
 	};
 
 	return (
-		<NotesPageFrame featuredCourses={featuredCourses}>
+		<NotesPageFrame>
 			{/* eslint-disable-next-line react/no-danger */}
 			<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 			<Container maxW="6xl" py={{ base: 8, md: 12 }}>

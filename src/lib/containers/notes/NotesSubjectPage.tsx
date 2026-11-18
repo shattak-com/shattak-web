@@ -9,8 +9,7 @@ import NotesBreadcrumbs from '~/lib/containers/notes/components/NotesBreadcrumbs
 import NotesList from '~/lib/containers/notes/components/NotesList';
 import NotesPageFrame from '~/lib/containers/notes/components/NotesPageFrame';
 import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory';
-import { loadFeaturedCourses } from '~/lib/containers/notes/data';
-import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
+import { assertNotesSlugs, isNotesNotFoundError } from '~/lib/containers/notes/errors';
 
 type SubjectPageProps = {
 	params: Promise<{ departmentSlug: string; subjectSlug: string }>;
@@ -18,14 +17,15 @@ type SubjectPageProps = {
 	page?: number;
 };
 
-const getSubject = cache((departmentSlug: string, subjectSlug: string, category?: NoteCategory, page = 1) =>
-	getNotesSubject(departmentSlug, subjectSlug, { category, page, pageSize: 20 })
-);
+const getSubject = cache(async (departmentSlug: string, subjectSlug: string, category?: NoteCategory, page = 1) => {
+	assertNotesSlugs(departmentSlug, subjectSlug);
+	return getNotesSubject(departmentSlug, subjectSlug, { category, page, pageSize: 20 });
+});
 
 export const generateSubjectMetadata = async ({ params, category, page = 1 }: SubjectPageProps): Promise<Metadata> => {
 	const { departmentSlug, subjectSlug } = await params;
 	try {
-		const data = await getSubject(decodeURIComponent(departmentSlug), decodeURIComponent(subjectSlug), category, page);
+		const data = await getSubject(departmentSlug, subjectSlug, category, page);
 		return {
 			title: `${data.subject.name} Notes, PDFs & PYQs`,
 			description: `Browse ${data.subject.name} notes, PDFs, presentations, labs, and previous-year questions for ${data.department.name}.`,
@@ -40,15 +40,14 @@ const NotesSubjectPage = async ({ params, category, page = 1 }: SubjectPageProps
 	const { departmentSlug, subjectSlug } = await params;
 	let data;
 	try {
-		data = await getSubject(decodeURIComponent(departmentSlug), decodeURIComponent(subjectSlug), category, page);
+		data = await getSubject(departmentSlug, subjectSlug, category, page);
 	} catch (error) {
 		if (isNotesNotFoundError(error)) notFound();
 		throw error;
 	}
-	const featuredCourses = await loadFeaturedCourses();
 
 	return (
-		<NotesPageFrame featuredCourses={featuredCourses}>
+		<NotesPageFrame>
 			<Container maxW="6xl" py={{ base: 8, md: 12 }}>
 				<Stack gap={{ base: 8, md: 10 }}>
 					<NotesBreadcrumbs

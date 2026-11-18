@@ -9,3 +9,20 @@ package = "@netlify/plugin-nextjs"
 for = "/sw.js"
 [headers.values]
 Cache-Control = "no-cache"
+
+# Exact legacy/probe URLs only. Do not intercept Notes, RSC, API namespaces,
+# verification files, or future real content (static files may shadow these).
+[[redirects]]
+from = "/Jenkinsfile"
+to = "/probe-not-found.html"
+status = 404
+
+[[redirects]]
+from = "/index.php"
+to = "/probe-not-found.html"
+status = 404
+
+[[redirects]]
+from = "/userfiles"
+to = "/probe-not-found.html"
+status = 404

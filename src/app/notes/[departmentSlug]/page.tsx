@@ -8,8 +8,7 @@ import ContributorBanner from '~/lib/containers/notes/components/ContributorBann
 import NotesBreadcrumbs from '~/lib/containers/notes/components/NotesBreadcrumbs';
 import NotesPageFrame from '~/lib/containers/notes/components/NotesPageFrame';
 import SubjectDirectory from '~/lib/containers/notes/components/SubjectDirectory';
-import { loadFeaturedCourses } from '~/lib/containers/notes/data';
-import { isNotesNotFoundError } from '~/lib/containers/notes/errors';
+import { assertNotesSlugs, isNotesNotFoundError } from '~/lib/containers/notes/errors';
 
 export const revalidate = 3600;
 export const dynamic = 'force-static';
@@ -21,12 +20,15 @@ export const generateStaticParams = async () => {
 };
 
 type DepartmentPageProps = { params: Promise<{ departmentSlug: string }> };
-const getDepartment = cache((slug: string) => getNotesDepartment(slug));
+const getDepartment = cache(async (slug: string) => {
+	assertNotesSlugs(slug);
+	return getNotesDepartment(slug);
+});
 
 export const generateMetadata = async ({ params }: DepartmentPageProps): Promise<Metadata> => {
 	const { departmentSlug } = await params;
 	try {
-		const { department } = await getDepartment(decodeURIComponent(departmentSlug));
+		const { department } = await getDepartment(departmentSlug);
 		return {
 			title: `${department.name} Notes & Study Resources`,
 			description: `Browse subjects, notes, PDFs, PYQs, and lab resources for ${department.name}.`,
@@ -39,18 +41,16 @@ export const generateMetadata = async ({ params }: DepartmentPageProps): Promise
 
 const NotesDepartmentPage = async ({ params }: DepartmentPageProps) => {
 	const { departmentSlug } = await params;
-	const slug = decodeURIComponent(departmentSlug);
 	let data;
 	try {
-		data = await getDepartment(slug);
+		data = await getDepartment(departmentSlug);
 	} catch (error) {
 		if (isNotesNotFoundError(error)) notFound();
 		throw error;
 	}
-	const featuredCourses = await loadFeaturedCourses();
 
 	return (
-		<NotesPageFrame featuredCourses={featuredCourses}>
+		<NotesPageFrame>
 			<Container maxW="6xl" py={{ base: 8, md: 12 }}>
 				<Stack gap={{ base: 8, md: 10 }}>
 					<NotesBreadcrumbs items={[{ label: 'All departments', href: '/notes' }, { label: data.department.name }]} />

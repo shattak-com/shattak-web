@@ -10,25 +10,23 @@ import { ApiRequestError } from '~/lib/api/client';
 import { accessNote, type PublicNote } from '~/lib/api/notes';
 import FolderResourceViewer from '~/lib/containers/notes/components/FolderResourceViewer';
 import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
-import useNotesAuth from '~/lib/containers/notes/hooks/useNotesAuth';
 import { createNotesLoginHref, createNoteViewerUrl } from '~/lib/containers/notes/utils';
 
 const NoteViewer = ({ note }: { note: PublicNote }) => {
 	const pathname = usePathname();
 	const router = useRouter();
-	const { authState, setAuthState } = useNotesAuth();
 	const [resource, setResource] = useState<{ noteId: string; url: string } | null>(null);
 	const [viewerError, setViewerError] = useState<{ noteId: string; message: string } | null>(null);
 	const [isDownloading, setIsDownloading] = useState(false);
 	const viewRequest = useRef<{ noteId: string; promise: ReturnType<typeof accessNote>; tracked: boolean } | null>(null);
-	const hasRedirectedToLogin = useRef(false);
+	const loginRedirectedFor = useRef<string | null>(null);
 	const resourceUrl = resource?.noteId === note.id ? resource.url : '';
 	const error = viewerError?.noteId === note.id ? viewerError.message : '';
 
 	const redirectToLogin = useCallback(
 		(action: 'VIEW' | 'DOWNLOAD') => {
-			if (hasRedirectedToLogin.current) return;
-			hasRedirectedToLogin.current = true;
+			if (loginRedirectedFor.current === note.id) return;
+			loginRedirectedFor.current = note.id;
 			trackNotesEvent({
 				eventName: 'Authentication Required',
 				location: 'notes_resources',
@@ -43,11 +41,6 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 	);
 
 	useEffect(() => {
-		if (authState === 'anonymous') redirectToLogin('VIEW');
-	}, [authState, redirectToLogin]);
-
-	useEffect(() => {
-		if (authState !== 'authenticated') return undefined;
 		let active = true;
 
 		if (viewRequest.current?.noteId !== note.id) {
@@ -74,11 +67,10 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 				if (!active) return;
 				const statusCode = requestError instanceof ApiRequestError ? requestError.statusCode : 0;
 				if (statusCode === 401) {
-					setAuthState('anonymous');
 					redirectToLogin('VIEW');
-				} else {
-					setViewerError({ noteId: note.id, message: 'The viewer could not load this resource. Please try again.' });
+					return;
 				}
+				setViewerError({ noteId: note.id, message: 'The viewer could not load this resource. Please try again.' });
 				trackNotesEvent({
 					eventName: 'Note Access Failed',
 					location: 'notes_resources',
@@ -91,7 +83,7 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 		return () => {
 			active = false;
 		};
-	}, [authState, note.category, note.id, note.resourceType, redirectToLogin, setAuthState]);
+	}, [note.category, note.id, note.resourceType, redirectToLogin]);
 
 	const handleDownload = async () => {
 		setIsDownloading(true);
@@ -114,7 +106,6 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 			resourceWindow?.close();
 			const statusCode = requestError instanceof ApiRequestError ? requestError.statusCode : 0;
 			if (statusCode === 401) {
-				setAuthState('anonymous');
 				redirectToLogin('DOWNLOAD');
 			} else {
 				setViewerError({ noteId: note.id, message: 'The resource could not be opened. Please try again.' });
@@ -124,11 +115,7 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 		}
 	};
 
-	if (
-		authState === 'checking' ||
-		authState === 'anonymous' ||
-		(authState === 'authenticated' && !resourceUrl && !error)
-	) {
+	if (!resourceUrl && !error) {
 		return (
 			<Flex
 				minH={{ base: '360px', md: '560px' }}
@@ -142,15 +129,11 @@ const NoteViewer = ({ note }: { note: PublicNote }) => {
 				<Stack align="center" gap={3} role="status">
 					<Spinner color="primary" size="lg" />
 					<Text color="text.muted" fontSize="sm">
-						{authState === 'anonymous' ? 'Opening login…' : 'Preparing the secure viewer…'}
+						Preparing the secure viewer…
 					</Text>
 				</Stack>
 			</Flex>
 		);
-	}
-
-	if (authState === 'error') {
-		return <NotesAccessMessage message="Your session could not be checked. Please refresh the page and try again." />;
 	}
 
 	if (error) {

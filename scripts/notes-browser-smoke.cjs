@@ -17,12 +17,15 @@ exports.verifyNotesBrowser = async ({ base, apiBase, department }) => {
 		});
 		const page = await context.newPage();
 		const rsc = [];
-		let accessCalls = 0;
+		let previewCalls = 0;
+		const downloadCalls = [];
 		page.on('request', request => {
 			const url = new URL(request.url());
 			if (url.searchParams.has('_rsc'))
 				rsc.push({ path: url.pathname, prefetch: Boolean(request.headers()['next-router-prefetch']) });
-			if (request.method() === 'POST' && url.pathname === '/api/v1/notes/sample/access') accessCalls++;
+			if (request.method() === 'POST' && url.pathname === '/api/v1/notes/sample/preview') previewCalls++;
+			if (request.method() === 'POST' && url.pathname === '/api/v1/notes/sample/access')
+				downloadCalls.push(request.postDataJSON()?.action);
 		});
 		const subject = `/notes/${department}/math/`;
 		const detail = `${subject}sample/`;
@@ -60,22 +63,29 @@ exports.verifyNotesBrowser = async ({ base, apiBase, department }) => {
 			.getByText(/Result PYQ page 2/)
 			.first()
 			.waitFor();
-		assert.equal(accessCalls, 0, 'Browsing and history must not access a private resource');
+		assert.deepEqual(downloadCalls, [], 'Browsing and history must not access a private resource');
 		assert.ok(
 			await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
 			'Mobile subject should not overflow'
 		);
 		await page.getByRole('link', { name: 'View', exact: true }).first().click();
+		await page.waitForURL(`${base}${detail}`);
+		await page.locator('iframe[title^="Note version"]').scrollIntoViewIfNeeded();
+		await page.frameLocator('iframe[title^="Note version"]').getByText('Synthetic public preview').waitFor();
+		assert.equal(previewCalls, 1, 'Anonymous view uses a single public preview request');
+		assert.deepEqual(downloadCalls, [], 'Opening the preview must not access a private resource');
+		await page.getByRole('button', { name: 'Download', exact: true }).first().click();
 		await page.waitForURL(
 			url =>
 				url.pathname === '/login/' && url.searchParams.get('redirect')?.replace(/\/$/, '') === detail.replace(/\/$/, '')
 		);
-		assert.equal(accessCalls, 1, 'The unauthenticated viewer uses one protected request');
+		assert.deepEqual(downloadCalls, ['DOWNLOAD'], 'Only the explicit download prompts for login');
 		await context.addCookies([{ name: 'notes-fixture-user', value: 'authorized', url: apiBase }]);
 		await page.setViewportSize({ width: 1280, height: 800 });
 		await page.goto(`${base}${detail}`);
 		await page.locator('iframe[title^="Note version"]').waitFor();
-		assert.equal(accessCalls, 2, 'The authorized viewer uses one protected request');
+		assert.equal(previewCalls, 2, 'The authorized viewer still uses the public preview');
+		assert.deepEqual(downloadCalls, ['DOWNLOAD']);
 		assert.ok(
 			await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
 			'Desktop viewer should not overflow'
@@ -89,15 +99,16 @@ exports.verifyNotesBrowser = async ({ base, apiBase, department }) => {
 		await page.getByRole('button', { name: 'Download', exact: true }).first().click();
 		const popup = await popupReady;
 		await popup.waitForURL(`${apiBase}/fixture-file`);
-		assert.equal(accessCalls, 3, 'An explicit Download uses one additional protected request');
+		assert.deepEqual(downloadCalls, ['DOWNLOAD', 'DOWNLOAD'], 'An explicit Download uses one protected request');
 		await popup.close();
 		const notesPrefetches = rsc.filter(request => request.prefetch && request.path.startsWith('/notes/')).length;
 		console.log(
 			JSON.stringify({
-				browser: 'Notes navigation, history, anonymous redirect, authorized viewer and download passed',
+				browser: 'Notes navigation, anonymous preview, download login redirect, and authorized download passed',
 				rsc,
 				notesPrefetches,
-				accessCalls,
+				previewCalls,
+				downloadCalls,
 				samples
 			})
 		);

@@ -17,7 +17,7 @@ import {
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react';
 import {
 	FiAlertCircle,
-	FiExternalLink,
+	FiDownload,
 	FiFolder,
 	FiGrid,
 	FiList,
@@ -26,12 +26,14 @@ import {
 	FiRefreshCw
 } from 'react-icons/fi';
 
-import { createDriveFolderViewerUrl } from '~/lib/containers/notes/utils';
+import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
 
 type FolderResourceViewerProps = {
-	resourceUrl: string;
+	previewUrl: string | null;
 	title: string;
-	onOpenExternally: () => void;
+	onDownload: () => void;
+	isDownloading: boolean;
+	downloadError: string;
 };
 
 type FolderLayout = 'grid' | 'list';
@@ -58,8 +60,8 @@ const FolderPreviewStatus = ({
 	const isWaiting = viewerState === 'loading' || viewerState === 'slow';
 	const isUnavailable = viewerState === 'failed';
 	const unavailableMessage = canRetry
-		? 'Use Open in Drive above to access this folder, or reload its preview.'
-		: 'This link cannot be previewed here. Use Open in Drive above to access the original resource.';
+		? 'Reload the preview, or sign in to download from Drive.'
+		: 'This folder cannot be previewed here. Sign in to download from Drive.';
 	return (
 		<Flex position="absolute" inset={0} bg="bg.card" direction="column" overflowY="auto" p={{ base: 5, md: 8 }}>
 			<Stack
@@ -83,7 +85,7 @@ const FolderPreviewStatus = ({
 				</Stack>
 				{viewerState === 'slow' ? (
 					<Text fontSize="sm" color="text.muted">
-						Drive is taking longer than usual. Reload the preview or open the folder in Drive.
+						Drive is taking longer than usual. Try reloading the preview.
 					</Text>
 				) : null}
 				{canRetry && (viewerState === 'slow' || isUnavailable) ? (
@@ -148,7 +150,7 @@ const FolderPreview = ({
 	);
 };
 
-type FolderPanelProps = FolderResourceViewerProps & {
+type FolderPanelProps = Omit<FolderResourceViewerProps, 'previewUrl'> & {
 	layout: FolderLayout;
 	onLayoutChange: (layout: FolderLayout) => void;
 	onReload: () => void;
@@ -160,9 +162,10 @@ type FolderPanelProps = FolderResourceViewerProps & {
 };
 
 const FolderPanel = ({
-	resourceUrl,
 	title,
-	onOpenExternally,
+	onDownload,
+	isDownloading,
+	downloadError,
 	layout,
 	onLayoutChange,
 	onReload,
@@ -212,12 +215,19 @@ const FolderPanel = ({
 						{titleElement}
 					</Stack>
 				</Flex>
-				<Button asChild size="sm" minH={10} variant="outline" borderRadius="full" flexShrink={0}>
-					<a href={resourceUrl} target="_blank" rel="noopener noreferrer" onClick={onOpenExternally}>
-						<FiExternalLink aria-hidden="true" /> Open in Drive
-					</a>
+				<Button
+					size="sm"
+					minH={10}
+					variant="outline"
+					borderRadius="full"
+					flexShrink={0}
+					onClick={onDownload}
+					loading={isDownloading}
+				>
+					<FiDownload aria-hidden="true" /> Download from Drive
 				</Button>
 			</Flex>
+			{downloadError ? <NotesAccessMessage message={downloadError} /> : null}
 
 			<Flex
 				px={{ base: 4, md: 5 }}
@@ -285,22 +295,23 @@ const FolderPanel = ({
 			</Flex>
 			{children}
 			<Text px={{ base: 4, md: 5 }} py={3} fontSize="xs" color="text.muted" bg="bg.surface" flexShrink={0}>
-				Select a file to open it in a new tab. If Drive asks for access, use Open in Drive.
+				Select a file to open it in a new tab. Sign in to use Shattak’s download button.
 			</Text>
 		</Flex>
 	);
 };
 
-const FolderResourceViewer = ({ resourceUrl, title, onOpenExternally }: FolderResourceViewerProps) => {
+const FolderResourceViewer = ({ previewUrl, ...downloadProps }: FolderResourceViewerProps) => {
 	const [layout, setLayout] = useState<FolderLayout>('grid');
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [reloadCount, setReloadCount] = useState(0);
 	const expandButtonRef = useRef<HTMLButtonElement>(null);
 	const dialogRef = useRef<HTMLDialogElement>(null);
 	const expandedTitleId = useId();
-	const viewerUrl = createDriveFolderViewerUrl(resourceUrl, layout);
+	const viewerUrl = previewUrl ? `${previewUrl}#${layout}` : '';
 	const reload = () => setReloadCount(count => count + 1);
-	const panelProps = { resourceUrl, title, onOpenExternally, layout, onLayoutChange: setLayout, onReload: reload };
+	const panelProps = { ...downloadProps, layout, onLayoutChange: setLayout, onReload: reload };
+	const { title } = downloadProps;
 	const previewKey = `${viewerUrl}:${reloadCount}`;
 
 	useEffect(() => {

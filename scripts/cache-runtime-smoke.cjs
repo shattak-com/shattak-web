@@ -148,6 +148,14 @@ const run = async () => {
 					}
 				})
 			);
+		} else if (browserFixtureReady && request.method === 'POST' && request.url === '/api/v1/notes/sample/preview') {
+			response.setHeader('Cache-Control', 'private, no-store');
+			response.end(
+				JSON.stringify({
+					success: true,
+					data: { previewUrl: `http://127.0.0.1:${api.address().port}/fixture-preview` }
+				})
+			);
 		} else if (browserFixtureReady && request.method === 'POST' && request.url === '/api/v1/notes/sample/access') {
 			response.setHeader('Cache-Control', 'private, no-store');
 			if (!request.headers.cookie?.includes('notes-fixture-user=authorized'))
@@ -158,8 +166,10 @@ const run = async () => {
 					data: { resourceUrl: `http://127.0.0.1:${api.address().port}/fixture-file`, resourceType: 'PDF' }
 				})
 			);
+		} else if (browserFixtureReady && request.url === '/fixture-preview') {
+			response.writeHead(200, { 'Content-Type': 'text/plain' }).end('Synthetic public preview');
 		} else if (browserFixtureReady && request.url === '/fixture-file') {
-			response.writeHead(200, { 'Content-Type': 'text/plain' }).end('Synthetic protected preview');
+			response.writeHead(200, { 'Content-Type': 'text/plain' }).end('Synthetic download');
 		} else {
 			response.writeHead(404).end(JSON.stringify({ success: false, message: 'Not found' }));
 		}

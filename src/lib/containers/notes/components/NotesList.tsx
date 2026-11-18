@@ -8,7 +8,7 @@ import { FiDownload, FiEye, FiFileText, FiFolder, FiMonitor } from 'react-icons/
 
 import { trackNotesEvent } from '~/lib/analytics/mixpanel';
 import { ApiRequestError } from '~/lib/api/client';
-import { accessNote, type NoteCategory, type PublicNote } from '~/lib/api/notes';
+import { downloadNote, type NoteCategory, type PublicNote } from '~/lib/api/notes';
 import NotesAccessMessage from '~/lib/containers/notes/components/NotesAccessMessage';
 import { createNotesLoginHref, formatNoteDate, getCategoryLabel, getResourceLabel } from '~/lib/containers/notes/utils';
 
@@ -92,7 +92,7 @@ const NotesList = ({
 		if (resourceWindow) resourceWindow.opener = null;
 
 		try {
-			const resource = await accessNote(note.id, 'DOWNLOAD');
+			const resource = await downloadNote(note.id);
 			trackNotesEvent({
 				eventName: 'Note Download Opened',
 				location: 'notes_resources',

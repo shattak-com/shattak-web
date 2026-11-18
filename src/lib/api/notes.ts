@@ -89,7 +89,10 @@ export const getNoteDetail = (departmentSlug: string, subjectSlug: string, noteS
 		`/notes/departments/${encodeURIComponent(departmentSlug)}/subjects/${encodeURIComponent(subjectSlug)}/notes/${encodeURIComponent(noteSlug)}?view=compact`
 	);
 
-export const accessNote = (noteId: string, action: 'VIEW' | 'DOWNLOAD') =>
+export const previewNote = (noteId: string) =>
+	postJson<{ previewUrl: string | null }>(`/notes/${encodeURIComponent(noteId)}/preview`);
+
+export const downloadNote = (noteId: string) =>
 	postJson<{ resourceUrl: string; resourceType: NoteResourceType }>(`/notes/${encodeURIComponent(noteId)}/access`, {
-		action
+		action: 'DOWNLOAD'
 	});
